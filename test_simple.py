@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Very simple test with minimal data
+simple test with minimal data
 """
 
 import requests
@@ -36,16 +36,16 @@ def test_minimal():
         
         if response.status_code == 200:
             data = response.json()
-            print("✅ Success!")
+            print("Success!")
             print(f"Template: {data.get('template_used')}")
             print(f"Tokens: {data.get('tokens_used')}")
             print(f"Time: {data.get('processing_time'):.2f}s")
             print(f"Response: {data.get('response', '')[:100]}...")
         else:
-            print(f"❌ Error: {response.text}")
+            print(f"Error: {response.text}")
             
     except Exception as e:
-        print(f"❌ Exception: {e}")
+        print(f"Exception: {e}")
 
 if __name__ == "__main__":
     test_minimal() 
