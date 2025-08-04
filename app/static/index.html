@@ -262,14 +262,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Prompting Engine Demo</h1>
-            <p>Generate prompts, get LLM responses, and optimize your templates</p>
+            <h1>🤖 Agentic Prompt Engine</h1>
+            <p>Ultra-fast AI-powered prompt generation with vector database acceleration</p>
         </div>
 
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('generate')">Generate Prompt</div>
-            <div class="tab" onclick="switchTab('feedback')">Feedback & Analytics</div>
-            <div class="tab" onclick="switchTab('templates')">Templates</div>
+            <div class="tab active" onclick="switchTab('generate')">⚡ AI Generation</div>
+            <div class="tab" onclick="switchTab('analytics')">📊 Vector Analytics</div>
+            <div class="tab" onclick="switchTab('capabilities')">🤖 AI Capabilities</div>
         </div>
 
         <!-- Generate Tab -->
@@ -279,28 +279,57 @@
                     <h2>📝 Generate Prompt & Response</h2>
                     <form id="generateForm">
                         <div class="form-group">
-                            <label for="context">Context:</label>
-                            <select id="context" required>
-                                <option value="">Select a context...</option>
-                                <option value="customer_service">Customer Service</option>
-                                <option value="data_analysis">Data Analysis</option>
+                            <label for="generationType">Generation Type:</label>
+                            <select id="generationType" onchange="toggleGenerationOptions()">
+                                <option value="standard">🤖 Smart Agentic (Auto-detect everything)</option>
+                                <option value="reasoning">🔍 Multi-step Reasoning</option>
+                                <option value="autonomous">🧠 Fully Autonomous (No hints)</option>
+                                <option value="optimize">⚡ Vector-Optimized (Fastest)</option>
                             </select>
                         </div>
 
-                        <div class="form-group">
-                            <label for="dataType">Data Type:</label>
-                            <select id="dataType" required>
-                                <option value="">Select a data type...</option>
-                            </select>
+                        <div id="reasoningOptions" style="display: none;">
+                            <div class="form-group">
+                                <label for="reasoningSteps">Reasoning Steps (3-10):</label>
+                                <input type="number" id="reasoningSteps" min="3" max="10" value="5">
+                            </div>
+                        </div>
+
+                        <div id="hintFields">
+                            <div class="form-group">
+                                <label for="contextHint">Context Hint (Optional - AI auto-detects):</label>
+                                <select id="contextHint">
+                                    <option value="">🤖 Let AI auto-detect</option>
+                                    <option value="core_banking">Core Banking</option>
+                                    <option value="lending_decision">Lending Decision</option>
+                                    <option value="loan_approval">Loan Approval</option>
+                                    <option value="loan_offers">Loan Offers</option>
+                                    <option value="card_data">Card Data</option>
+                                    <option value="risk_assessment">Risk Assessment</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="dataTypeHint">Data Type Hint (Optional - AI auto-detects):</label>
+                                <select id="dataTypeHint">
+                                    <option value="">🤖 Let AI auto-detect</option>
+                                    <option value="transaction_history">Transaction History</option>
+                                    <option value="time_series_data">Time Series Data</option>
+                                    <option value="transaction_analysis">Transaction Analysis</option>
+                                    <option value="credit_assessment">Credit Assessment</option>
+                                    <option value="card_transactions">Card Transactions</option>
+                                    <option value="card_behavior">Card Behavior</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="form-group">
                             <label for="inputData">Input Data (JSON):</label>
-                            <textarea id="inputData" placeholder='{"key": "value"}' required></textarea>
+                            <textarea id="inputData" placeholder='{"transactions": [...], "account_data": {...}}' required></textarea>
                         </div>
 
                         <button type="submit" class="btn" id="generateBtn">
-                            🚀 Generate Prompt & Response
+                            ⚡ Generate with AI Intelligence
                         </button>
                     </form>
 
@@ -336,6 +365,37 @@
                                 <div class="metric-value" id="templateUsed">-</div>
                                 <div class="metric-label">Template Used</div>
                             </div>
+                            <div class="metric">
+                                <div class="metric-value" id="generationModeUsed">-</div>
+                                <div class="metric-label">Generation Mode</div>
+                            </div>
+                        </div>
+
+                        <div id="agenticMetadata">
+                            <div class="result-section">
+                                <h3>🤖 AI Intelligence Report</h3>
+                                <div class="result-content" id="agenticAnalysisResult"></div>
+                            </div>
+                        </div>
+
+                        <div id="vectorStats" style="display: none;">
+                            <div class="result-section">
+                                <h3>⚡ Vector Database Acceleration</h3>
+                                <div class="result-content" id="vectorStatsResult"></div>
+                            </div>
+                        </div>
+
+                        <div id="learningFeedback">
+                            <div class="result-section">
+                                <h3>📝 Help AI Learn & Improve</h3>
+                                <p>Rate this response to enhance the vector database:</p>
+                                <div style="margin: 10px 0;">
+                                    <label for="qualityScore">Quality Score (0-1): </label>
+                                    <input type="number" id="qualityScore" min="0" max="1" step="0.1" value="0.8" style="width: 80px;">
+                                    <button onclick="submitLearningFeedback()" class="btn" style="margin-left: 10px;">💾 Store in Vector DB</button>
+                                </div>
+                                <div id="feedbackStatus"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -353,14 +413,38 @@
             </div>
         </div>
 
-        <!-- Templates Tab -->
-        <div id="templates-tab" class="tab-content">
+        <!-- Analytics Tab -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="main-content">
+                <div class="card">
+                    <h2>⚡ Vector Database Performance</h2>
+                    <button class="btn" onclick="loadVectorStats()" style="margin-bottom: 20px;">
+                        📊 Refresh Vector Stats
+                    </button>
+                    <div id="vectorAnalyticsResults"></div>
+                </div>
+
+                <div class="card">
+                    <h2>🧠 Quick Data Analysis</h2>
+                    <p>Analyze data structure and get AI insights instantly</p>
+                    <div class="form-group">
+                        <label for="analysisData">Input Data (JSON):</label>
+                        <textarea id="analysisData" placeholder='{"transactions": [...]}' required></textarea>
+                    </div>
+                    <button class="btn" onclick="analyzeData()">🔍 AI Analysis</button>
+                    <div id="analysisResults"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Capabilities Tab -->
+        <div id="capabilities-tab" class="tab-content">
             <div class="card">
-                <h2>📋 Available Templates</h2>
-                <button class="btn" onclick="loadTemplates()" style="margin-bottom: 20px;">
-                    🔄 Load Templates
+                <h2>🤖 AI System Capabilities</h2>
+                <button class="btn" onclick="loadCapabilities()" style="margin-bottom: 20px;">
+                    🔄 Refresh Capabilities
                 </button>
-                <div id="templatesResults"></div>
+                <div id="capabilitiesResults"></div>
             </div>
         </div>
     </div>

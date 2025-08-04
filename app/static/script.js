@@ -3,18 +3,39 @@
 // API base URL
 const API_BASE = window.location.origin;
 
-// Data type mappings
-const dataTypeMappings = {
-    'customer_service': [
-        { value: 'complaint', label: 'Customer Complaint' },
-        { value: 'refund_request', label: 'Refund Request' },
-        { value: 'product_inquiry', label: 'Product Inquiry' }
-    ],
-    'data_analysis': [
-        { value: 'csv_analysis', label: 'CSV Data Analysis' },
-        { value: 'statistical_summary', label: 'Statistical Summary' },
-        { value: 'trend_analysis', label: 'Trend Analysis' }
-    ]
+// Global variables for agentic functionality
+let lastGenerationResult = null;
+
+// Example input data for banking templates
+const bankingExampleInputs = {
+    'core_banking_transaction_history': {
+        "transactions": [
+            {"date": "2024-01-15", "amount": 1500.00, "type": "credit", "description": "Salary deposit"},
+            {"date": "2024-01-16", "amount": -50.00, "type": "debit", "description": "Grocery shopping"},
+            {"date": "2024-01-17", "amount": -1200.00, "type": "debit", "description": "Rent payment"}
+        ]
+    },
+    'lending_decision_cash_flow': {
+        "monthly_data": [
+            {"month": "Jan", "revenue": 45000, "expenses": 35000},
+            {"month": "Feb", "revenue": 48000, "expenses": 37000},
+            {"month": "Mar", "revenue": 52000, "expenses": 39000}
+        ]
+    },
+    'loan_approval_credit': {
+        "borrower_name": "John Smith",
+        "credit_score": 720,
+        "annual_income": 85000,
+        "debt_to_income_ratio": 0.35,
+        "loan_amount": 250000
+    },
+    'card_data_transactions': {
+        "card_transactions": [
+            {"merchant": "Amazon", "amount": 129.99, "category": "Online Shopping"},
+            {"merchant": "Shell", "amount": 45.00, "category": "Gas Station"},
+            {"merchant": "Starbucks", "amount": 8.50, "category": "Coffee Shop"}
+        ]
+    }
 };
 
 // Example input data for different templates
@@ -61,22 +82,12 @@ const exampleInputs = {
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
-    updateDataTypeOptions();
+    toggleGenerationOptions(); // Initialize generation-specific fields
+    updateExampleInput();
 });
 
 // Setup event listeners
 function setupEventListeners() {
-    // Context change handler
-    document.getElementById('context').addEventListener('change', function() {
-        updateDataTypeOptions();
-        updateExampleInput();
-    });
-
-    // Data type change handler
-    document.getElementById('dataType').addEventListener('change', function() {
-        updateExampleInput();
-    });
-
     // Form submission handler
     document.getElementById('generateForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -84,22 +95,27 @@ function setupEventListeners() {
     });
 }
 
-// Update data type options based on selected context
-function updateDataTypeOptions() {
-    const context = document.getElementById('context').value;
-    const dataTypeSelect = document.getElementById('dataType');
+// Toggle generation options based on type
+function toggleGenerationOptions() {
+    const type = document.getElementById('generationType').value;
+    const reasoningOptions = document.getElementById('reasoningOptions');
+    const hintFields = document.getElementById('hintFields');
     
-    // Clear existing options
-    dataTypeSelect.innerHTML = '<option value="">Select a data type...</option>';
+    // Show reasoning steps only for reasoning type
+    reasoningOptions.style.display = type === 'reasoning' ? 'block' : 'none';
     
-    if (context && dataTypeMappings[context]) {
-        dataTypeMappings[context].forEach(option => {
-            const optionElement = document.createElement('option');
-            optionElement.value = option.value;
-            optionElement.textContent = option.label;
-            dataTypeSelect.appendChild(optionElement);
-        });
-    }
+    // Hide hint fields for autonomous mode (it should auto-detect everything)
+    hintFields.style.display = type === 'autonomous' ? 'none' : 'block';
+    
+    updateExampleInput();
+}
+
+// Update example input based on current selections
+function updateExampleInput() {
+    const inputDataField = document.getElementById('inputData');
+    
+    // Always use a default banking example since we're in pure agentic mode
+    inputDataField.value = JSON.stringify(bankingExampleInputs['core_banking_transaction_history'], null, 2);
 }
 
 // Update example input based on selected template
@@ -120,15 +136,14 @@ function updateExampleInput() {
     }
 }
 
-// Generate prompt and get response
+// Generate prompt and get response (Pure Agentic)
 async function generatePrompt() {
-    const context = document.getElementById('context').value;
-    const dataType = document.getElementById('dataType').value;
+    const generationType = document.getElementById('generationType').value;
     const inputDataText = document.getElementById('inputData').value;
     
-    // Validate inputs
-    if (!context || !dataType || !inputDataText) {
-        showError('Please fill in all required fields.');
+    // Validate input data
+    if (!inputDataText) {
+        showError('Please provide input data.');
         return;
     }
     
@@ -141,6 +156,27 @@ async function generatePrompt() {
         return;
     }
     
+    // Prepare request payload for pure agentic generation
+    let requestBody = { 
+        input_data: inputData,
+        generation_type: generationType
+    };
+    
+    // Add optional hints if not autonomous mode
+    if (generationType !== 'autonomous') {
+        const contextHint = document.getElementById('contextHint').value;
+        const dataTypeHint = document.getElementById('dataTypeHint').value;
+        
+        if (contextHint) requestBody.context = contextHint;
+        if (dataTypeHint) requestBody.data_type = dataTypeHint;
+    }
+    
+    // Add reasoning steps if reasoning mode
+    if (generationType === 'reasoning') {
+        const steps = document.getElementById('reasoningSteps').value;
+        requestBody.reasoning_steps = parseInt(steps);
+    }
+    
     // Show loading state
     showLoading(true);
     hideResults();
@@ -151,21 +187,18 @@ async function generatePrompt() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                context: context,
-                data_type: dataType,
-                input_data: inputData
-            })
+            body: JSON.stringify(requestBody)
         });
         
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.detail || 'Failed to generate prompt');
+            throw new Error(errorData.error || 'Failed to generate prompt');
         }
         
         const result = await response.json();
+        lastGenerationResult = { result, inputData, generationType };
         displayResults(result);
-        showSuccess('Prompt generated successfully!');
+        showSuccess(`🚀 ${result.vector_accelerated ? 'Vector-accelerated' : 'AI-powered'} prompt generated successfully!`);
         
     } catch (error) {
         showError(`Error: ${error.message}`);

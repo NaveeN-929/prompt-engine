@@ -12,7 +12,7 @@ OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')  # Llama 3.1 8B for fina
 
 # Flask Configuration
 FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')
-FLASK_PORT = int(os.getenv('FLASK_PORT', '8000'))
+FLASK_PORT = int(os.getenv('FLASK_PORT', '5000'))
 FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
 
 def print_config():

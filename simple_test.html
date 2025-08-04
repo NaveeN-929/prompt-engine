@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Prompt Display</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .prompt-display { background: #f0f0f0; padding: 20px; border: 1px solid #ddd; margin: 10px 0; }
+        .hidden { display: none; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Prompt Generation Test</h1>
+    
+    <textarea id="testData">{"transactions": [{"amount": 1500, "type": "credit"}]}</textarea>
+    <br>
+    <button onclick="testGeneration()">Generate</button>
+    <button onclick="toggleDebug()">Toggle Debug</button>
+    
+    <div id="debug" style="background: #ffffcc; padding: 10px; margin: 10px 0; display: none;">
+        <h3>Debug Info:</h3>
+        <div id="debugContent"></div>
+    </div>
+    
+    <div id="promptDisplay" class="prompt-display">
+        <h3>Generated Prompt:</h3>
+        <div id="promptContent">No prompt generated yet</div>
+    </div>
+
+    <script>
+        let debugMode = false;
+        
+        function toggleDebug() {
+            debugMode = !debugMode;
+            document.getElementById('debug').style.display = debugMode ? 'block' : 'none';
+        }
+        
+        function log(message) {
+            if (debugMode) {
+                const debugContent = document.getElementById('debugContent');
+                debugContent.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+            }
+            console.log(message);
+        }
+        
+        async function testGeneration() {
+            const data = document.getElementById('testData').value;
+            const promptContent = document.getElementById('promptContent');
+            
+            try {
+                log('Starting generation...');
+                promptContent.innerHTML = '⏳ Generating...';
+                
+                log('Sending request to /generate');
+                const response = await fetch('http://localhost:5000/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        input_data: JSON.parse(data),
+                        generation_type: 'standard'
+                    })
+                });
+                
+                log('Response status: ' + response.status);
+                const result = await response.json();
+                log('Response received, prompt length: ' + (result.prompt ? result.prompt.length : 'no prompt'));
+                
+                if (response.ok && result.prompt) {
+                    promptContent.innerHTML = '<pre>' + result.prompt + '</pre>';
+                    log('Prompt displayed successfully');
+                } else {
+                    promptContent.innerHTML = 'Error: ' + (result.error || 'No prompt in response');
+                    log('Error or no prompt: ' + JSON.stringify(result));
+                }
+            } catch (error) {
+                promptContent.innerHTML = 'Network Error: ' + error.message;
+                log('Exception: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
