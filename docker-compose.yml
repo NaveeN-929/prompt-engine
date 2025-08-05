@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Main Prompt Engine Application
+  prompt-engine:
+    build: .
+    container_name: prompt-engine-app
+    ports:
+      - "${FLASK_PORT:-5000}:5000"
+    environment:
+      - OLLAMA_HOST=${OLLAMA_HOST}
+      - OLLAMA_PORT=${OLLAMA_PORT}
+      - OLLAMA_MODEL=${OLLAMA_MODEL}
+      - FLASK_HOST=${FLASK_HOST}
+      - FLASK_PORT=${FLASK_PORT}
+      - FLASK_DEBUG=${FLASK_DEBUG}
+      - QDRANT_HOST=${QDRANT_HOST}
+      - QDRANT_PORT=${QDRANT_PORT}
+    depends_on:
+      - qdrant
+    volumes:
+      - ./app:/app/app
+      - ./config.py:/app/config.py
+    restart: unless-stopped
+    networks:
+      - prompt-engine-network
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: prompt-engine-qdrant
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_PORT:-6334}:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    networks:
+      - prompt-engine-network
+
+  # Ollama (optional - can run externally)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: prompt-engine-ollama
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    networks:
+      - prompt-engine-network
+    # GPU support (uncomment if you have NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  qdrant_storage:
+    driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  prompt-engine-network:
+    driver: bridge

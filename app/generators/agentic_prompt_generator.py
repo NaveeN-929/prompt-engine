@@ -21,8 +21,8 @@ try:
     from app.vector.vector_service import VectorService
     VECTOR_SERVICE_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Vector service not available: {e}")
-    print("📝 Agentic generator will work without vector acceleration")
+    print(f"Vector service not available: {e}")
+    print("Agentic generator will work without vector acceleration")
     VectorService = None
     VECTOR_SERVICE_AVAILABLE = False
 
@@ -40,13 +40,15 @@ class AgenticPromptGenerator:
         self.vector_service = None
         if enable_vector_db and VECTOR_SERVICE_AVAILABLE and VectorService:
             try:
-                self.vector_service = VectorService()
-                print("🚀 Vector database enabled for ultra-fast prompt generation")
+                # Import config for Qdrant settings
+                from config import QDRANT_HOST, QDRANT_PORT
+                self.vector_service = VectorService(qdrant_host=QDRANT_HOST, qdrant_port=QDRANT_PORT)
+                print(f"Vector database enabled for ultra-fast prompt generation (Qdrant: {QDRANT_HOST}:{QDRANT_PORT})")
             except Exception as e:
-                print(f"⚠️ Vector database unavailable: {e}")
-                print("📝 Falling back to memory-based optimization")
+                print(f"Vector database unavailable: {e}")
+                print("Falling back to memory-based optimization")
         else:
-            print("📝 Vector service disabled - using memory-based agentic mode")
+            print("Vector service disabled - using memory-based agentic mode")
         
         # Learning and adaptation systems (legacy - now enhanced by vector DB)
         self.interaction_history = []
@@ -232,7 +234,7 @@ class AgenticPromptGenerator:
         if not input_data:
             raise ValueError("Input data is required for agentic prompt generation")
         
-        # 🚀 VECTOR-POWERED OPTIMIZATION
+        # VECTOR-POWERED OPTIMIZATION
         # Check vector database for similar patterns first
         if self.vector_service:
             similar_prompts = self.vector_service.find_similar_prompts(input_data, limit=3, min_similarity=0.8)
@@ -498,7 +500,7 @@ Perform this analysis autonomously using best practices for the identified data 
             "metadata": metadata or {}
         }
         
-        # 🚀 VECTOR DATABASE LEARNING
+        # VECTOR DATABASE LEARNING
         # Store successful patterns in vector database for fast retrieval
         if self.vector_service and quality_score and quality_score > 0.6:
             self.vector_service.store_successful_prompt(
@@ -508,7 +510,7 @@ Perform this analysis autonomously using best practices for the identified data 
                 metadata=metadata or {},
                 quality_score=quality_score
             )
-            print(f"💾 Stored successful pattern in vector database (quality: {quality_score:.2f})")
+            print(f"Stored successful pattern in vector database (quality: {quality_score:.2f})")
         
         # Legacy learning systems (still useful for fallback)
         self.interaction_history.append(interaction)
@@ -797,7 +799,7 @@ This prompt has been rapidly adapted from a high-similarity successful pattern.
             enhancement_section += "Based on similar successful cases in our vector database:\n\n"
             
             for suggestion in vector_suggestions[:5]:  # Top 5 suggestions
-                enhancement_section += f"✅ {suggestion}\n"
+                enhancement_section += f"{suggestion}\n"
             
             enhancement_section += "\nApply these proven enhancements to maximize analysis quality.\n"
             

@@ -15,6 +15,11 @@ FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')
 FLASK_PORT = int(os.getenv('FLASK_PORT', '5000'))
 FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
 
+# Qdrant Configuration
+QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
+QDRANT_PORT = int(os.getenv('QDRANT_PORT', '6333'))
+QDRANT_GRPC_PORT = int(os.getenv('QDRANT_GRPC_PORT', '6334'))
+
 def print_config():
     """Print current configuration"""
     print("Current Configuration:")
@@ -24,6 +29,9 @@ def print_config():
     print(f"   Flask Host: {FLASK_HOST}")
     print(f"   Flask Port: {FLASK_PORT}")
     print(f"   Flask Debug: {FLASK_DEBUG}")
+    print(f"   Qdrant Host: {QDRANT_HOST}")
+    print(f"   Qdrant Port: {QDRANT_PORT}")
+    print(f"   Qdrant gRPC Port: {QDRANT_GRPC_PORT}")
     print("=" * 50)
 
 if __name__ == "__main__":
