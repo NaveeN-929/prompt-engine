@@ -16,6 +16,7 @@ from config import OLLAMA_HOST, OLLAMA_PORT, OLLAMA_MODEL, FLASK_HOST, FLASK_POR
 
 # Import our components
 from app.generators.agentic_prompt_generator import AgenticPromptGenerator
+from app.generators.response_formatter import ResponseFormatter
 from app.llm.mock_llm import OllamaLLM
 from app.feedback.feedback_system import FeedbackSystem
 
@@ -31,6 +32,7 @@ ollama_llm = OllamaLLM(
     model=OLLAMA_MODEL
 )
 feedback_system = FeedbackSystem()
+response_formatter = ResponseFormatter()
 
 @app.route('/')
 def root():
@@ -118,6 +120,9 @@ def generate_prompt():
             template_name=template_name
         )
         
+        # Format response to ensure it follows the required two-section structure
+        formatted_response = response_formatter.format_response(response_text)
+        
         total_time = time.time() - start_time
         
         # Enhanced learning: Store successful interaction in vector database
@@ -125,7 +130,7 @@ def generate_prompt():
             agentic_generator.learn_from_interaction(
                 input_data=input_data,
                 prompt_result=prompt_text,
-                llm_response=response_text,
+                llm_response=formatted_response,
                 quality_score=0.8,  # Default good quality, user can provide feedback
                 metadata=metadata
             )
@@ -133,7 +138,7 @@ def generate_prompt():
         # Log the interaction for analytics
         feedback_system.log_interaction(
             prompt=prompt_text,
-            response=response_text,
+            response=formatted_response,
             template_name=template_name,
             tokens_used=tokens_used,
             processing_time=llm_time,
@@ -144,13 +149,15 @@ def generate_prompt():
         # Prepare comprehensive response
         response_data = {
             "prompt": prompt_text,
-            "response": response_text,
+            "response": formatted_response,
+            "original_response": response_text,
             "tokens_used": tokens_used,
             "template_used": template_name,
             "processing_time": total_time,
             "generation_mode": metadata.get('generation_mode', 'agentic'),
             "agentic_metadata": metadata,
-            "vector_accelerated": metadata.get('generation_mode') == 'vector_accelerated'
+            "vector_accelerated": metadata.get('generation_mode') == 'vector_accelerated',
+            "response_structure_validated": response_formatter.validate_response_structure(formatted_response)
         }
         
         return jsonify(response_data)
@@ -183,6 +190,28 @@ def analyze_data():
         
     except Exception as e:
         print(f"Error in analyze endpoint: {traceback.format_exc()}")
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+@app.route('/validate/response', methods=['POST'])
+def validate_response_structure():
+    """
+    Validate that a response follows the required two-section structure
+    """
+    try:
+        data = request.get_json()
+        if not data or 'response_text' not in data:
+            return jsonify({"error": "Missing response_text field"}), 400
+        
+        response_text = data['response_text']
+        validation_result = response_formatter.validate_response_structure(response_text)
+        
+        return jsonify({
+            "validation_result": validation_result,
+            "timestamp": time.time()
+        })
+        
+    except Exception as e:
+        print(f"Error in validate endpoint: {traceback.format_exc()}")
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 @app.route('/agentic/autonomous', methods=['POST'])

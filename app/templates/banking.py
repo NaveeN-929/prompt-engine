@@ -20,12 +20,50 @@ transaction_categorization = PromptTemplate(
     3. Debt obligations (loan payments, credit card payments)
     4. Irregular/suspicious transactions
     
-    Output format:
-    - For each transaction ID:
-      * Category: 
-      * Sub-category:
-      * Confidence score (0-1):
-      * Notes:
+    **CRITICAL OUTPUT STRUCTURE REQUIREMENT:**
+    
+    Your response MUST be organized into exactly TWO main sections:
+    
+    === SECTION 1: INSIGHTS ===
+    Provide all insights that can be derived from the input data and analysis:
+    - Data patterns and trends identified
+    - Key findings and observations
+    - Statistical analysis results
+    - Anomalies or unusual patterns detected
+    - Business context implications
+    - Risk factors identified
+    - Opportunities discovered
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    Provide specific, actionable recommendations for SMEs to take necessary actions:
+    - Immediate actions required
+    - Strategic recommendations
+    - Risk mitigation steps
+    - Process improvements
+    - Technology or tool recommendations
+    - Training or skill development needs
+    - Follow-up analysis requirements
+    - Compliance or regulatory actions
+    
+    **FORMATTING RULES:**
+    - Use clear section headers with === markers
+    - Provide specific, actionable recommendations
+    - Include confidence levels for insights
+    - Prioritize recommendations by urgency/impact
+    - Use bullet points for clarity
+    - Quantify findings where possible
+    - Include reasoning for each recommendation
+    
+    **EXAMPLE FORMAT:**
+    === SECTION 1: INSIGHTS ===
+    • [Insight 1 with supporting data]
+    • [Insight 2 with supporting data]
+    ...
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    • [Specific action item 1 with timeline]
+    • [Specific action item 2 with timeline]
+    ...
     """,
     parameters={
         "transaction_data": {"type": "json", "required": True}
@@ -53,7 +91,50 @@ cash_flow_analysis = PromptTemplate(
     2. Liquidity risk indicators
     3. Growth trends (YoY/MoM)
     
-    Output format: JSON with calculations and risk flags
+    **CRITICAL OUTPUT STRUCTURE REQUIREMENT:**
+    
+    Your response MUST be organized into exactly TWO main sections:
+    
+    === SECTION 1: INSIGHTS ===
+    Provide all insights that can be derived from the input data and analysis:
+    - Data patterns and trends identified
+    - Key findings and observations
+    - Statistical analysis results
+    - Anomalies or unusual patterns detected
+    - Business context implications
+    - Risk factors identified
+    - Opportunities discovered
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    Provide specific, actionable recommendations for SMEs to take necessary actions:
+    - Immediate actions required
+    - Strategic recommendations
+    - Risk mitigation steps
+    - Process improvements
+    - Technology or tool recommendations
+    - Training or skill development needs
+    - Follow-up analysis requirements
+    - Compliance or regulatory actions
+    
+    **FORMATTING RULES:**
+    - Use clear section headers with === markers
+    - Provide specific, actionable recommendations
+    - Include confidence levels for insights
+    - Prioritize recommendations by urgency/impact
+    - Use bullet points for clarity
+    - Quantify findings where possible
+    - Include reasoning for each recommendation
+    
+    **EXAMPLE FORMAT:**
+    === SECTION 1: INSIGHTS ===
+    • [Insight 1 with supporting data]
+    • [Insight 2 with supporting data]
+    ...
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    • [Specific action item 1 with timeline]
+    • [Specific action item 2 with timeline]
+    ...
     """,
     parameters={
         "time_series_data": {"type": "json", "required": True},
@@ -82,7 +163,50 @@ credit_assessment = PromptTemplate(
     2. Risk flags (list with severity)
     3. Key positive factors
     
-    Output format: JSON with scores and explanations
+    **CRITICAL OUTPUT STRUCTURE REQUIREMENT:**
+    
+    Your response MUST be organized into exactly TWO main sections:
+    
+    === SECTION 1: INSIGHTS ===
+    Provide all insights that can be derived from the input data and analysis:
+    - Data patterns and trends identified
+    - Key findings and observations
+    - Statistical analysis results
+    - Anomalies or unusual patterns detected
+    - Business context implications
+    - Risk factors identified
+    - Opportunities discovered
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    Provide specific, actionable recommendations for SMEs to take necessary actions:
+    - Immediate actions required
+    - Strategic recommendations
+    - Risk mitigation steps
+    - Process improvements
+    - Technology or tool recommendations
+    - Training or skill development needs
+    - Follow-up analysis requirements
+    - Compliance or regulatory actions
+    
+    **FORMATTING RULES:**
+    - Use clear section headers with === markers
+    - Provide specific, actionable recommendations
+    - Include confidence levels for insights
+    - Prioritize recommendations by urgency/impact
+    - Use bullet points for clarity
+    - Quantify findings where possible
+    - Include reasoning for each recommendation
+    
+    **EXAMPLE FORMAT:**
+    === SECTION 1: INSIGHTS ===
+    • [Insight 1 with supporting data]
+    • [Insight 2 with supporting data]
+    ...
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    • [Specific action item 1 with timeline]
+    • [Specific action item 2 with timeline]
+    ...
     """,
     parameters={
         "transaction_analysis": {"type": "json", "required": True},
@@ -114,7 +238,50 @@ offer_generation = PromptTemplate(
     - Special conditions
     - Upsell/cross-sell opportunities
     
-    Format as markdown table with justification for each offer
+    **CRITICAL OUTPUT STRUCTURE REQUIREMENT:**
+    
+    Your response MUST be organized into exactly TWO main sections:
+    
+    === SECTION 1: INSIGHTS ===
+    Provide all insights that can be derived from the input data and analysis:
+    - Data patterns and trends identified
+    - Key findings and observations
+    - Statistical analysis results
+    - Anomalies or unusual patterns detected
+    - Business context implications
+    - Risk factors identified
+    - Opportunities discovered
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    Provide specific, actionable recommendations for SMEs to take necessary actions:
+    - Immediate actions required
+    - Strategic recommendations
+    - Risk mitigation steps
+    - Process improvements
+    - Technology or tool recommendations
+    - Training or skill development needs
+    - Follow-up analysis requirements
+    - Compliance or regulatory actions
+    
+    **FORMATTING RULES:**
+    - Use clear section headers with === markers
+    - Provide specific, actionable recommendations
+    - Include confidence levels for insights
+    - Prioritize recommendations by urgency/impact
+    - Use bullet points for clarity
+    - Quantify findings where possible
+    - Include reasoning for each recommendation
+    
+    **EXAMPLE FORMAT:**
+    === SECTION 1: INSIGHTS ===
+    • [Insight 1 with supporting data]
+    • [Insight 2 with supporting data]
+    ...
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    • [Specific action item 1 with timeline]
+    • [Specific action item 2 with timeline]
+    ...
     """,
     parameters={
         "credit_assessment": {"type": "json", "required": True},
@@ -141,7 +308,50 @@ card_spend_analysis = PromptTemplate(
        - Merchant type
        - Transaction size
     
-    Output: JSON with spend analytics and risk flags
+    **CRITICAL OUTPUT STRUCTURE REQUIREMENT:**
+    
+    Your response MUST be organized into exactly TWO main sections:
+    
+    === SECTION 1: INSIGHTS ===
+    Provide all insights that can be derived from the input data and analysis:
+    - Data patterns and trends identified
+    - Key findings and observations
+    - Statistical analysis results
+    - Anomalies or unusual patterns detected
+    - Business context implications
+    - Risk factors identified
+    - Opportunities discovered
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    Provide specific, actionable recommendations for SMEs to take necessary actions:
+    - Immediate actions required
+    - Strategic recommendations
+    - Risk mitigation steps
+    - Process improvements
+    - Technology or tool recommendations
+    - Training or skill development needs
+    - Follow-up analysis requirements
+    - Compliance or regulatory actions
+    
+    **FORMATTING RULES:**
+    - Use clear section headers with === markers
+    - Provide specific, actionable recommendations
+    - Include confidence levels for insights
+    - Prioritize recommendations by urgency/impact
+    - Use bullet points for clarity
+    - Quantify findings where possible
+    - Include reasoning for each recommendation
+    
+    **EXAMPLE FORMAT:**
+    === SECTION 1: INSIGHTS ===
+    • [Insight 1 with supporting data]
+    • [Insight 2 with supporting data]
+    ...
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    • [Specific action item 1 with timeline]
+    • [Specific action item 2 with timeline]
+    ...
     """,
     parameters={
         "card_transactions": {"type": "json", "required": True},
@@ -170,7 +380,50 @@ credit_utilization = PromptTemplate(
     2. Late payment trends
     3. Potential liquidity crunches
     
-    Output format: JSON with scores and risk indicators
+    **CRITICAL OUTPUT STRUCTURE REQUIREMENT:**
+    
+    Your response MUST be organized into exactly TWO main sections:
+    
+    === SECTION 1: INSIGHTS ===
+    Provide all insights that can be derived from the input data and analysis:
+    - Data patterns and trends identified
+    - Key findings and observations
+    - Statistical analysis results
+    - Anomalies or unusual patterns detected
+    - Business context implications
+    - Risk factors identified
+    - Opportunities discovered
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    Provide specific, actionable recommendations for SMEs to take necessary actions:
+    - Immediate actions required
+    - Strategic recommendations
+    - Risk mitigation steps
+    - Process improvements
+    - Technology or tool recommendations
+    - Training or skill development needs
+    - Follow-up analysis requirements
+    - Compliance or regulatory actions
+    
+    **FORMATTING RULES:**
+    - Use clear section headers with === markers
+    - Provide specific, actionable recommendations
+    - Include confidence levels for insights
+    - Prioritize recommendations by urgency/impact
+    - Use bullet points for clarity
+    - Quantify findings where possible
+    - Include reasoning for each recommendation
+    
+    **EXAMPLE FORMAT:**
+    === SECTION 1: INSIGHTS ===
+    • [Insight 1 with supporting data]
+    • [Insight 2 with supporting data]
+    ...
+    
+    === SECTION 2: RECOMMENDATIONS ===
+    • [Specific action item 1 with timeline]
+    • [Specific action item 2 with timeline]
+    ...
     """,
     parameters={
         "statements": {"type": "json", "required": True},

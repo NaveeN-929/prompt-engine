@@ -195,8 +195,7 @@ class AutonomousAgent:
                 "status": "error",
                 "error": str(e),
                 "processing_time": processing_time,
-                "timestamp": datetime.now().isoformat(),
-                "fallback_analysis": await self._generate_fallback_response(input_data, str(e))
+                "timestamp": datetime.now().isoformat()
             }
     
     async def _consume_prompt(self, input_data: Dict[str, Any], 
@@ -345,11 +344,9 @@ class AutonomousAgent:
             final_response = llm_result["response"]
             status = "approved"
         else:
-            # Attempt response improvement or use fallback
-            final_response = await self._improve_or_fallback_response(
-                llm_result, validation_result, confidence_result, gate_results
-            )
-            status = "improved" if final_response != llm_result["response"] else "fallback"
+            # Response failed quality gates - return error
+            final_response = llm_result["response"]
+            status = "failed_quality_gates"
         
         return {
             "response": final_response,
@@ -357,7 +354,7 @@ class AutonomousAgent:
             "quality_passed": all_gates_passed,
             "quality_score": quality_score,
             "gate_results": gate_results,
-            "improvement_applied": status == "improved"
+            "quality_failed": status == "failed_quality_gates"
         }
     
     async def _submit_learning_feedback(self, input_data: Dict[str, Any],
@@ -570,44 +567,9 @@ Please generate your response considering this reasoning framework and ensure yo
         
         return max(0.0, check_average - hallucination_penalty)
     
-    async def _improve_or_fallback_response(self, llm_result: Dict[str, Any],
-                                          validation_result: Dict[str, Any],
-                                          confidence_result: Dict[str, Any],
-                                          gate_results: Dict[str, Any]) -> str:
-        """Attempt to improve response or provide fallback"""
-        
-        # For now, return original response with quality warning
-        # In full implementation, this could trigger response regeneration
-        
-        original_response = llm_result["response"]
-        failed_gates = [gate for gate, result in gate_results.items() if not result["passed"]]
-        
-        quality_notice = f"""
-[QUALITY NOTICE: This response did not pass all quality gates. Failed gates: {', '.join(failed_gates)}]
 
-{original_response}
-
-[NOTE: Please use this analysis with caution and consider additional validation.]
-"""
-        
-        return quality_notice.strip()
     
-    async def _generate_fallback_response(self, input_data: Dict[str, Any], error: str) -> str:
-        """Generate a basic fallback response when processing fails"""
-        
-        return f"""
-AUTONOMOUS ANALYSIS FALLBACK
 
-An error occurred during autonomous processing: {error}
-
-Basic Data Summary:
-- Input keys: {list(input_data.keys())}
-- Data size: {len(str(input_data))} characters
-- Contains transactions: {'transactions' in input_data}
-
-Please note: This is a fallback response due to processing errors. 
-For accurate analysis, please retry the request or contact support.
-"""
     
     def _update_statistics(self, processing_time: float, quality_score: float, success: bool):
         """Update agent statistics"""

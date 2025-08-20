@@ -20,7 +20,6 @@ class LLMInterface:
     def __init__(self):
         self.config = None
         self.primary_provider = None
-        self.fallback_providers = []
         self.session = None
         
         # Statistics
@@ -38,7 +37,7 @@ class LLMInterface:
         """Initialize available LLM providers based on configuration"""
         providers = []
         
-        # Ollama provider (primary)
+        # Ollama provider (primary and only)
         ollama_config = self.config["llm"]["ollama"]
         if ollama_config["host"] and ollama_config["model"]:
             providers.append({
@@ -49,34 +48,8 @@ class LLMInterface:
                 "priority": 1
             })
         
-        # OpenAI provider (fallback)
-        openai_config = self.config["llm"]["openai"]
-        if openai_config["api_key"]:
-            providers.append({
-                "name": "openai",
-                "type": "openai", 
-                "api_key": openai_config["api_key"],
-                "model": openai_config["model"],
-                "priority": 2
-            })
-        
-        # Anthropic provider (fallback)
-        anthropic_config = self.config["llm"]["anthropic"]
-        if anthropic_config["api_key"]:
-            providers.append({
-                "name": "anthropic",
-                "type": "anthropic",
-                "api_key": anthropic_config["api_key"],
-                "model": anthropic_config["model"],
-                "priority": 3
-            })
-        
-        # Sort by priority
-        providers.sort(key=lambda x: x["priority"])
-        
         if providers:
             self.primary_provider = providers[0]
-            self.fallback_providers = providers[1:]
         else:
             logger.warning("No LLM providers configured")
     
@@ -110,8 +83,8 @@ class LLMInterface:
         self.total_requests += 1
         start_time = time.time()
         
-        # Try providers in order
-        providers_to_try = [self.primary_provider] + self.fallback_providers
+        # Try primary provider only
+        providers_to_try = [self.primary_provider] if self.primary_provider else []
         
         for provider in providers_to_try:
             if not provider:
@@ -155,9 +128,9 @@ class LLMInterface:
         logger.error("All LLM providers failed")
         
         return {
-            "response": self._generate_fallback_response(prompt),
+            "response": "",
             "metadata": {
-                "provider": "fallback",
+                "provider": "none",
                 "model": "none",
                 "processing_time": processing_time,
                 "error": "All providers failed"
@@ -363,23 +336,7 @@ Use this reasoning framework to guide your analysis and ensure consistency with 
         
         return base_prompt
     
-    def _generate_fallback_response(self, prompt: str) -> str:
-        """Generate a basic fallback response when all LLM providers fail"""
-        
-        return f"""[FALLBACK RESPONSE - LLM UNAVAILABLE]
 
-I apologize, but I'm currently unable to process your request due to technical difficulties with the language model services. 
-
-Your request was: Analysis of provided financial data.
-
-To assist you, please:
-1. Verify the data format is correct
-2. Ensure all required fields are present
-3. Try submitting the request again in a few minutes
-4. Contact support if the issue persists
-
-This is an automated fallback response. For accurate financial analysis, please retry when services are restored.
-"""
     
     async def _test_provider(self, provider: Dict[str, Any]) -> bool:
         """Test if a provider is available"""
@@ -393,7 +350,7 @@ This is an automated fallback response. For accurate financial analysis, please 
     
     def is_available(self) -> bool:
         """Check if any LLM provider is available"""
-        return self.primary_provider is not None or len(self.fallback_providers) > 0
+        return self.primary_provider is not None
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get LLM interface statistics"""
@@ -406,8 +363,7 @@ This is an automated fallback response. For accurate financial analysis, please 
             "failed_requests": self.failed_requests,
             "success_rate": success_rate,
             "provider_usage": self.provider_usage,
-            "primary_provider": self.primary_provider["name"] if self.primary_provider else None,
-            "fallback_providers": [p["name"] for p in self.fallback_providers]
+            "primary_provider": self.primary_provider["name"] if self.primary_provider else None
         }
     
     async def close(self):

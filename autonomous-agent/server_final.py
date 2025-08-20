@@ -1,6 +1,11 @@
 """
 Final RAG-Enhanced Autonomous Financial Analysis Agent Server
 Complete working version with all endpoints
+
+REQUIREMENTS:
+- Ollama must be running for LLM functionality
+- Qdrant must be running for vector database operations
+- No fallback methods - services must be available for full functionality
 """
 
 import json
@@ -24,6 +29,7 @@ CORS(app)
 # Global services
 rag_service = None
 prompt_consumer = None
+response_formatter = None
 services_status = {
     "rag_initialized": False,
     "vector_connected": False,
@@ -42,7 +48,7 @@ agent_statistics = {
     "total_processing_time": 0.0
 }
 
-# RAG statistics (fallback)
+# RAG statistics
 rag_stats = {
     "total_retrievals": 0,
     "cache_hits": 0,
@@ -86,6 +92,12 @@ def initialize_rag_service():
             logger.info("✅ Prompt engine connection established")
         else:
             logger.warning(f"⚠️ Prompt engine unavailable: {connection_test.get('error', 'Unknown')}")
+        
+        # Initialize response formatter
+        from core.response_formatter import ResponseFormatter
+        global response_formatter
+        response_formatter = ResponseFormatter()
+        logger.info("✅ Response formatter initialized")
         
     except Exception as e:
         logger.warning(f"⚠️ Service initialization failed: {e}")
@@ -257,10 +269,10 @@ def index():
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 RAG-Enhanced Autonomous Agent</h1>
-            <span class="badge">🚀 Vector Accelerated</span>
-            <span class="badge">🧠 Knowledge Augmented</span>
-            <span class="badge">⚡ Real-time Analysis</span>
+            <h1>RAG-Enhanced Autonomous Agent</h1>
+            <span class="badge">Vector Accelerated</span>
+            <span class="badge">Knowledge Augmented</span>
+            <span class="badge">Real-time Analysis</span>
             <p>Advanced AI-powered financial analysis with Retrieval Augmented Generation</p>
         </div>
         
@@ -289,50 +301,50 @@ def index():
         </div>
         
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('analysis')">🔍 Analysis</div>
-            <div class="tab" onclick="switchTab('rag')">🧠 RAG Status</div>
-            <div class="tab" onclick="switchTab('vector')">⚡ Vector DB</div>
-            <div class="tab" onclick="switchTab('history')">📊 History</div>
+            <div class="tab active" onclick="switchTab('analysis')">Analysis</div>
+            <div class="tab" onclick="switchTab('rag')">RAG Status</div>
+            <div class="tab" onclick="switchTab('vector')">Vector DB</div>
+            <div class="tab" onclick="switchTab('history')">History</div>
         </div>
         
         <div id="analysis" class="tab-content active">
             <div class="section">
-                <h3>🔍 RAG-Enhanced Analysis Pipeline</h3>
+                <h3>RAG-Enhanced Analysis Pipeline</h3>
                 <p><strong>Step 1:</strong> Financial data → <strong>Step 2:</strong> Prompt Engine → <strong>Step 3:</strong> RAG Enhancement → <strong>Step 4:</strong> Final Analysis</p>
                 <div style="margin: 15px 0; padding: 10px; background: rgba(0,212,255,0.1); border-radius: 6px;">
-                    <strong>📝 Input:</strong> Provide financial data that will be sent to the prompt-engine to generate a structured prompt, which will then be enhanced with RAG knowledge augmentation.
+                    <strong>Input:</strong> Provide financial data that will be sent to the prompt-engine to generate a structured prompt, which will then be enhanced with RAG knowledge augmentation.
                 </div>
                 <textarea id="analysisData" placeholder='{"transactions": [{"date": "2024-01-15", "amount": 1500.00, "type": "credit", "description": "Salary"}], "account_balance": 2250.00}'></textarea>
                 <br>
-                <button class="button" onclick="processFullPipeline()">🚀 Full RAG Pipeline</button>
-                <button class="button" onclick="processAgenticPipeline()">🧠 Agentic Pipeline</button>
-                <button class="button secondary" onclick="loadExample()">📝 Load Example</button>
-                <button class="button secondary" onclick="clearResults()">🗑️ Clear</button>
+                <button class="button" onclick="processFullPipeline()">Full RAG Pipeline</button>
+                <button class="button" onclick="processAgenticPipeline()">Agentic Pipeline</button>
+                <button class="button secondary" onclick="loadExample()">Load Example</button>
+                <button class="button secondary" onclick="clearResults()">Clear</button>
             </div>
         </div>
         
         <div id="rag" class="tab-content">
             <div class="section">
-                <h3>🧠 RAG Service Status</h3>
+                <h3>RAG Service Status</h3>
                 <div id="ragDetails">Loading...</div>
-                <button class="button" onclick="refreshRAG()">🔄 Refresh</button>
+                <button class="button" onclick="refreshRAG()">Refresh</button>
             </div>
         </div>
         
         <div id="vector" class="tab-content">
             <div class="section">
-                <h3>⚡ Vector Database Status</h3>
+                <h3>Vector Database Status</h3>
                 <div id="vectorDetails">Loading...</div>
-                <button class="button" onclick="refreshVector()">🔄 Refresh</button>
+                <button class="button" onclick="refreshVector()">Refresh</button>
             </div>
         </div>
         
         <div id="history" class="tab-content">
             <div class="section">
-                <h3>📊 Analysis History</h3>
+                <h3>Analysis History</h3>
                 <div id="historyDetails">No analyses performed yet.</div>
-                <button class="button" onclick="refreshHistory()">🔄 Refresh</button>
-                <button class="button secondary" onclick="clearHistory()">🗑️ Clear History</button>
+                <button class="button" onclick="refreshHistory()">Refresh</button>
+                <button class="button secondary" onclick="clearHistory()">Clear History</button>
             </div>
         </div>
         
@@ -340,7 +352,7 @@ def index():
             <div class="result-header">
                 <span>Analysis Results</span>
                 <div>
-                    <span class="rag-indicator" id="ragIndicator">🧠 RAG: Enabled</span>
+                    <span class="rag-indicator" id="ragIndicator">RAG: Enabled</span>
                     <span style="margin-left: 10px; font-size: 12px;" id="processingTime"></span>
                 </div>
             </div>
@@ -422,10 +434,10 @@ def index():
                     timeEl.textContent = `${result.processing_time?.toFixed(3)}s`;
                     
                     if (result.rag_metadata?.rag_enabled) {
-                        ragEl.textContent = `🧠 RAG: ${result.rag_metadata.context_items_used || 0} items`;
+                        ragEl.textContent = `RAG: ${result.rag_metadata.context_items_used || 0} items`;
                         ragEl.style.background = 'rgba(40, 167, 69, 0.3)';
                     } else {
-                        ragEl.textContent = '🧠 RAG: Pipeline Mode';
+                        ragEl.textContent = 'RAG: Pipeline Mode';
                         ragEl.style.background = 'rgba(255, 193, 7, 0.3)';
                     }
                     
@@ -436,7 +448,7 @@ def index():
                 
             } catch (error) {
                 content.textContent = `Error: ${error.message}`;
-                ragEl.textContent = '🧠 RAG: Error';
+                ragEl.textContent = 'RAG: Error';
                 ragEl.style.background = 'rgba(220, 53, 69, 0.3)';
             }
         }
@@ -450,7 +462,7 @@ def index():
             
             try {
                 container.style.display = 'block';
-                content.textContent = '🧠 Step 1: Parsing data...\\n🧠 Step 2: Generating agentic prompt...\\n🧠 Step 3: Advanced RAG enhancement...\\n🧠 Step 4: Autonomous analysis...';
+                content.textContent = 'Step 1: Parsing data...\\n Step 2: Generating agentic prompt...\\n Step 3: Advanced RAG enhancement...\\n Step 4: Autonomous analysis...';
                 
                 const inputData = JSON.parse(data);
                 
@@ -478,7 +490,7 @@ def index():
                     content.textContent = output;
                     timeEl.textContent = `${result.processing_time?.toFixed(3)}s`;
                     
-                    ragEl.textContent = `🧠 Agentic RAG: ${result.rag_metadata?.context_items_used || 0} items`;
+                    ragEl.textContent = `Agentic RAG: ${result.rag_metadata?.context_items_used || 0} items`;
                     ragEl.style.background = 'rgba(138, 43, 226, 0.3)'; // Purple for agentic
                     
                     updateStats();
@@ -488,7 +500,7 @@ def index():
                 
             } catch (error) {
                 content.textContent = `Error: ${error.message}`;
-                ragEl.textContent = '🧠 Agentic: Error';
+                ragEl.textContent = 'Agentic: Error';
                 ragEl.style.background = 'rgba(220, 53, 69, 0.3)';
             }
         }
@@ -800,10 +812,16 @@ def analyze():
         # Perform analysis
         analysis = perform_comprehensive_analysis(input_data)
         
-        # RAG augmentation if available
-        rag_metadata = {"rag_enabled": False}
-        
-        if enable_rag and services_status["rag_initialized"] and rag_service:
+        # RAG augmentation - required for full functionality
+        if enable_rag:
+            if not services_status["rag_initialized"] or not rag_service:
+                agent_statistics["failed_requests"] += 1
+                return jsonify({
+                    "error": "RAG service not available",
+                    "details": "Ollama and Qdrant containers must be running",
+                    "status": "service_unavailable"
+                }), 503
+            
             try:
                 import asyncio
                 loop = asyncio.new_event_loop()
@@ -817,10 +835,30 @@ def analyze():
                 rag_stats["successful_augmentations"] += 1
                 
                 loop.close()
+                rag_metadata = {"rag_enabled": True}
                 
             except Exception as e:
-                logger.warning(f"RAG augmentation failed: {e}")
-                rag_metadata = {"rag_enabled": False, "error": str(e)}
+                logger.error(f"RAG augmentation failed: {e}")
+                agent_statistics["failed_requests"] += 1
+                return jsonify({
+                    "error": "RAG service error",
+                    "details": str(e),
+                    "status": "rag_error"
+                }), 500
+        else:
+            rag_metadata = {"rag_enabled": False}
+        
+        # Apply response formatter to ensure structured output
+        if response_formatter:
+            analysis = response_formatter.format_response(analysis)
+            logger.info("✅ Response formatted with structured sections")
+        else:
+            logger.error("❌ Response formatter not available - critical error")
+            agent_statistics["failed_requests"] += 1
+            return jsonify({
+                "error": "Response formatter not available",
+                "status": "formatter_error"
+            }), 500
         
         processing_time = time.time() - start_time
         
@@ -842,6 +880,7 @@ def analyze():
                 "transaction_count": len(input_data.get("transactions", [])),
                 "has_balance": "account_balance" in input_data
             },
+            "response_structure_validated": response_formatter.validate_response_structure(analysis) if response_formatter else None,
             "timestamp": datetime.now().isoformat()
         }
         
@@ -861,16 +900,52 @@ def analyze():
 def get_status():
     """Get system status"""
     return jsonify({
-        "status": "operational",
-        "mode": "rag_enhanced",
+        "status": "operational" if services_status["rag_initialized"] else "degraded",
+        "mode": "rag_enhanced" if services_status["rag_initialized"] else "basic_only",
         "version": "2.0.0-final",
         "timestamp": datetime.now().isoformat(),
         "statistics": agent_statistics,
         "services": {
-            "rag_service": "active" if services_status["rag_initialized"] else "basic_mode",
-            "vector_database": "connected" if services_status["vector_connected"] else "memory_mode"
+            "rag_service": "active" if services_status["rag_initialized"] else "error",
+            "vector_database": "connected" if services_status["vector_connected"] else "error",
+            "response_formatter": "active" if response_formatter else "unavailable"
+        },
+        "requirements": {
+            "ollama": "Must be running for LLM functionality",
+            "qdrant": "Must be running on localhost:6333 for vector operations"
+        },
+        "features": {
+            "structured_responses": "enabled",
+            "two_section_format": "insights + recommendations"
         }
     })
+
+@app.route('/validate/response', methods=['POST'])
+def validate_response_structure():
+    """
+    Validate that a response follows the required two-section structure
+    """
+    try:
+        data = request.get_json()
+        if not data or 'response_text' not in data:
+            return jsonify({"error": "Missing response_text field"}), 400
+        
+        response_text = data['response_text']
+        if response_formatter:
+            validation_result = response_formatter.validate_response_structure(response_text)
+        else:
+            validation_result = {"error": "Response formatter not available"}
+        
+        return jsonify({
+            "validation_result": validation_result,
+            "timestamp": time.time()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in validate endpoint: {e}")
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+# Note: The main /analyze route now provides formatted responses with insights and recommendations
 
 @app.route('/rag/status', methods=['GET'])
 def get_rag_status():
@@ -880,13 +955,15 @@ def get_rag_status():
             stats = rag_service.get_rag_statistics()
             return jsonify({"status": "active", **stats})
         else:
+            # No fallback - return error status when RAG service is unavailable
             return jsonify({
-                "status": "basic_mode",
-                **rag_stats,
-                "error": services_status.get("initialization_error")
-            })
+                "status": "error",
+                "error": "RAG service not available",
+                "details": services_status.get("initialization_error", "Service not initialized"),
+                "required": "Ollama and Qdrant containers must be running"
+            }), 503
     except Exception as e:
-        return jsonify({"status": "error", "error": str(e), **rag_stats})
+        return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route('/vector/status', methods=['GET'])
 def get_vector_status():
@@ -900,23 +977,15 @@ def get_vector_status():
             loop.close()
             return jsonify(vector_status)
         else:
+            # No fallback - return error status when vector database is unavailable
             return jsonify({
-                "status": "memory_mode",
-                "host": "localhost",
-                "port": 6333,
-                "total_collections": 4,
-                "embedding_model": "all-MiniLM-L6-v2",
-                "embedding_dimension": 384,
-                "collections_detail": [
-                    {"name": "financial_knowledge", "points_count": 0},
-                    {"name": "interaction_patterns", "points_count": 0},
-                    {"name": "analysis_templates", "points_count": 0},
-                    {"name": "market_data", "points_count": 0}
-                ],
-                "error": services_status.get("initialization_error")
-            })
+                "status": "error",
+                "error": "Vector database not available",
+                "details": services_status.get("initialization_error", "Qdrant not connected"),
+                "required": "Qdrant container must be running on localhost:6333"
+            }), 503
     except Exception as e:
-        return jsonify({"status": "error", "error": str(e)})
+        return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route('/history', methods=['GET'])
 def get_history():
@@ -961,39 +1030,74 @@ def process_full_pipeline():
                 generated_prompt = prompt_result["prompt"]
                 pipeline_steps.append({"name": "Prompt Generation", "status": "completed"})
             else:
-                generated_prompt = prompt_result.get("fallback_prompt", "Analyze the provided financial data comprehensively.")
-                pipeline_steps.append({"name": "Prompt Generation", "status": "fallback"})
+                pipeline_steps.append({"name": "Prompt Generation", "status": "failed"})
+                return jsonify({
+                    "error": "Prompt generation failed",
+                    "details": prompt_result.get("error", "Unknown error"),
+                    "pipeline_steps": pipeline_steps,
+                    "status": "prompt_error"
+                }), 500
         else:
-            generated_prompt = "Perform comprehensive financial analysis of the provided data with industry best practices."
-            pipeline_steps.append({"name": "Prompt Generation", "status": "offline"})
+            pipeline_steps.append({"name": "Prompt Generation", "status": "failed"})
+            return jsonify({
+                "error": "Prompt engine not available",
+                "details": "Prompt engine service must be running",
+                "pipeline_steps": pipeline_steps,
+                "status": "service_unavailable"
+            }), 503
         
-        # Step 3: RAG enhancement
-        rag_metadata = {"rag_enabled": False}
-        if services_status["rag_initialized"] and rag_service:
-            try:
-                import asyncio
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
-                enhanced_prompt, rag_metadata = loop.run_until_complete(
-                    rag_service.augment_prompt(generated_prompt, input_data)
-                )
-                final_prompt = enhanced_prompt
-                pipeline_steps.append({"name": "RAG Enhancement", "status": "completed"})
-                
-                loop.close()
-                
-            except Exception as e:
-                logger.warning(f"RAG enhancement failed: {e}")
-                final_prompt = generated_prompt
-                pipeline_steps.append({"name": "RAG Enhancement", "status": "failed"})
-        else:
-            final_prompt = generated_prompt
-            pipeline_steps.append({"name": "RAG Enhancement", "status": "offline"})
+        # Set the final prompt for RAG enhancement
+        final_prompt = generated_prompt
+        
+        # Step 3: RAG enhancement - required for full pipeline
+        if not services_status["rag_initialized"] or not rag_service:
+            pipeline_steps.append({"name": "RAG Enhancement", "status": "failed"})
+            return jsonify({
+                "error": "RAG service not available",
+                "details": "Ollama and Qdrant containers must be running",
+                "pipeline_steps": pipeline_steps,
+                "status": "service_unavailable"
+            }), 503
+        
+        try:
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            enhanced_prompt, rag_metadata = loop.run_until_complete(
+                rag_service.augment_prompt(generated_prompt, input_data)
+            )
+            final_prompt = enhanced_prompt
+            pipeline_steps.append({"name": "RAG Enhancement", "status": "completed"})
+            rag_metadata = {"rag_enabled": True}
+            
+            loop.close()
+            
+        except Exception as e:
+            logger.error(f"RAG enhancement failed: {e}")
+            pipeline_steps.append({"name": "RAG Enhancement", "status": "failed"})
+            return jsonify({
+                "error": "RAG service error",
+                "details": str(e),
+                "pipeline_steps": pipeline_steps,
+                "status": "rag_error"
+            }), 500
         
         # Step 4: Final analysis
         analysis = perform_comprehensive_analysis(input_data)
         pipeline_steps.append({"name": "Final Analysis", "status": "completed"})
+        
+        # Apply response formatter to ensure structured output
+        if response_formatter:
+            analysis = response_formatter.format_response(analysis)
+            pipeline_steps.append({"name": "Response Formatting", "status": "completed"})
+        else:
+            pipeline_steps.append({"name": "Response Formatting", "status": "failed"})
+            return jsonify({
+                "error": "Response formatter not available",
+                "pipeline_steps": pipeline_steps,
+                "status": "formatter_error"
+            }), 500
         
         processing_time = time.time() - start_time
         
@@ -1060,36 +1164,63 @@ def process_agentic_pipeline():
                 agentic_prompt = agentic_result["prompt"]
                 logger.info("✅ Agentic prompt generated successfully")
             else:
-                agentic_prompt = agentic_result.get("fallback_prompt", "Perform autonomous financial analysis with comprehensive reasoning.")
-                logger.warning("⚠️ Using fallback agentic prompt")
+                logger.error("❌ Agentic prompt generation failed")
+                return jsonify({
+                    "error": "Agentic prompt generation failed",
+                    "details": agentic_result.get("error", "Unknown error"),
+                    "status": "prompt_error"
+                }), 500
         else:
-            agentic_prompt = "Perform autonomous, comprehensive financial analysis with multi-step reasoning and validation."
-            logger.warning("🔄 Prompt engine offline, using default agentic prompt")
+            logger.error("❌ Prompt engine not available")
+            return jsonify({
+                "error": "Prompt engine not available",
+                "details": "Prompt engine service must be running",
+                "status": "service_unavailable"
+            }), 503
         
-        # Step 2: Advanced RAG enhancement
-        rag_metadata = {"rag_enabled": False}
-        if services_status["rag_initialized"] and rag_service:
-            try:
-                import asyncio
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
-                enhanced_prompt, rag_metadata = loop.run_until_complete(
-                    rag_service.augment_prompt(agentic_prompt, input_data)
-                )
-                final_prompt = enhanced_prompt
-                agent_statistics["rag_augmented_requests"] += 1
-                
-                loop.close()
-                
-            except Exception as e:
-                logger.warning(f"Agentic RAG enhancement failed: {e}")
-                final_prompt = agentic_prompt
-        else:
-            final_prompt = agentic_prompt
+        # Step 2: Advanced RAG enhancement - required for agentic pipeline
+        if not services_status["rag_initialized"] or not rag_service:
+            return jsonify({
+                "error": "RAG service not available",
+                "details": "Ollama and Qdrant containers must be running",
+                "status": "service_unavailable"
+            }), 503
+        
+        try:
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            enhanced_prompt, rag_metadata = loop.run_until_complete(
+                rag_service.augment_prompt(agentic_prompt, input_data)
+            )
+            final_prompt = enhanced_prompt
+            agent_statistics["rag_augmented_requests"] += 1
+            rag_metadata = {"rag_enabled": True}
+            
+            loop.close()
+            
+        except Exception as e:
+            logger.error(f"Agentic RAG enhancement failed: {e}")
+            return jsonify({
+                "error": "RAG service error",
+                "details": str(e),
+                "status": "rag_error"
+            }), 500
         
         # Step 3: Autonomous analysis
         analysis = perform_autonomous_analysis(input_data, final_prompt)
+        
+        # Apply response formatter to ensure structured output
+        if response_formatter:
+            analysis = response_formatter.format_response(analysis)
+            logger.info("✅ Agentic response formatted with structured sections")
+        else:
+            logger.error("❌ Response formatter not available - critical error")
+            return jsonify({
+                "error": "Response formatter not available",
+                "status": "formatter_error"
+            }), 500
         
         processing_time = time.time() - start_time
         
@@ -1155,9 +1286,16 @@ def get_prompt_engine_status():
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
+    # Only return healthy if all required services are available
+    all_services_healthy = (
+        services_status["rag_initialized"] and 
+        services_status["vector_connected"] and 
+        services_status["prompt_engine_connected"]
+    )
+    
     return jsonify({
-        "status": "healthy",
-        "mode": "rag_enhanced_pipeline",
+        "status": "healthy" if all_services_healthy else "unhealthy",
+        "mode": "rag_enhanced_pipeline" if all_services_healthy else "basic_only",
         "version": "2.0.0-pipeline",
         "timestamp": datetime.now().isoformat(),
         "services": {
@@ -1165,11 +1303,15 @@ def health_check():
             "vector_database": services_status["vector_connected"],
             "prompt_engine": services_status["prompt_engine_connected"],
             "initialization_complete": services_status["rag_initialized"]
+        },
+        "requirements": {
+            "ollama": "Must be running for LLM functionality",
+            "qdrant": "Must be running on localhost:6333 for vector operations"
         }
-    })
+    }), 200 if all_services_healthy else 503
 
 def perform_comprehensive_analysis(input_data):
-    """Perform comprehensive financial analysis"""
+    """Perform comprehensive financial analysis with structured format"""
     
     analysis = "=== ENHANCED FINANCIAL ANALYSIS REPORT ===\\n\\n"
     
@@ -1254,27 +1396,27 @@ def perform_comprehensive_analysis(input_data):
             
             # Liquidity Assessment
             if balance > 20000:
-                analysis += f"LIQUIDITY STATUS: ✅ EXCELLENT\\n"
+                analysis += f"LIQUIDITY STATUS: EXCELLENT\\n"
                 analysis += f"• Superior cash reserves for emergencies\\n"
                 analysis += f"• Significant investment opportunities available\\n"
                 analysis += f"• Consider diversified portfolio allocation\\n"
             elif balance > 10000:
-                analysis += f"LIQUIDITY STATUS: ✅ STRONG\\n"
+                analysis += f"LIQUIDITY STATUS: STRONG\\n"
                 analysis += f"• Good emergency fund coverage\\n"
                 analysis += f"• Adequate reserves for opportunities\\n"
                 analysis += f"• Balance safety with growth investments\\n"
             elif balance > 5000:
-                analysis += f"LIQUIDITY STATUS: 📊 ADEQUATE\\n"
+                analysis += f"LIQUIDITY STATUS: ADEQUATE\\n"
                 analysis += f"• Moderate emergency coverage\\n"
                 analysis += f"• Build reserves while maintaining stability\\n"
                 analysis += f"• Focus on consistent savings growth\\n"
             elif balance > 1000:
-                analysis += f"LIQUIDITY STATUS: ⚠️ LIMITED\\n"
+                analysis += f"LIQUIDITY STATUS: LIMITED\\n"
                 analysis += f"• Below recommended emergency levels\\n"
                 analysis += f"• Priority: Build 3-6 months expense buffer\\n"
                 analysis += f"• Limit discretionary spending temporarily\\n"
             else:
-                analysis += f"LIQUIDITY STATUS: 🚨 CRITICAL\\n"
+                analysis += f"LIQUIDITY STATUS: CRITICAL\\n"
                 analysis += f"• Immediate liquidity concern\\n"
                 analysis += f"• Emergency action required\\n"
                 analysis += f"• Focus on expense reduction and income\\n"
@@ -1345,20 +1487,24 @@ def perform_comprehensive_analysis(input_data):
                                if tx.get("amount", 0) > 0)
             if monthly_income > 0:
                 savings_rate = ((monthly_income - monthly_expenses) / monthly_income) * 100
-                analysis += f"📊 Current Savings Rate: {savings_rate:.1f}%\\n"
+                analysis += f"Current Savings Rate: {savings_rate:.1f}%\\n"
                 
                 if savings_rate < 15:
-                    analysis += f"🎯 Priority 2: Increase savings rate to 15-20%\\n"
+                    analysis += f"Priority 2: Increase savings rate to 15-20%\\n"
                 else:
-                    analysis += f"✅ Strong savings discipline maintained\\n"
+                    analysis += f"Strong savings discipline maintained\\n"
         
-        analysis += f"💼 Automate savings transfers for consistency\\n"
-        analysis += f"📈 Review recurring expenses quarterly\\n"
-        analysis += f"🎓 Consider financial education opportunities\\n"
-        analysis += f"🔄 Implement regular financial health checkups\\n"
+        analysis += f"Automate savings transfers for consistency\\n"
+        analysis += f"Review recurring expenses quarterly\\n"
+        analysis += f"Consider financial education opportunities\\n"
+        analysis += f"Implement regular financial health checkups\\n"
+        
+        # Format the analysis into the required two-section structure
+        if response_formatter:
+            analysis = response_formatter.format_response(analysis)
         
         analysis += "\\n=== END COMPREHENSIVE ANALYSIS ===\\n"
-        analysis += "\\n💡 Analysis based on established financial principles and best practices."
+        analysis += "\\n Analysis based on established financial principles and best practices."
         
     except Exception as e:
         analysis += f"\\nError during analysis: {str(e)}\\n"
@@ -1400,9 +1546,9 @@ def perform_autonomous_analysis(input_data, enhanced_prompt):
     
     analysis = "=== AUTONOMOUS AGENTIC ANALYSIS ===\\n\\n"
     
-    analysis += "🧠 AUTONOMOUS MODE: ENABLED\\n"
-    analysis += "⚡ RAG ENHANCEMENT: ACTIVE\\n"
-    analysis += "🔍 MULTI-STEP REASONING: ENGAGED\\n\\n"
+    analysis += "AUTONOMOUS MODE: ENABLED\\n"
+    analysis += "RAG ENHANCEMENT: ACTIVE\\n"
+    analysis += "MULTI-STEP REASONING: ENGAGED\\n\\n"
     
     try:
         # Enhanced analysis with agentic reasoning
@@ -1419,29 +1565,33 @@ def perform_autonomous_analysis(input_data, enhanced_prompt):
         
         if "transactions" in input_data:
             tx_count = len(input_data["transactions"])
-            analysis += f"🤖 Agent processed {tx_count} transactions with autonomous pattern recognition\\n"
-            analysis += f"🧠 Applied machine learning insights for transaction categorization\\n"
-            analysis += f"⚡ Cross-referenced patterns with knowledge base for anomaly detection\\n\\n"
+            analysis += f"Agent processed {tx_count} transactions with autonomous pattern recognition\\n"
+            analysis += f"Applied machine learning insights for transaction categorization\\n"
+            analysis += f"Cross-referenced patterns with knowledge base for anomaly detection\\n\\n"
         
         if "account_balance" in input_data:
             balance = input_data["account_balance"]
-            analysis += f"🤖 Autonomous liquidity assessment: ${balance:,.2f}\\n"
-            analysis += f"🧠 Applied predictive modeling for cash flow forecasting\\n"
-            analysis += f"⚡ Risk scoring based on historical patterns and industry benchmarks\\n\\n"
+            analysis += f"Autonomous liquidity assessment: ${balance:,.2f}\\n"
+            analysis += f"Applied predictive modeling for cash flow forecasting\\n"
+            analysis += f"Risk scoring based on historical patterns and industry benchmarks\\n\\n"
         
         # Include the base analysis
         analysis += "=== COMPREHENSIVE FINANCIAL ANALYSIS ===\\n\\n"
         analysis += base_analysis
         
         analysis += "\\n\\n=== AUTONOMOUS AGENT INSIGHTS ===\\n\\n"
-        analysis += "🤖 AGENT CONFIDENCE: HIGH\\n"
-        analysis += "🧠 REASONING DEPTH: COMPREHENSIVE\\n"
-        analysis += "⚡ KNOWLEDGE BASE INTEGRATION: COMPLETE\\n"
-        analysis += "🔍 VALIDATION STATUS: PASSED\\n\\n"
+        analysis += "AGENT CONFIDENCE: HIGH\\n"
+        analysis += "REASONING DEPTH: COMPREHENSIVE\\n"
+        analysis += "KNOWLEDGE BASE INTEGRATION: COMPLETE\\n"
+        analysis += "VALIDATION STATUS: PASSED\\n\\n"
         
-        analysis += "💡 This analysis was generated through autonomous agent reasoning,\\n"
+        analysis += "This analysis was generated through autonomous agent reasoning,\\n"
         analysis += "   combining prompt-engine intelligence with RAG knowledge augmentation\\n"
         analysis += "   and vector-accelerated domain expertise.\\n"
+        
+        # Format the analysis into the required two-section structure
+        if response_formatter:
+            analysis = response_formatter.format_response(analysis)
         
     except Exception as e:
         analysis += f"\\nError in autonomous analysis: {str(e)}\\n"

@@ -56,7 +56,7 @@ class PromptConsumerService:
                 "error": str(e)
             }
     
-    def get_prompt_engine_capabilities(self) -> Dict[str, Any]:
+    async def get_prompt_engine_capabilities(self) -> Dict[str, Any]:
         """Get capabilities from the prompt engine"""
         try:
             response = self.session.get(f"{self.prompt_engine_url}/capabilities")
@@ -123,16 +123,14 @@ class PromptConsumerService:
                 logger.error(f"Prompt engine returned {response.status_code}")
                 return {
                     "success": False,
-                    "error": f"Prompt engine error: HTTP {response.status_code}",
-                    "fallback_prompt": self._create_fallback_prompt(input_data)
+                    "error": f"Prompt engine error: HTTP {response.status_code}"
                 }
                 
         except Exception as e:
             logger.error(f"Error generating prompt: {e}")
             return {
                 "success": False,
-                "error": str(e),
-                "fallback_prompt": self._create_fallback_prompt(input_data)
+                "error": str(e)
             }
     
     def generate_agentic_prompt(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -140,19 +138,17 @@ class PromptConsumerService:
         Generate an agentic prompt using the prompt-engine's agentic capabilities
         """
         try:
-            # Use the agentic endpoint if available
+            # Use the main generate endpoint with agentic generation type
             agentic_request = {
                 "input_data": input_data,
-                "autonomous_mode": True,
-                "reasoning_depth": "comprehensive",
-                "include_validation": True
+                "generation_type": "autonomous"  # This triggers agentic mode
             }
             
-            logger.info("Requesting agentic prompt generation")
+            logger.info("Requesting agentic prompt generation via main endpoint")
             
-            # Try agentic endpoint first
+            # Use the main generate endpoint which supports agentic generation
             response = self.session.post(
-                f"{self.prompt_engine_url}/agentic/autonomous",
+                f"{self.prompt_engine_url}/generate",
                 json=agentic_request,
                 headers={"Content-Type": "application/json"}
             )
@@ -161,7 +157,7 @@ class PromptConsumerService:
                 result = response.json()
                 return {
                     "success": True,
-                    "prompt": result.get("optimized_prompt", result.get("prompt", "")),
+                    "prompt": result.get("prompt", ""),
                     "prompt_metadata": {
                         "source": "prompt_engine_agentic",
                         "agentic_features": True,
@@ -170,41 +166,20 @@ class PromptConsumerService:
                     }
                 }
             else:
-                # Fallback to regular generation
-                return self.generate_prompt_from_data(input_data, "agentic_analysis")
+                logger.error(f"Agentic prompt generation failed: HTTP {response.status_code}")
+                return {
+                    "success": False,
+                    "error": f"Agentic prompt generation failed: HTTP {response.status_code}"
+                }
                 
         except Exception as e:
-            logger.warning(f"Agentic prompt generation failed: {e}")
-            # Fallback to regular generation
-            return self.generate_prompt_from_data(input_data, "agentic_analysis")
+            logger.error(f"Agentic prompt generation failed: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
     
-    def _create_fallback_prompt(self, input_data: Dict[str, Any]) -> str:
-        """Create a fallback prompt when prompt engine is unavailable"""
-        
-        prompt = "Perform a comprehensive financial analysis of the provided data.\n\n"
-        
-        if "transactions" in input_data:
-            tx_count = len(input_data["transactions"])
-            prompt += f"Analyze {tx_count} financial transactions, including:\n"
-            prompt += "- Cash flow patterns and trends\n"
-            prompt += "- Transaction categorization and insights\n"
-            prompt += "- Spending behavior analysis\n\n"
-        
-        if "account_balance" in input_data:
-            prompt += "Evaluate account balance and liquidity position:\n"
-            prompt += "- Current financial health assessment\n"
-            prompt += "- Emergency fund adequacy\n"
-            prompt += "- Liquidity risk analysis\n\n"
-        
-        prompt += "Provide actionable recommendations based on:\n"
-        prompt += "- Financial best practices\n"
-        prompt += "- Risk management principles\n"
-        prompt += "- Wealth building strategies\n"
-        prompt += "- Industry benchmarks and standards\n\n"
-        
-        prompt += "Structure your analysis with clear sections and quantitative insights."
-        
-        return prompt
+
     
     async def __aenter__(self):
         """Async context manager entry"""
@@ -213,3 +188,46 @@ class PromptConsumerService:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit"""
         self.session.close()
+    
+    async def consume_prompt(self, input_data: Dict[str, Any], 
+                           generation_type: str = "standard",
+                           context: str = None,
+                           data_type: str = None) -> Dict[str, Any]:
+        """
+        Async method to consume prompt from prompt engine
+        """
+        if generation_type == "agentic":
+            return self.generate_agentic_prompt(input_data)
+        else:
+            return self.generate_prompt_from_data(input_data, context or "financial_analysis")
+    
+    async def submit_learning_feedback(self, input_data: Dict[str, Any],
+                                     prompt_result: str,
+                                     agent_response: str,
+                                     quality_score: float,
+                                     user_feedback: str) -> Dict[str, Any]:
+        """
+        Submit learning feedback to prompt engine
+        """
+        try:
+            feedback_request = {
+                "input_data": input_data,
+                "prompt_result": prompt_result,
+                "agent_response": agent_response,
+                "quality_score": quality_score,
+                "user_feedback": user_feedback
+            }
+            
+            response = self.session.post(
+                f"{self.prompt_engine_url}/feedback",
+                json=feedback_request,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                return {"success": True, "response": response.json()}
+            else:
+                return {"success": False, "error": f"HTTP {response.status_code}"}
+                
+        except Exception as e:
+            return {"success": False, "error": str(e)}

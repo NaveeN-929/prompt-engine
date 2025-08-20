@@ -372,6 +372,9 @@ Based on the data analysis, follow this autonomous approach:
 Remember: This is an autonomous analysis system. Be thorough, accurate, and provide reasoning for all conclusions.
 """
         
+        # Add structured output requirements
+        enhanced_prompt = self._add_structured_output_requirements(enhanced_prompt)
+        
         return enhanced_prompt.strip()
     
     def _generate_autonomous_prompt(self, input_data: Dict[str, Any], analysis: Dict[str, Any], elapsed_time: float) -> Tuple[str, Dict[str, Any], float]:
@@ -440,6 +443,9 @@ Perform this analysis autonomously using best practices for the identified data 
             "timestamp": datetime.now().isoformat()
         }
         
+        # Add structured output requirements
+        prompt = self._add_structured_output_requirements(prompt)
+        
         return prompt.strip(), metadata, processing_time
     
     def _create_agentic_enhancement(self, analysis: Dict[str, Any], input_data: Dict[str, Any]) -> str:
@@ -478,6 +484,82 @@ Perform this analysis autonomously using best practices for the identified data 
         if not suggestions:
             return "- Apply standard analytical approach"
         return "\n   ".join(f"- {suggestion}" for suggestion in suggestions)
+    
+    def _add_structured_output_requirements(self, prompt: str) -> str:
+        """Add structured output requirements to ensure insights and recommendations format"""
+        
+        structured_requirements = """
+
+**CRITICAL OUTPUT STRUCTURE REQUIREMENT:**
+
+Your response MUST be organized into exactly TWO main sections:
+
+=== SECTION 1: INSIGHTS ===
+Provide all insights that can be derived from the input data and analysis:
+- Data patterns and trends identified
+- Key findings and observations
+- Statistical analysis results
+- Anomalies or unusual patterns detected
+- Business context implications
+- Risk factors identified
+- Opportunities discovered
+
+=== SECTION 2: RECOMMENDATIONS ===
+Provide specific, actionable recommendations for SMEs to take necessary actions:
+- Immediate actions required
+- Strategic recommendations
+- Risk mitigation steps
+- Process improvements
+- Technology or tool recommendations
+- Training or skill development needs
+- Follow-up analysis requirements
+- Compliance or regulatory actions
+
+**FORMATTING RULES:**
+- Use clear section headers with === markers
+- Provide specific, actionable recommendations
+- Include confidence levels for insights
+- Prioritize recommendations by urgency/impact
+- Use bullet points for clarity
+- Quantify findings where possible
+- Include reasoning for each recommendation
+
+**EXAMPLE FORMAT:**
+=== SECTION 1: INSIGHTS ===
+• [Insight 1 with supporting data]
+• [Insight 2 with supporting data]
+...
+
+=== SECTION 2: RECOMMENDATIONS ===
+• [Specific action item 1 with timeline]
+• [Specific action item 2 with timeline]
+...
+"""
+        
+        return prompt + structured_requirements
+    
+    def _ensure_structured_response(self, response_text: str) -> str:
+        """Ensure the response follows the required two-section format"""
+        
+        # Check if response already has the required structure
+        if "=== SECTION 1: INSIGHTS ===" in response_text and "=== SECTION 2: RECOMMENDATIONS ===" in response_text:
+            return response_text
+        
+        # If not, add the structure requirement and regenerate
+        enhanced_prompt = f"""
+The previous response did not follow the required format. Please restructure your analysis into exactly two sections:
+
+{response_text}
+
+**REQUIRED FORMAT:**
+=== SECTION 1: INSIGHTS ===
+[All insights derived from the data and analysis]
+
+=== SECTION 2: RECOMMENDATIONS ===
+[All actionable recommendations for SMEs]
+"""
+        
+        return enhanced_prompt
     
     def learn_from_interaction(self, input_data: Dict[str, Any], 
                                 prompt_result: str, 
