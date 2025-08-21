@@ -5,7 +5,8 @@
 # Documentation
 *.md
 docs/
-COMPREHENSIVE_DOCUMENTATION.md
+README_FINAL.md
+QUICK_START.md
 
 # Python
 __pycache__/
@@ -30,7 +31,7 @@ wheels/
 *.egg
 
 # Virtual environments
-prompt_engine_env/
+agent1/
 venv/
 env/
 ENV/
@@ -55,18 +56,15 @@ test/
 tests/
 *_test.py
 test_*.py
+test_*.html
 
 # Development files
 .env.local
 .env.development
-simple_test.html
-test_ui_directly.html
+requirements-simple.txt
+install.bat
+setup.py
+run_agent.py
 
 # Build files
-build-and-push.bat
-build-and-push.sh
-docker-compose.paytechneodemo.yml
-restart_*.bat
-
-# Autonomous agent (exclude from prompt engine build)
-autonomous-agent/
+docker-compose.yml
