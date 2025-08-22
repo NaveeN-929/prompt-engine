@@ -160,6 +160,25 @@ def index():
         """
 
 
+@app.route('/simple')
+def simple_interface():
+    """Simplified interface - serves the simple HTML file"""
+    try:
+        with open("interface_simple.html", "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return """
+        <html>
+            <head><title>RAG-Enhanced Analysis Pipeline</title></head>
+<body>
+            <h1>RAG-Enhanced Analysis Pipeline</h1>
+                <p>Simple interface file not found. Please check that interface_simple.html exists.</p>
+                <p><a href="/">Full Interface</a> | <a href="/status">System Status</a></p>
+</body>
+</html>
+        """
+
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     """Enhanced analysis endpoint"""

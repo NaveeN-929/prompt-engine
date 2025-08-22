@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG-Enhanced Analysis Pipeline</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 20px; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); 
+            min-height: 100vh; 
+            color: white;
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.1); 
+            padding: 30px; 
+            border-radius: 15px; 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+        }
+        .header h1 { 
+            color: #00d4ff; 
+            margin-bottom: 10px; 
+            font-size: 2.2em;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        .badge {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 5px;
+            display: inline-block;
+        }
+        .button { 
+            background: linear-gradient(45deg, #00d4ff, #0099cc); 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            margin: 5px; 
+            font-size: 14px; 
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4); 
+        }
+        .button.secondary {
+            background: linear-gradient(45deg, #6c757d, #495057);
+        }
+        .section {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        textarea { 
+            width: 100%; 
+            height: 120px; 
+            margin: 10px 0; 
+            padding: 12px; 
+            border: 1px solid rgba(0, 212, 255, 0.3); 
+            border-radius: 6px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 13px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .result-container { 
+            background: rgba(0, 212, 255, 0.1); 
+            border: 2px solid #00d4ff; 
+            border-radius: 10px; 
+            margin: 20px 0; 
+            overflow: hidden;
+            display: none;
+        }
+        .result-header { 
+            background: #00d4ff; 
+            color: #1a1a2e; 
+            padding: 12px 20px; 
+            font-weight: bold; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-content { 
+            padding: 20px; 
+            max-height: 600px; 
+            overflow-y: auto; 
+            white-space: pre-wrap;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .rag-indicator {
+            background: rgba(255, 107, 107, 0.3);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        .loading {
+            color: #00d4ff;
+            font-style: italic;
+        }
+        .error {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .section-header {
+            color: #00d4ff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 5px;
+        }
+        .insights-section {
+            background: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .recommendations-section {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .status-info {
+            text-align: right;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>RAG-Enhanced Analysis Pipeline</h1>
+            <span class="badge">Agentic RAG: 3 items</span>
+            <span class="badge">0.279s</span>
+        </div>
+        
+        <div class="section">
+            <h3>RAG-Enhanced Analysis Pipeline</h3>
+            <p><strong>Step 1:</strong> Financial data → <strong>Step 2:</strong> Prompt Engine → <strong>Step 3:</strong> RAG Enhancement → <strong>Step 4:</strong> Final Analysis</p>
+            <div style="margin: 15px 0; padding: 10px; background: rgba(0,212,255,0.1); border-radius: 6px;">
+                <strong>Input:</strong> Provide financial data that will be sent to the prompt-engine to generate a structured prompt, which will then be enhanced with RAG knowledge augmentation.
+            </div>
+            <textarea id="analysisData" placeholder='{"transactions": [{"date": "2024-01-15", "amount": 1500.00, "type": "credit", "description": "Salary"}], "account_balance": 2250.00}'></textarea>
+            <br>
+            <button class="button" onclick="processFullPipeline()">Full RAG Pipeline</button>
+            <button class="button" onclick="processAgenticPipeline()">Agentic Pipeline</button>
+            <button class="button secondary" onclick="loadExample()">Load Example</button>
+            <button class="button secondary" onclick="clearResults()">Clear</button>
+        </div>
+        
+        <div id="resultsContainer" class="result-container" style="display: block;">
+            <div class="result-header">
+                <span>Analysis Results</span>
+                <div>
+                    <span class="rag-indicator" id="ragIndicator">Agentic RAG: 3 items</span>
+                    <span style="margin-left: 10px; font-size: 12px;" id="processingTime">0.279s</span>
+                </div>
+            </div>
+            <div id="resultsContent" class="result-content">
+                <div class="section-header">🤖 AUTONOMOUS AGENTIC ANALYSIS</div>
+                <div style="background: rgba(138, 43, 226, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <div style="margin: 5px 0;"><strong>AUTONOMOUS MODE:</strong> ENABLED</div>
+                    <div style="margin: 5px 0;"><strong>RAG ENHANCEMENT:</strong> ACTIVE</div>
+                    <div style="margin: 5px 0;"><strong>MULTI-STEP REASONING:</strong> ENGAGED</div>
+                    <div style="margin: 5px 0;"><strong>ENHANCED PROMPT INTEGRATION:</strong></div>
+                    <div style="margin: 5px 0; padding-left: 20px;">✅ Prompt generated by prompt-engine</div>
+                    <div style="margin: 5px 0; padding-left: 20px;">✅ Enhanced with RAG knowledge base</div>
+                    <div style="margin: 5px 0; padding-left: 20px;">✅ Applied domain expertise and best practices</div>
+                </div>
+                
+                <div class="section-header">⚙️ AUTONOMOUS REASONING PROCESS:</div>
+                <div style="background: rgba(255, 193, 7, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <div style="margin: 8px 0;">Agent processed 5 transactions with autonomous pattern recognition</div>
+                    <div style="margin: 8px 0;">Applied machine learning insights for transaction categorization</div>
+                    <div style="margin: 8px 0;">Cross-referenced patterns with knowledge base for anomaly detection</div>
+                    <div style="margin: 8px 0;"><strong>Autonomous liquidity assessment:</strong> $2,175.50</div>
+                    <div style="margin: 8px 0;">Applied predictive modeling for cash flow forecasting</div>
+                    <div style="margin: 8px 0;">Risk scoring based on historical patterns and industry benchmarks</div>
+                </div>
+                
+                <div style="margin: 10px 0;">COMPREHENSIVE FINANCIAL ANALYSIS</div>
+                
+                <div class="section-header">🔍 SECTION 1: INSIGHTS</div>
+                <div class="insights-section">
+                    <div style="margin: 10px 0;"></div>
+                </div>
+                
+                <div class="section-header">📈 ENHANCED FINANCIAL ANALYSIS REPORT</div>
+                <div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <div style="margin: 10px 0;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-info">
+            AUTONOMOUS AGENTIC ANALYSIS<br>
+            AUTONOMOUS MODE: ENABLED<br>
+            RAG ENHANCEMENT: ACTIVE<br>
+            MULTI-STEP REASONING: ENGAGED<br>
+            ENHANCED PROMPT INTEGRATION:
+        </div>
+    </div>
+    
+    <script>
+        function loadExample() {
+            document.getElementById('analysisData').value = JSON.stringify({
+                "transactions": [
+                    {"date": "2024-01-15", "amount": 1500.00, "type": "credit", "description": "Salary deposit"},
+                    {"date": "2024-01-16", "amount": -50.00, "type": "debit", "description": "Grocery shopping"},
+                    {"date": "2024-01-17", "amount": -1200.00, "type": "debit", "description": "Rent payment"},
+                    {"date": "2024-01-18", "amount": -75.50, "type": "debit", "description": "Utilities"},
+                    {"date": "2024-01-20", "amount": 2000.00, "type": "credit", "description": "Freelance income"}
+                ],
+                "account_balance": 2175.50,
+                "customer_id": "CUST_001"
+            }, null, 2);
+        }
+        
+        function formatAnalysisResponse(analysis) {
+            // Clean up escaped newlines and format the response
+            let formatted = analysis
+                .replace(/\\n/g, '\n')
+                .replace(/\\"/g, '"')
+                .replace(/\\\\/g, '\\');
+            
+            // Split into sections and format them
+            const sections = formatted.split('===');
+            let html = '';
+            
+            sections.forEach(section => {
+                if (section.trim()) {
+                    const cleanSection = section.trim();
+                    if (cleanSection.includes('SECTION 1: INSIGHTS')) {
+                        html += '<div class="section-header">🔍 SECTION 1: INSIGHTS</div>';
+                        html += '<div class="insights-section">' + formatSectionContent(cleanSection.replace('SECTION 1: INSIGHTS', '')) + '</div>';
+                    } else if (cleanSection.includes('SECTION 2: RECOMMENDATIONS')) {
+                        html += '<div class="section-header">💡 SECTION 2: RECOMMENDATIONS</div>';
+                        html += '<div class="recommendations-section">' + formatSectionContent(cleanSection.replace('SECTION 2: RECOMMENDATIONS', '')) + '</div>';
+                    } else if (cleanSection.includes('AGENTIC PIPELINE')) {
+                        html += '<div class="section-header">🤖 AGENTIC PIPELINE</div>';
+                        html += '<div style="background: rgba(138, 43, 226, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">' + formatSectionContent(cleanSection.replace('AGENTIC PIPELINE', '')) + '</div>';
+                    } else if (cleanSection.includes('AUTONOMOUS ANALYSIS')) {
+                        html += '<div class="section-header">🧠 AUTONOMOUS ANALYSIS</div>';
+                        html += '<div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">' + formatSectionContent(cleanSection.replace('AUTONOMOUS ANALYSIS', '')) + '</div>';
+                    } else if (cleanSection.includes('PIPELINE EXECUTION')) {
+                        html += '<div class="section-header">⚙️ PIPELINE EXECUTION</div>';
+                        html += '<div style="background: rgba(255, 193, 7, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">' + formatSectionContent(cleanSection.replace('PIPELINE EXECUTION', '')) + '</div>';
+                    } else if (cleanSection.includes('FINAL ANALYSIS')) {
+                        html += '<div class="section-header">📊 FINAL ANALYSIS</div>';
+                        html += '<div style="background: rgba(40, 167, 69, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">' + formatSectionContent(cleanSection.replace('FINAL ANALYSIS', '')) + '</div>';
+                    } else if (cleanSection.includes('ENHANCED FINANCIAL ANALYSIS REPORT')) {
+                        html += '<div class="section-header">📈 ENHANCED FINANCIAL ANALYSIS REPORT</div>';
+                        html += '<div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">' + formatSectionContent(cleanSection.replace('ENHANCED FINANCIAL ANALYSIS REPORT', '')) + '</div>';
+                    } else {
+                        html += '<div style="margin: 10px 0;">' + formatSectionContent(cleanSection) + '</div>';
+                    }
+                }
+            });
+            
+            return html;
+        }
+        
+        function formatSectionContent(content) {
+            // Format the content with proper line breaks and styling
+            return content
+                .trim()
+                .split('\n')
+                .map(line => {
+                    line = line.trim();
+                    if (line.startsWith('•') || line.startsWith('-')) {
+                        return '<div style="margin: 5px 0; padding-left: 20px;">' + line + '</div>';
+                    } else if (line.includes(':')) {
+                        const [key, value] = line.split(':', 2);
+                        return '<div style="margin: 8px 0;"><strong>' + key + ':</strong> ' + value + '</div>';
+                    } else if (line.length > 0) {
+                        return '<div style="margin: 5px 0;">' + line + '</div>';
+                    }
+                    return '';
+                })
+                .join('');
+        }
+        
+        async function processFullPipeline() {
+            const data = document.getElementById('analysisData').value;
+            const container = document.getElementById('resultsContainer');
+            const content = document.getElementById('resultsContent');
+            const timeEl = document.getElementById('processingTime');
+            const ragEl = document.getElementById('ragIndicator');
+            
+            try {
+                container.style.display = 'block';
+                content.innerHTML = '<div class="loading">🔄 Processing Full RAG Pipeline...</div>';
+                
+                const inputData = JSON.parse(data);
+                
+                const response = await fetch('/pipeline/full', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input_data: inputData })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Analysis completed successfully');
+                    timeEl.textContent = `${result.processing_time?.toFixed(3)}s`;
+                    
+                    if (result.rag_metadata?.rag_enabled) {
+                        ragEl.textContent = `RAG: ${result.rag_metadata.context_items_used || 0} items`;
+                        ragEl.style.background = 'rgba(40, 167, 69, 0.3)';
+                    } else {
+                        ragEl.textContent = 'RAG: Pipeline Mode';
+                        ragEl.style.background = 'rgba(255, 193, 7, 0.3)';
+                    }
+                } else {
+                    content.innerHTML = '<div class="error">Pipeline Error: ' + (result.error || 'Unknown error') + '</div>';
+                }
+                
+            } catch (error) {
+                content.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+                ragEl.textContent = 'RAG: Error';
+                ragEl.style.background = 'rgba(220, 53, 69, 0.3)';
+            }
+        }
+        
+        async function processAgenticPipeline() {
+            const data = document.getElementById('analysisData').value;
+            const container = document.getElementById('resultsContainer');
+            const content = document.getElementById('resultsContent');
+            const timeEl = document.getElementById('processingTime');
+            const ragEl = document.getElementById('ragIndicator');
+            
+            try {
+                container.style.display = 'block';
+                content.innerHTML = '<div class="loading">🤖 Processing Agentic Pipeline...</div>';
+                
+                const inputData = JSON.parse(data);
+                
+                const response = await fetch('/pipeline/agentic', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input_data: inputData })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Agentic analysis completed successfully');
+                    timeEl.textContent = `${result.processing_time?.toFixed(3)}s`;
+                    
+                    ragEl.textContent = `Agentic RAG: ${result.rag_metadata?.context_items_used || 0} items`;
+                    ragEl.style.background = 'rgba(138, 43, 226, 0.3)';
+                } else {
+                    content.innerHTML = '<div class="error">Agentic Pipeline Error: ' + (result.error || 'Unknown error') + '</div>';
+                }
+                
+            } catch (error) {
+                content.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+                ragEl.textContent = 'Agentic: Error';
+                ragEl.style.background = 'rgba(220, 53, 69, 0.3)';
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('resultsContainer').style.display = 'none';
+        }
+        
+        // Load example data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExample();
+        });
+    </script>
+</body>
+</html>
