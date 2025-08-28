@@ -50,6 +50,7 @@ COPY core/ ./core/
 COPY config.py .
 COPY server_final.py .
 COPY interface.html .
+COPY interface_simple.html .
 
 # Create non-root user and required directories
 RUN useradd --create-home --shell /bin/bash --uid 1001 app && \

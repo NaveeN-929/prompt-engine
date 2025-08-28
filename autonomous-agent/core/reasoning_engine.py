@@ -280,15 +280,15 @@ class ReasoningEngine:
         if "transactions" in input_data:
             transactions = input_data["transactions"]
             
-            # Basic calculations
+            # Basic calculations - Fixed logic
             calculations["total_credits"] = sum(
                 tx.get("amount", 0) for tx in transactions 
-                if tx.get("type") == "credit" or tx.get("amount", 0) > 0
+                if tx.get("type") == "credit" and tx.get("amount", 0) > 0
             )
             
             calculations["total_debits"] = sum(
                 abs(tx.get("amount", 0)) for tx in transactions 
-                if tx.get("type") == "debit" or tx.get("amount", 0) < 0
+                if tx.get("type") == "debit" and tx.get("amount", 0) < 0
             )
             
             calculations["net_flow"] = calculations["total_credits"] - calculations["total_debits"]

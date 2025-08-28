@@ -164,15 +164,22 @@ def index():
 def simple_interface():
     """Simplified interface - serves the simple HTML file"""
     try:
-        with open("interface_simple.html", "r", encoding="utf-8") as f:
+        # Get the directory where this script is located
+        import os
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        interface_path = os.path.join(script_dir, "interface_simple.html")
+        
+        with open(interface_path, "r", encoding="utf-8") as f:
             return f.read()
-    except FileNotFoundError:
-        return """
+    except FileNotFoundError as e:
+        return f"""
         <html>
             <head><title>RAG-Enhanced Analysis Pipeline</title></head>
 <body>
             <h1>RAG-Enhanced Analysis Pipeline</h1>
                 <p>Simple interface file not found. Please check that interface_simple.html exists.</p>
+                <p>Looking for file at: {os.path.join(os.path.dirname(os.path.abspath(__file__)), "interface_simple.html")}</p>
+                <p>Error: {str(e)}</p>
                 <p><a href="/">Full Interface</a> | <a href="/status">System Status</a></p>
 </body>
 </html>
@@ -196,8 +203,17 @@ def analyze():
         input_data = data['input_data']
         enable_rag = data.get('enable_rag', True)
         
-        # Perform analysis
-        analysis = perform_comprehensive_analysis(input_data)
+        # Generate autonomous prompt for analysis
+        autonomous_prompt = f"""
+        Perform comprehensive financial analysis of the provided transaction data.
+        Apply advanced reasoning, pattern recognition, and domain expertise.
+        Ensure mathematical accuracy and proper categorization.
+        Provide actionable insights and strategic recommendations.
+        Data: {input_data}
+        """
+        
+        # Perform autonomous analysis
+        analysis = perform_autonomous_analysis(input_data, autonomous_prompt)
         
         # Initialize rag_metadata before try block to avoid scope issues
         rag_metadata = {"rag_enabled": False}
@@ -285,6 +301,66 @@ def analyze():
         agent_statistics["failed_requests"] += 1
         logger.error(f"Analysis error: {e}")
         return jsonify({"error": str(e), "status": "error"}), 500
+
+@app.route('/insights', methods=['POST'])
+def generate_insights():
+    """Generate CRM-compatible insights only (JSON format)"""
+    global agent_statistics
+    
+    start_time = time.time()
+    agent_statistics["total_requests"] += 1
+    
+    try:
+        data = request.get_json()
+        if not data or 'input_data' not in data:
+            agent_statistics["failed_requests"] += 1
+            return jsonify({"error": "Missing input_data field"}), 400
+        
+        input_data = data['input_data']
+        
+        # Generate CRM insights
+        crm_insights = generate_crm_insights(input_data)
+        
+        processing_time = time.time() - start_time
+        agent_statistics["successful_requests"] += 1
+        
+        # Create clean JSON response for CRM integration
+        response_data = {
+            "request_id": f"insights_{int(time.time())}",
+            "status": "success",
+            "insights": crm_insights,
+            "processing_time": processing_time,
+            "insight_count": len(crm_insights),
+            "input_summary": {
+                "transaction_count": len(input_data.get("transactions", [])),
+                "has_balance": "account_balance" in input_data
+            },
+            "timestamp": datetime.now().isoformat(),
+            "format": "CRM_COMPATIBLE"
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        agent_statistics["failed_requests"] += 1
+        logger.error(f"Insights generation error: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+@app.route('/prompt-template', methods=['GET'])
+def get_prompt_template():
+    """Get the developer prompt template for LLM-based insight generation"""
+    
+    timeframe = request.args.get('timeframe', 'last month')
+    template = generate_developer_prompt_template(timeframe)
+    
+    return jsonify({
+        "status": "success",
+        "prompt_template": template,
+        "timeframe": timeframe,
+        "usage": "Use this template with your LLM to generate CRM-compatible insights",
+        "format": "Single line Insight + Single line Recommendation",
+        "target": "Business clients only"
+    })
 
 @app.route('/status', methods=['GET'])
 def get_status():
@@ -706,6 +782,139 @@ def health_check():
         }
     }), 200 if all_services_healthy else 503
 
+def generate_crm_insights(input_data):
+    """Generate CRM-compatible insights and recommendations"""
+    insights = []
+    
+    if "transactions" in input_data:
+        transactions = input_data["transactions"]
+        
+        # Calculate key metrics
+        credits = sum(tx.get("amount", 0) for tx in transactions 
+                     if tx.get("type") == "credit" and tx.get("amount", 0) > 0)
+        debits = sum(abs(tx.get("amount", 0)) for tx in transactions 
+                    if tx.get("type") == "debit" and tx.get("amount", 0) < 0)
+        net_flow = credits - debits
+        
+        # Categories analysis
+        categories = categorize_spending(transactions)
+        expense_categories = {k: v for k, v in categories.items() if k not in ["Revenue", "Other Income"]}
+        
+        # Date range for trend analysis
+        from datetime import datetime
+        dates = [tx.get("date") for tx in transactions if tx.get("date")]
+        if dates:
+            first_date = min(datetime.strptime(d, "%Y-%m-%d") for d in dates)
+            last_date = max(datetime.strptime(d, "%Y-%m-%d") for d in dates)
+            days_span = (last_date - first_date).days + 1
+            months_span = max(1, days_span / 30.44)
+        else:
+            months_span = 1
+        
+        # Generate insights based on data patterns
+        
+        # Cash flow insight
+        if net_flow > 0:
+            monthly_surplus = net_flow / months_span
+            insights.append({
+                "insight": f"Your business generated ${net_flow:,.0f} in positive cash flow over the analysis period — a strong ${monthly_surplus:,.0f} monthly average.",
+                "recommendation": "Consider investing this surplus in growth opportunities or establishing an emergency fund to strengthen your financial position."
+            })
+        
+        # Revenue trend insight
+        revenue_total = categories.get("Revenue", 0)
+        if revenue_total > 0:
+            monthly_revenue = revenue_total / months_span
+            insights.append({
+                "insight": f"You've generated ${revenue_total:,.0f} in revenue with a consistent ${monthly_revenue:,.0f} monthly average.",
+                "recommendation": "Explore our business growth financing options to capitalize on your strong revenue performance."
+            })
+        
+        # Expense category insights
+        if expense_categories:
+            largest_expense = max(expense_categories.items(), key=lambda x: x[1])
+            expense_name, expense_amount = largest_expense
+            expense_pct = (expense_amount / sum(expense_categories.values())) * 100
+            
+            if expense_pct > 30:
+                insights.append({
+                    "insight": f"Your {expense_name.lower()} represents {expense_pct:.0f}% of total expenses at ${expense_amount:,.0f}.",
+                    "recommendation": "We can help optimize these costs through strategic financing or payment term negotiations."
+                })
+        
+        # Payroll insights
+        payroll_amount = expense_categories.get("Payroll & Staffing", 0)
+        if payroll_amount > 0:
+            monthly_payroll = payroll_amount / months_span
+            insights.append({
+                "insight": f"Your monthly payroll averages ${monthly_payroll:,.0f} across the analysis period.",
+                "recommendation": "Consider our payroll financing solutions to smooth cash flow during growth phases or seasonal fluctuations."
+            })
+        
+        # Technology spending insight
+        tech_spending = expense_categories.get("Software & Technology", 0)
+        if tech_spending > 0:
+            monthly_tech = tech_spending / months_span
+            insights.append({
+                "insight": f"You're investing ${monthly_tech:,.0f} monthly in technology and software solutions.",
+                "recommendation": "Our technology expense cards offer rebates and spend controls to optimize your digital tool investments."
+            })
+        
+        # Professional services insight
+        professional_spend = expense_categories.get("Professional Services", 0)
+        if professional_spend > 0:
+            insights.append({
+                "insight": f"Professional services represent ${professional_spend:,.0f} of your business expenses.",
+                "recommendation": "Consider our business advisory services to potentially reduce external consulting costs."
+            })
+        
+        # Liquidity insight
+        if "account_balance" in input_data:
+            balance = input_data["account_balance"]
+            monthly_expenses = sum(expense_categories.values()) / months_span
+            coverage_months = balance / monthly_expenses if monthly_expenses > 0 else 0
+            
+            if coverage_months < 3:
+                insights.append({
+                    "insight": f"Your current balance covers approximately {coverage_months:.1f} months of operating expenses.",
+                    "recommendation": "Building a 3-6 month expense buffer through our savings products could strengthen your financial resilience."
+                })
+            elif coverage_months > 6:
+                insights.append({
+                    "insight": f"You maintain strong liquidity with {coverage_months:.1f} months of expense coverage.",
+                    "recommendation": "Consider our investment products to put excess cash to work while maintaining appropriate reserves."
+                })
+    
+    return insights
+
+def generate_developer_prompt_template(timeframe="last month"):
+    """Generate the developer prompt template for LLM-based insight generation"""
+    
+    template = f"""Based on customer transaction, card, and behavioural data across the {timeframe}, extract a business insight followed by a clear, proactive recommendation.
+
+The format must follow:
+Insight: [Single-sentence observation, phrased in natural, friendly language].
+Recommendation: [Single-sentence advisory or product/service suggestion, positioned as helpful, not salesy].
+
+The output should be suitable for use inside a CRM (e.g., as a card or embedded nudge).
+Only include insights relevant to business clients.
+
+EXAMPLE OUTPUT FORMAT:
+Insight: Your average monthly card spend on equipment has increased by 34% over the last 3 months.
+Recommendation: We suggest exploring our flexible equipment financing options to preserve your cash flow.
+
+GUIDELINES:
+- Focus on actionable business observations
+- Recommendations should be helpful, not pushy
+- Use natural, conversational language
+- Single sentence for both insight and recommendation
+- Include specific numbers/percentages when available
+- Frame insights positively where possible
+- Suggest relevant financial products/services naturally
+"""
+    
+    return template
+
 def perform_comprehensive_analysis(input_data):
     """Perform comprehensive financial analysis with structured format"""
     
@@ -723,11 +932,11 @@ def perform_comprehensive_analysis(input_data):
             analysis += f"TRANSACTION ANALYSIS:\\n"
             analysis += f"📊 Total Transactions: {len(transactions)}\\n\\n"
             
-            # Financial Metrics
-            credits = sum(abs(tx.get("amount", 0)) for tx in transactions 
-                         if tx.get("type") == "credit" or tx.get("amount", 0) > 0)
+            # Financial Metrics - Fixed calculation logic
+            credits = sum(tx.get("amount", 0) for tx in transactions 
+                         if tx.get("type") == "credit" and tx.get("amount", 0) > 0)
             debits = sum(abs(tx.get("amount", 0)) for tx in transactions 
-                        if tx.get("type") == "debit" or tx.get("amount", 0) < 0)
+                        if tx.get("type") == "debit" and tx.get("amount", 0) < 0)
             net_flow = credits - debits
             
             analysis += f"CASH FLOW METRICS:\\n"
@@ -756,31 +965,37 @@ def perform_comprehensive_analysis(input_data):
             categories = categorize_spending(transactions)
             if categories:
                 analysis += f"SPENDING BREAKDOWN:\\n"
-                total_spending = sum(v for k, v in categories.items() if k != "Income")
                 
-                for category, amount in sorted(categories.items(), key=lambda x: x[1], reverse=True):
-                    if category == "Income":
-                        analysis += f"💰 {category}: ${amount:,.2f}\\n"
-                    else:
-                        pct = (amount / total_spending * 100) if total_spending > 0 else 0
-                        analysis += f"📊 {category}: ${amount:,.2f} ({pct:.1f}%)\\n"
+                # Separate revenue from expenses
+                revenue_categories = {k: v for k, v in categories.items() if "Revenue" in k or "Income" in k}
+                expense_categories = {k: v for k, v in categories.items() if k not in revenue_categories}
+                total_spending = sum(expense_categories.values())
+                
+                # Show revenue first
+                for category, amount in sorted(revenue_categories.items(), key=lambda x: x[1], reverse=True):
+                    analysis += f"💰 {category}: ${amount:,.2f}\\n"
+                
+                # Show expenses with percentages
+                for category, amount in sorted(expense_categories.items(), key=lambda x: x[1], reverse=True):
+                    pct = (amount / total_spending * 100) if total_spending > 0 else 0
+                    analysis += f"📊 {category}: ${amount:,.2f} ({pct:.1f}%)\\n"
                 
                 analysis += "\\n"
                 
-                # Spending Insights
+                # Spending Insights - only consider expense categories
                 analysis += f"SPENDING INSIGHTS:\\n"
-                if total_spending > 0:
-                    largest_expense = max((k, v) for k, v in categories.items() if k != "Income")
-                    analysis += f"🔍 Largest category: {largest_expense[0]} (${largest_expense[1]:,.2f})\\n"
+                if total_spending > 0 and expense_categories:
+                    largest_expense = max(expense_categories.items(), key=lambda x: x[1])
+                    analysis += f"🔍 Largest expense category: {largest_expense[0]} (${largest_expense[1]:,.2f})\\n"
                     
-                    # Check spending ratios
-                    housing_pct = categories.get("Housing", 0) / total_spending * 100
-                    if housing_pct > 30:
-                        analysis += f"⚠️ Housing costs ({housing_pct:.1f}%) exceed recommended 30%\\n"
+                    # Business-specific spending insights
+                    rent_pct = expense_categories.get("Rent & Facilities", 0) / total_spending * 100
+                    if rent_pct > 20:
+                        analysis += f"⚠️ Rent & facilities ({rent_pct:.1f}%) - high overhead costs\\n"
                     
-                    food_pct = categories.get("Food & Dining", 0) / total_spending * 100
-                    if food_pct > 15:
-                        analysis += f"💡 Food expenses ({food_pct:.1f}%) - consider optimization\\n"
+                    payroll_pct = expense_categories.get("Payroll & Staffing", 0) / total_spending * 100
+                    if payroll_pct > 40:
+                        analysis += f"💡 Payroll costs ({payroll_pct:.1f}%) - monitor staffing efficiency\\n"
                 
                 analysis += "\\n"
         
@@ -870,30 +1085,72 @@ def perform_comprehensive_analysis(input_data):
         
         if "transactions" in input_data and "account_balance" in input_data:
             balance = input_data["account_balance"]
-            monthly_expenses = sum(abs(tx.get("amount", 0)) for tx in input_data["transactions"] 
-                                 if tx.get("amount", 0) < 0)
+            total_expenses = sum(abs(tx.get("amount", 0)) for tx in input_data["transactions"] 
+                                if tx.get("type") == "debit" and tx.get("amount", 0) < 0)
             
-            # Emergency fund target
-            emergency_target = monthly_expenses * 6
+            # Calculate approximate monthly expenses based on data timeframe
+            # Estimate timeframe from first and last transaction dates
+            dates = [tx.get("date") for tx in input_data["transactions"] if tx.get("date")]
+            if dates:
+                from datetime import datetime
+                try:
+                    first_date = min(datetime.strptime(d, "%Y-%m-%d") for d in dates)
+                    last_date = max(datetime.strptime(d, "%Y-%m-%d") for d in dates)
+                    days_span = (last_date - first_date).days + 1
+                    months_span = max(1, days_span / 30.44)  # Average days per month
+                    monthly_expenses = total_expenses / months_span
+                except:
+                    # Fallback: assume 1 month if date parsing fails
+                    monthly_expenses = total_expenses
+            else:
+                # Fallback: assume data represents 1 month
+                monthly_expenses = total_expenses
+            
+            # Emergency fund target (3-6 months of expenses)
+            emergency_target = monthly_expenses * 3  # Conservative 3-month target
             if balance < emergency_target:
-                analysis += f"🎯 Priority 1: Build emergency fund to ${emergency_target:,.2f}\\n"
+                analysis += f"🎯 Priority 1: Build emergency fund to ${emergency_target:,.2f} (3 months expenses)\\n"
             
-            # Savings rate
-            monthly_income = sum(tx.get("amount", 0) for tx in input_data["transactions"] 
-                               if tx.get("amount", 0) > 0)
+            # Savings rate calculation
+            total_income = sum(tx.get("amount", 0) for tx in input_data["transactions"] 
+                              if tx.get("type") == "credit" and tx.get("amount", 0) > 0)
+            
+            # Calculate monthly income based on same timeframe
+            if dates:
+                try:
+                    monthly_income = total_income / months_span
+                except:
+                    monthly_income = total_income
+            else:
+                monthly_income = total_income
+            
             if monthly_income > 0:
-                savings_rate = ((monthly_income - monthly_expenses) / monthly_income) * 100
+                net_monthly_income = monthly_income - monthly_expenses
+                savings_rate = (net_monthly_income / monthly_income) * 100
+                analysis += f"Monthly Income: ${monthly_income:,.2f}\\n"
+                analysis += f"Monthly Expenses: ${monthly_expenses:,.2f}\\n"
                 analysis += f"Current Savings Rate: {savings_rate:.1f}%\\n"
                 
-                if savings_rate < 15:
-                    analysis += f"Priority 2: Increase savings rate to 15-20%\\n"
+                if savings_rate < 10:
+                    analysis += f"⚠️ Priority 2: Increase savings rate to 10-15%\\n"
+                elif savings_rate < 20:
+                    analysis += f"💡 Good savings rate - consider targeting 20%\\n"
                 else:
-                    analysis += f"Strong savings discipline maintained\\n"
+                    analysis += f"✅ Excellent savings discipline maintained\\n"
         
         analysis += f"Automate savings transfers for consistency\\n"
         analysis += f"Review recurring expenses quarterly\\n"
         analysis += f"Consider financial education opportunities\\n"
         analysis += f"Implement regular financial health checkups\\n"
+        
+        # Add CRM-compatible insights
+        analysis += "\\n"
+        analysis += "=== CRM-READY INSIGHTS & RECOMMENDATIONS ===\\n"
+        crm_insights = generate_crm_insights(input_data)
+        
+        for i, insight_data in enumerate(crm_insights, 1):
+            analysis += f"\\nInsight {i}: {insight_data['insight']}\\n"
+            analysis += f"Recommendation {i}: {insight_data['recommendation']}\\n"
         
         # Format the analysis into the required two-section structure
         if response_formatter:
@@ -909,31 +1166,43 @@ def perform_comprehensive_analysis(input_data):
     return analysis
 
 def categorize_spending(transactions):
-    """Categorize transactions for spending analysis"""
+    """Categorize transactions for business financial analysis"""
     categories = {}
     
     for tx in transactions:
         desc = tx.get("description", "").lower()
         amount = abs(tx.get("amount", 0))
+        tx_type = tx.get("type", "")
         
-        if any(word in desc for word in ["salary", "income", "payroll", "freelance", "wage"]):
-            categories["Income"] = categories.get("Income", 0) + amount
-        elif any(word in desc for word in ["rent", "mortgage", "property", "housing"]):
-            categories["Housing"] = categories.get("Housing", 0) + amount
-        elif any(word in desc for word in ["grocery", "food", "restaurant", "dining"]):
-            categories["Food & Dining"] = categories.get("Food & Dining", 0) + amount
-        elif any(word in desc for word in ["utility", "electric", "gas", "water", "internet"]):
-            categories["Utilities"] = categories.get("Utilities", 0) + amount
-        elif any(word in desc for word in ["transport", "gas", "uber", "taxi", "car"]):
-            categories["Transportation"] = categories.get("Transportation", 0) + amount
-        elif any(word in desc for word in ["medical", "health", "doctor", "pharmacy"]):
-            categories["Healthcare"] = categories.get("Healthcare", 0) + amount
-        elif any(word in desc for word in ["entertainment", "streaming", "gym", "fitness"]):
-            categories["Entertainment"] = categories.get("Entertainment", 0) + amount
-        elif any(word in desc for word in ["shopping", "amazon", "store", "retail"]):
-            categories["Shopping"] = categories.get("Shopping", 0) + amount
-        else:
-            categories["Other"] = categories.get("Other", 0) + amount
+        # Only categorize credits as revenue/income
+        if tx_type == "credit" and amount > 0:
+            if any(word in desc for word in ["invoice", "payment", "retainer", "subscription", "consulting", "project", "campaign", "strategy", "management", "mgmt"]):
+                categories["Revenue"] = categories.get("Revenue", 0) + amount
+            else:
+                categories["Other Income"] = categories.get("Other Income", 0) + amount
+        
+        # Categorize debits as business expenses
+        elif tx_type == "debit" and amount > 0:
+            if any(word in desc for word in ["rent", "office"]):
+                categories["Rent & Facilities"] = categories.get("Rent & Facilities", 0) + amount
+            elif any(word in desc for word in ["payroll", "salary", "salaries", "staff"]):
+                categories["Payroll & Staffing"] = categories.get("Payroll & Staffing", 0) + amount
+            elif any(word in desc for word in ["saas", "subscription", "software", "license", "cloud", "hosting", "aws", "microsoft", "zoom", "github", "figma", "crm"]):
+                categories["Software & Technology"] = categories.get("Software & Technology", 0) + amount
+            elif any(word in desc for word in ["marketing", "ads", "advertising", "ppc", "google ads", "linkedin", "social media"]):
+                categories["Marketing & Advertising"] = categories.get("Marketing & Advertising", 0) + amount
+            elif any(word in desc for word in ["internet", "phone", "utility", "utilities"]):
+                categories["Utilities & Communications"] = categories.get("Utilities & Communications", 0) + amount
+            elif any(word in desc for word in ["tax", "accounting", "legal", "consultancy", "insurance"]):
+                categories["Professional Services"] = categories.get("Professional Services", 0) + amount
+            elif any(word in desc for word in ["travel", "transport", "hotel", "parking", "courier", "freight", "delivery"]):
+                categories["Travel & Logistics"] = categories.get("Travel & Logistics", 0) + amount
+            elif any(word in desc for word in ["supplies", "equipment", "printer", "stationery", "materials", "coffee", "lunch", "snacks", "beverages", "pantry", "cleaning"]):
+                categories["Office Expenses"] = categories.get("Office Expenses", 0) + amount
+            elif any(word in desc for word in ["design", "freelance", "conference", "workshop", "training"]):
+                categories["External Services"] = categories.get("External Services", 0) + amount
+            else:
+                categories["Other Expenses"] = categories.get("Other Expenses", 0) + amount
     
     return categories
 
@@ -980,6 +1249,14 @@ def perform_autonomous_analysis(input_data, enhanced_prompt):
         analysis += "REASONING DEPTH: COMPREHENSIVE\\n"
         analysis += "KNOWLEDGE BASE INTEGRATION: COMPLETE\\n"
         analysis += "VALIDATION STATUS: PASSED\\n\\n"
+        
+        # Add CRM-compatible insights for autonomous analysis
+        analysis += "=== AUTONOMOUS CRM-READY INSIGHTS ===\\n\\n"
+        crm_insights = generate_crm_insights(input_data)
+        
+        for i, insight_data in enumerate(crm_insights, 1):
+            analysis += f"Insight {i}: {insight_data['insight']}\\n"
+            analysis += f"Recommendation {i}: {insight_data['recommendation']}\\n\\n"
         
         analysis += "This analysis was generated through autonomous agent reasoning,\\n"
         analysis += "   combining prompt-engine intelligence with RAG knowledge augmentation\\n"

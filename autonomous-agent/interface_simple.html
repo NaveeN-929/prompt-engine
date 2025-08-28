@@ -6,64 +6,65 @@
     <title>RAG-Enhanced Analysis Pipeline</title>
     <style>
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: Arial, sans-serif; 
             margin: 20px; 
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); 
-            min-height: 100vh; 
-            color: white;
+            background: #f5f5f5;
+            color: #333;
         }
         .container { 
             max-width: 1000px; 
             margin: 0 auto; 
-            background: rgba(255,255,255,0.1); 
+            background: white; 
             padding: 30px; 
-            border-radius: 15px; 
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
         }
         .header { 
             text-align: center; 
             margin-bottom: 30px; 
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 20px;
         }
         .header h1 { 
-            color: #00d4ff; 
+            color: #007bff; 
             margin-bottom: 10px; 
             font-size: 2.2em;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
         }
         .badge {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            background: #28a745;
             color: white;
             padding: 6px 12px;
-            border-radius: 15px;
+            border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
             margin: 5px;
             display: inline-block;
         }
-        .button { 
-            background: linear-gradient(45deg, #00d4ff, #0099cc); 
+        button { 
+            background: #007bff; 
             color: white; 
             padding: 10px 20px; 
             border: none; 
-            border-radius: 6px; 
+            border-radius: 4px; 
             cursor: pointer; 
             margin: 5px; 
             font-size: 14px; 
             font-weight: bold;
-            transition: all 0.3s ease;
         }
-        .button:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4); 
+        button:hover { 
+            background: #0056b3; 
         }
-        .button.secondary {
-            background: linear-gradient(45deg, #6c757d, #495057);
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #545b62;
         }
         .section {
-            background: rgba(255,255,255,0.05);
+            background: #f8f9fa;
             padding: 20px;
-            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
             margin: 20px 0;
         }
         textarea { 
@@ -71,26 +72,26 @@
             height: 120px; 
             margin: 10px 0; 
             padding: 12px; 
-            border: 1px solid rgba(0, 212, 255, 0.3); 
-            border-radius: 6px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
             font-family: 'Courier New', monospace; 
             font-size: 13px;
-            background: rgba(255,255,255,0.1);
-            color: white;
+            background: white;
+            color: #333;
             resize: vertical;
             box-sizing: border-box;
         }
         .result-container { 
-            background: rgba(0, 212, 255, 0.1); 
-            border: 2px solid #00d4ff; 
-            border-radius: 10px; 
+            background: white; 
+            border: 2px solid #007bff; 
+            border-radius: 8px; 
             margin: 20px 0; 
             overflow: hidden;
             display: none;
         }
         .result-header { 
-            background: #00d4ff; 
-            color: #1a1a2e; 
+            background: #007bff; 
+            color: white; 
             padding: 12px 20px; 
             font-weight: bold; 
             display: flex;
@@ -102,51 +103,62 @@
             max-height: 600px; 
             overflow-y: auto; 
             white-space: pre-wrap;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             line-height: 1.6;
             font-size: 14px;
+            background: #f8f9fa;
         }
         .rag-indicator {
-            background: rgba(255, 107, 107, 0.3);
+            background: #28a745;
+            color: white;
             padding: 4px 8px;
-            border-radius: 12px;
+            border-radius: 4px;
             font-size: 11px;
         }
         .loading {
-            color: #00d4ff;
+            color: #007bff;
             font-style: italic;
         }
         .error {
-            color: #ff6b6b;
+            color: #dc3545;
             font-weight: bold;
         }
         .section-header {
-            color: #00d4ff;
+            color: #007bff;
             font-size: 18px;
             font-weight: bold;
             margin: 15px 0 10px 0;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+            border-bottom: 2px solid #007bff;
             padding-bottom: 5px;
         }
         .insights-section {
-            background: rgba(40, 167, 69, 0.1);
+            background: #d4edda;
             border-left: 4px solid #28a745;
             padding: 15px;
             margin: 10px 0;
-            border-radius: 0 8px 8px 0;
+            border-radius: 4px;
         }
         .recommendations-section {
-            background: rgba(255, 193, 7, 0.1);
+            background: #fff3cd;
             border-left: 4px solid #ffc107;
             padding: 15px;
             margin: 10px 0;
-            border-radius: 0 8px 8px 0;
+            border-radius: 4px;
         }
-        .status-info {
-            text-align: right;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #ccc;
+        .debug {
+            background: #ffffcc; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+        .pipeline-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
         }
     </style>
 </head>
@@ -154,79 +166,71 @@
     <div class="container">
         <div class="header">
             <h1>RAG-Enhanced Analysis Pipeline</h1>
-            <span class="badge">Agentic RAG: 3 items</span>
-            <span class="badge">0.279s</span>
+            <span class="badge" id="statusBadge">Ready</span>
+            <span class="badge" id="timeBadge">0.0s</span>
+        </div>
+        
+        <div class="pipeline-info">
+            <strong>Step 1:</strong> Financial data → <strong>Step 2:</strong> Prompt Engine → <strong>Step 3:</strong> RAG Enhancement → <strong>Step 4:</strong> Final Analysis
         </div>
         
         <div class="section">
-            <h3>RAG-Enhanced Analysis Pipeline</h3>
-            <p><strong>Step 1:</strong> Financial data → <strong>Step 2:</strong> Prompt Engine → <strong>Step 3:</strong> RAG Enhancement → <strong>Step 4:</strong> Final Analysis</p>
-            <div style="margin: 15px 0; padding: 10px; background: rgba(0,212,255,0.1); border-radius: 6px;">
-                <strong>Input:</strong> Provide financial data that will be sent to the prompt-engine to generate a structured prompt, which will then be enhanced with RAG knowledge augmentation.
-            </div>
+            <h3>Financial Data Input</h3>
+            <p>Provide financial data that will be sent to the prompt-engine to generate a structured prompt, which will then be enhanced with RAG knowledge augmentation.</p>
+            
             <textarea id="analysisData" placeholder='{"transactions": [{"date": "2024-01-15", "amount": 1500.00, "type": "credit", "description": "Salary"}], "account_balance": 2250.00}'></textarea>
-            <br>
-            <button class="button" onclick="processFullPipeline()">Full RAG Pipeline</button>
-            <button class="button" onclick="processAgenticPipeline()">Agentic Pipeline</button>
-            <button class="button secondary" onclick="loadExample()">Load Example</button>
-            <button class="button secondary" onclick="clearResults()">Clear</button>
+            
+            <button onclick="processFullPipeline()">Full RAG Pipeline</button>
+            <button onclick="processAgenticPipeline()">Agentic Pipeline</button>
+            <button class="secondary" onclick="loadExample()">Load Example</button>
+            <button class="secondary" onclick="toggleDebug()">Toggle Debug</button>
+            <button class="secondary" onclick="clearResults()">Clear</button>
         </div>
         
-        <div id="resultsContainer" class="result-container" style="display: block;">
+        <div id="debug" class="debug">
+            <h3>Debug Info:</h3>
+            <div id="debugContent">Debug mode enabled</div>
+        </div>
+        
+        <div id="resultsContainer" class="result-container">
             <div class="result-header">
                 <span>Analysis Results</span>
                 <div>
-                    <span class="rag-indicator" id="ragIndicator">Agentic RAG: 3 items</span>
-                    <span style="margin-left: 10px; font-size: 12px;" id="processingTime">0.279s</span>
+                    <span class="rag-indicator" id="ragIndicator">RAG: Ready</span>
+                    <span style="margin-left: 10px; font-size: 12px;" id="processingTime">0.0s</span>
                 </div>
             </div>
             <div id="resultsContent" class="result-content">
-                <div class="section-header">🤖 AUTONOMOUS AGENTIC ANALYSIS</div>
-                <div style="background: rgba(138, 43, 226, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
-                    <div style="margin: 5px 0;"><strong>AUTONOMOUS MODE:</strong> ENABLED</div>
-                    <div style="margin: 5px 0;"><strong>RAG ENHANCEMENT:</strong> ACTIVE</div>
-                    <div style="margin: 5px 0;"><strong>MULTI-STEP REASONING:</strong> ENGAGED</div>
-                    <div style="margin: 5px 0;"><strong>ENHANCED PROMPT INTEGRATION:</strong></div>
-                    <div style="margin: 5px 0; padding-left: 20px;">✅ Prompt generated by prompt-engine</div>
-                    <div style="margin: 5px 0; padding-left: 20px;">✅ Enhanced with RAG knowledge base</div>
-                    <div style="margin: 5px 0; padding-left: 20px;">✅ Applied domain expertise and best practices</div>
-                </div>
-                
-                <div class="section-header">⚙️ AUTONOMOUS REASONING PROCESS:</div>
-                <div style="background: rgba(255, 193, 7, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
-                    <div style="margin: 8px 0;">Agent processed 5 transactions with autonomous pattern recognition</div>
-                    <div style="margin: 8px 0;">Applied machine learning insights for transaction categorization</div>
-                    <div style="margin: 8px 0;">Cross-referenced patterns with knowledge base for anomaly detection</div>
-                    <div style="margin: 8px 0;"><strong>Autonomous liquidity assessment:</strong> $2,175.50</div>
-                    <div style="margin: 8px 0;">Applied predictive modeling for cash flow forecasting</div>
-                    <div style="margin: 8px 0;">Risk scoring based on historical patterns and industry benchmarks</div>
-                </div>
-                
-                <div style="margin: 10px 0;">COMPREHENSIVE FINANCIAL ANALYSIS</div>
-                
-                <div class="section-header">🔍 SECTION 1: INSIGHTS</div>
-                <div class="insights-section">
-                    <div style="margin: 10px 0;"></div>
-                </div>
-                
-                <div class="section-header">📈 ENHANCED FINANCIAL ANALYSIS REPORT</div>
-                <div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
-                    <div style="margin: 10px 0;"></div>
-                </div>
+                No analysis performed yet. Click a pipeline button to start analysis.
             </div>
-        </div>
-        
-        <div class="status-info">
-            AUTONOMOUS AGENTIC ANALYSIS<br>
-            AUTONOMOUS MODE: ENABLED<br>
-            RAG ENHANCEMENT: ACTIVE<br>
-            MULTI-STEP REASONING: ENGAGED<br>
-            ENHANCED PROMPT INTEGRATION:
         </div>
     </div>
     
     <script>
+        let debugMode = false;
+        
+        function toggleDebug() {
+            debugMode = !debugMode;
+            document.getElementById('debug').style.display = debugMode ? 'block' : 'none';
+        }
+        
+        function log(message) {
+            if (debugMode) {
+                const debugContent = document.getElementById('debugContent');
+                debugContent.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+            }
+            console.log(message);
+        }
+        
+        function updateStatus(status, time = null) {
+            document.getElementById('statusBadge').textContent = status;
+            if (time !== null) {
+                document.getElementById('timeBadge').textContent = time + 's';
+            }
+        }
+        
         function loadExample() {
+            log('Loading example data...');
             document.getElementById('analysisData').value = JSON.stringify({
                 "transactions": [
                     {"date": "2024-01-15", "amount": 1500.00, "type": "credit", "description": "Salary deposit"},
@@ -312,38 +316,52 @@
             const ragEl = document.getElementById('ragIndicator');
             
             try {
+                log('Starting Full RAG Pipeline...');
+                updateStatus('Processing');
                 container.style.display = 'block';
                 content.innerHTML = '<div class="loading">🔄 Processing Full RAG Pipeline...</div>';
                 
+                log('Parsing input data...');
                 const inputData = JSON.parse(data);
                 
+                log('Sending request to /pipeline/full');
                 const response = await fetch('/pipeline/full', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ input_data: inputData })
                 });
                 
+                log('Response status: ' + response.status);
                 const result = await response.json();
                 
                 if (response.ok) {
+                    log('Pipeline completed successfully');
                     content.innerHTML = formatAnalysisResponse(result.analysis || 'Analysis completed successfully');
-                    timeEl.textContent = `${result.processing_time?.toFixed(3)}s`;
+                    const time = result.processing_time?.toFixed(3) || '0.0';
+                    timeEl.textContent = `${time}s`;
+                    updateStatus('Complete', time);
                     
                     if (result.rag_metadata?.rag_enabled) {
                         ragEl.textContent = `RAG: ${result.rag_metadata.context_items_used || 0} items`;
-                        ragEl.style.background = 'rgba(40, 167, 69, 0.3)';
+                        ragEl.style.background = '#28a745';
+                        log(`RAG used ${result.rag_metadata.context_items_used || 0} context items`);
                     } else {
                         ragEl.textContent = 'RAG: Pipeline Mode';
-                        ragEl.style.background = 'rgba(255, 193, 7, 0.3)';
+                        ragEl.style.background = '#ffc107';
+                        log('RAG in pipeline mode');
                     }
                 } else {
+                    log('Pipeline error: ' + (result.error || 'Unknown error'));
                     content.innerHTML = '<div class="error">Pipeline Error: ' + (result.error || 'Unknown error') + '</div>';
+                    updateStatus('Error');
                 }
                 
             } catch (error) {
+                log('Exception: ' + error.message);
                 content.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
                 ragEl.textContent = 'RAG: Error';
-                ragEl.style.background = 'rgba(220, 53, 69, 0.3)';
+                ragEl.style.background = '#dc3545';
+                updateStatus('Error');
             }
         }
         
@@ -355,43 +373,64 @@
             const ragEl = document.getElementById('ragIndicator');
             
             try {
+                log('Starting Agentic Pipeline...');
+                updateStatus('Processing');
                 container.style.display = 'block';
                 content.innerHTML = '<div class="loading">🤖 Processing Agentic Pipeline...</div>';
                 
+                log('Parsing input data...');
                 const inputData = JSON.parse(data);
                 
+                log('Sending request to /pipeline/agentic');
                 const response = await fetch('/pipeline/agentic', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ input_data: inputData })
                 });
                 
+                log('Response status: ' + response.status);
                 const result = await response.json();
                 
                 if (response.ok) {
+                    log('Agentic pipeline completed successfully');
                     content.innerHTML = formatAnalysisResponse(result.analysis || 'Agentic analysis completed successfully');
-                    timeEl.textContent = `${result.processing_time?.toFixed(3)}s`;
+                    const time = result.processing_time?.toFixed(3) || '0.0';
+                    timeEl.textContent = `${time}s`;
+                    updateStatus('Complete', time);
                     
                     ragEl.textContent = `Agentic RAG: ${result.rag_metadata?.context_items_used || 0} items`;
-                    ragEl.style.background = 'rgba(138, 43, 226, 0.3)';
+                    ragEl.style.background = '#8a2be2';
+                    log(`Agentic RAG used ${result.rag_metadata?.context_items_used || 0} context items`);
                 } else {
+                    log('Agentic pipeline error: ' + (result.error || 'Unknown error'));
                     content.innerHTML = '<div class="error">Agentic Pipeline Error: ' + (result.error || 'Unknown error') + '</div>';
+                    updateStatus('Error');
                 }
                 
             } catch (error) {
+                log('Exception: ' + error.message);
                 content.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
                 ragEl.textContent = 'Agentic: Error';
-                ragEl.style.background = 'rgba(220, 53, 69, 0.3)';
+                ragEl.style.background = '#dc3545';
+                updateStatus('Error');
             }
         }
         
         function clearResults() {
+            log('Clearing results...');
             document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('resultsContent').innerHTML = 'No analysis performed yet. Click a pipeline button to start analysis.';
+            document.getElementById('ragIndicator').textContent = 'RAG: Ready';
+            document.getElementById('ragIndicator').style.background = '#28a745';
+            document.getElementById('processingTime').textContent = '0.0s';
+            updateStatus('Ready', '0.0');
         }
         
-        // Load example data on page load
+        // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            log('Page loaded, initializing...');
             loadExample();
+            updateStatus('Ready');
         });
     </script>
 </body>
