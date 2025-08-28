@@ -168,7 +168,7 @@ class ConfidenceEngine:
             
         except Exception as e:
             logger.error(f"Error calculating confidence: {e}")
-            return self._fallback_confidence_score(str(e))
+            raise Exception(f"Confidence calculation failed: {str(e)} - NO FALLBACKS")
     
     async def _score_data_grounding(self, response: str, input_data: Dict[str, Any], 
                                   reasoning_chain: Dict[str, Any]) -> float:
@@ -586,17 +586,7 @@ class ConfidenceEngine:
             "weakest_component": min(component_scores.items(), key=lambda x: x[1])[0]
         }
     
-    def _fallback_confidence_score(self, error: str) -> ConfidenceScore:
-        """Generate fallback confidence score when calculation fails"""
-        return ConfidenceScore(
-            overall_score=0.3,
-            component_scores={component: 0.3 for component in self.weights.keys()},
-            uncertainty_indicators=[f"Confidence calculation error: {error}"],
-            confidence_level="low",
-            explanation="Unable to calculate confidence due to system error.",
-            risk_factors=["Confidence calculation failed"],
-            reliability_indicators={"error": error}
-        )
+
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get confidence engine statistics"""

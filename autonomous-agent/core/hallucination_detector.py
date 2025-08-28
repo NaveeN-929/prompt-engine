@@ -172,7 +172,7 @@ class HallucinationDetector:
             
         except Exception as e:
             logger.error(f"Error in hallucination detection: {e}")
-            return self._fallback_detection_result(str(e))
+            raise Exception(f"Hallucination detection failed: {str(e)} - NO FALLBACKS")
     
     async def _check_data_grounding(self, response: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Check if response claims are grounded in input data"""
@@ -643,17 +643,7 @@ class HallucinationDetector:
         
         return recommendations
     
-    def _fallback_detection_result(self, error: str) -> HallucinationResult:
-        """Generate fallback result when detection fails"""
-        return HallucinationResult(
-            is_hallucinated=True,  # Conservative approach
-            confidence=0.8,
-            hallucination_type="detection_error",
-            evidence=[f"Detection system error: {error}"],
-            severity="high",
-            affected_portions=["Unable to validate"],
-            recommendations=["Manual review required due to detection system error"]
-        )
+
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get hallucination detection statistics"""

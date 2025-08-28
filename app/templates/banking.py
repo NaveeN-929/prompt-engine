@@ -4,7 +4,63 @@ Banking and Financial Templates
 
 from app.templates.base import PromptTemplate
 
-# Transaction Categorization Template
+# CRM Insights Analysis Template
+crm_insights_analysis = PromptTemplate(
+    name="crm_insights_analysis", 
+    context="crm_financial_insights",
+    data_type="transaction_history",
+    template="""
+    Based on customer transaction, card, and behavioral data across the provided time period, extract business insights followed by clear, proactive recommendations.
+
+    Transaction Data: {transaction_data}
+
+    **ANALYSIS REQUIREMENTS:**
+    - Identify meaningful financial patterns and trends
+    - Focus on actionable business intelligence
+    - Generate insights relevant to business growth and optimization
+    - Provide financial services recommendations where appropriate
+
+    **OUTPUT FORMAT:**
+    The format must follow exactly:
+
+    === SECTION 1: INSIGHTS ===
+    
+    Insight 1: [Single-sentence observation, phrased in natural, friendly language].
+    Insight 2: [Single-sentence observation, phrased in natural, friendly language].
+    [Continue for all meaningful insights discovered]
+
+    === SECTION 2: RECOMMENDATIONS ===
+    
+    Recommendation 1: [Single-sentence advisory or product/service suggestion, positioned as helpful, not salesy].
+    Recommendation 2: [Single-sentence advisory or product/service suggestion, positioned as helpful, not salesy].
+    [Continue for all relevant recommendations]
+
+    **GUIDELINES:**
+    - Each insight should be a complete, standalone observation
+    - Each recommendation should be actionable and specific
+    - Focus on business financial health and growth opportunities
+    - Suitable for CRM integration (cards, dashboards, automations)
+    - Only include insights relevant to business clients
+    - Use natural, conversational language
+    - Avoid technical jargon
+    - Be proactive and helpful, not pushy
+
+    **EXAMPLE INSIGHTS:**
+    - "You received 12 international payments last week — a 60% increase from the week before."
+    - "Your average monthly card spend on equipment has increased by 34% over the last 3 months."
+    - "Payroll expenses have risen by 22% over the last quarter."
+
+    **EXAMPLE RECOMMENDATIONS:**
+    - "Consider enabling a multi-currency account to reduce FX fees and improve settlement times."
+    - "We suggest exploring our flexible equipment financing options to preserve your cash flow."
+    - "Explore our short-term credit facility to support your growth during expansion phases."
+    """,
+    parameters={
+        "transaction_data": {"type": "json", "required": True}
+    }
+)
+
+# Legacy Transaction Categorization Template (maintained for compatibility)
 transaction_categorization = PromptTemplate(
     name="transaction_categorization",
     context="core_banking",

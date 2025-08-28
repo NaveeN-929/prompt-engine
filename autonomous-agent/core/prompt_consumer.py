@@ -32,7 +32,7 @@ class PromptConsumerService:
                     "response": response.json()
                 }
             else:
-                # Fallback to trying /health
+                # NO FALLBACKS - service must be available
                 try:
                     response = self.session.get(f"{self.prompt_engine_url}/health")
                     if response.status_code == 200:

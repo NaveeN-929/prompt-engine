@@ -379,7 +379,7 @@ class ReasoningEngine:
                 step_found = True
                 break
         
-        # Fallback: create generic reasoning steps
+        # NO FALLBACKS - require proper reasoning
         if not step_found:
             default_steps = [
                 ("Data Validation", "Verify data integrity and completeness"),
