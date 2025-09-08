@@ -16,7 +16,7 @@ from app.templates.banking import (
     card_spend_analysis,
     credit_utilization
 )
-# Try to import vector service, fallback gracefully if not available
+# Import vector service - required for full functionality
 try:
     from app.vector.vector_service import VectorService
     VECTOR_SERVICE_AVAILABLE = True
@@ -36,9 +36,12 @@ class AgenticPromptGenerator:
         self.template_registry = TemplateRegistry()
         self._register_templates()
         
-        # Vector database for fast similarity search
+        # Vector database for fast similarity search - NO FALLBACKS
         self.vector_service = None
-        if enable_vector_db and VECTOR_SERVICE_AVAILABLE and VectorService:
+        if enable_vector_db:
+            if not VECTOR_SERVICE_AVAILABLE or not VectorService:
+                raise Exception("Vector service dependencies not available. Vector database is required when enable_vector_db=True.")
+
             try:
                 # Import config for Qdrant settings
                 from config import QDRANT_HOST, QDRANT_PORT
@@ -46,7 +49,8 @@ class AgenticPromptGenerator:
                 print(f"Vector database enabled for ultra-fast prompt generation (Qdrant: {QDRANT_HOST}:{QDRANT_PORT})")
             except Exception as e:
                 print(f"Vector database unavailable: {e}")
-                print("Falling back to memory-based optimization")
+                print("Vector database is required - no fallbacks allowed")
+                raise Exception("Vector database unavailable. Vector database is required for operation.")
         else:
             print("Vector service disabled - using memory-based agentic mode")
         
@@ -594,7 +598,7 @@ The previous response did not follow the required format. Please restructure you
             )
             print(f"Stored successful pattern in vector database (quality: {quality_score:.2f})")
         
-        # Legacy learning systems (still useful for fallback)
+        # Legacy learning systems (used when vector service is disabled)
         self.interaction_history.append(interaction)
         
         # Update learning weights based on outcomes

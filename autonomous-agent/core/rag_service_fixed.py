@@ -73,8 +73,9 @@ class RAGService:
                 collections = self.client.get_collections()
                 logger.info(f"Connected to Qdrant at {self.qdrant_host}:{self.qdrant_port}")
             except Exception as e:
-                logger.warning(f"Qdrant connection failed: {e}, using in-memory mode")
-                self.client = QdrantClient(":memory:")
+                logger.error(f"Qdrant connection failed: {e}")
+                logger.error("Vector database unavailable - no fallbacks allowed")
+                raise Exception(f"Qdrant database unavailable at {self.qdrant_host}:{self.qdrant_port}. Vector database is required for operation.")
             
             # Create collections
             await self._create_collections()

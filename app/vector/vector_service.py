@@ -19,27 +19,19 @@ class VectorService:
     """
     
     def __init__(self, qdrant_host: str = "localhost", qdrant_port: int = 6333):
-        # Initialize Qdrant client with fallback options
+        # Initialize Qdrant client - NO FALLBACKS
         self.client = None
-        self.memory_mode = False
-        
+
         try:
-            # Try to connect to external Qdrant instance
+            # Connect to Qdrant instance
             self.client = QdrantClient(host=qdrant_host, port=qdrant_port)
             # Test the connection
             self.client.get_collections()
             print(f"🔗 Connected to Qdrant at {qdrant_host}:{qdrant_port}")
         except Exception as e:
-            try:
-                # Fallback to in-memory mode
-                print(f"⚠️ Could not connect to external Qdrant: {e}")
-                print("📝 Starting in memory-only mode")
-                self.client = QdrantClient(":memory:")
-                self.memory_mode = True
-            except Exception as e2:
-                print(f"❌ Could not initialize Qdrant client: {e2}")
-                print("🔄 Vector database will be disabled")
-                self.client = None
+            print(f"❌ Could not connect to Qdrant at {qdrant_host}:{qdrant_port}: {e}")
+            print("🚫 Vector database unavailable - no fallbacks allowed")
+            raise Exception(f"Qdrant database unavailable at {qdrant_host}:{qdrant_port}. Vector database is required for operation.")
         
         # Initialize embedding model with safer loading
         try:
@@ -85,8 +77,7 @@ class VectorService:
     def _setup_collections(self):
         """Setup Qdrant collections for different data types"""
         if not self.client:
-            print("⚠️ Qdrant client not available, skipping collection setup")
-            return
+            raise Exception("Qdrant client not available. Vector database is required for operation.")
             
         for collection_name in self.collections.values():
             try:
@@ -149,15 +140,14 @@ class VectorService:
         text_parts = flatten_dict(data)
         return " ".join(text_parts)
     
-    def find_similar_prompts(self, input_data: Dict[str, Any], 
-                           limit: int = 5, 
+    def find_similar_prompts(self, input_data: Dict[str, Any],
+                           limit: int = 5,
                            min_similarity: float = 0.7) -> List[Dict[str, Any]]:
         """
         Find similar prompts using vector similarity search
         """
         if not self.client:
-            print("⚠️ Vector database not available, returning empty results")
-            return []
+            raise Exception("Vector database not available. Vector database is required for operation.")
             
         try:
             # Convert input data to searchable text
@@ -196,8 +186,8 @@ class VectorService:
             print(f"⚠️ Error in similarity search: {e}")
             return []
     
-    def store_successful_prompt(self, input_data: Dict[str, Any], 
-                              prompt: str, 
+    def store_successful_prompt(self, input_data: Dict[str, Any],
+                              prompt: str,
                               response: str,
                               metadata: Dict[str, Any],
                               quality_score: float = 1.0):
@@ -205,8 +195,7 @@ class VectorService:
         Store a successful prompt generation for future similarity matching
         """
         if not self.client:
-            print("⚠️ Vector database not available, cannot store prompt")
-            return
+            raise Exception("Vector database not available. Vector database is required for operation.")
             
         try:
             # Create unique ID based on input data
@@ -247,12 +236,15 @@ class VectorService:
         except Exception as e:
             print(f"❌ Error storing prompt: {e}")
     
-    def find_successful_patterns(self, context: str, 
-                               data_type: str, 
+    def find_successful_patterns(self, context: str,
+                               data_type: str,
                                limit: int = 3) -> List[Dict[str, Any]]:
         """
         Find successful patterns for specific context and data type
         """
+        if not self.client:
+            raise Exception("Vector database not available. Vector database is required for operation.")
+
         try:
             # Search by context and data type in metadata
             search_result = self.client.scroll(
@@ -297,7 +289,7 @@ class VectorService:
         Quick cache lookup for previously optimized prompts
         """
         if not self.client:
-            return None
+            raise Exception("Vector database not available. Vector database is required for operation.")
             
         try:
             # Create hash for cache key
@@ -408,6 +400,9 @@ class VectorService:
         """
         Clean up old patterns to keep the vector database optimized
         """
+        if not self.client:
+            raise Exception("Vector database not available. Vector database is required for operation.")
+
         try:
             cutoff_time = time.time() - (max_age_days * 24 * 60 * 60)
             

@@ -418,7 +418,7 @@ def start_fixed_server():
                 vector_collections = 0
                 if app.agentic_gen and hasattr(app.agentic_gen, 'vector_service'):
                     if app.agentic_gen.vector_service and app.agentic_gen.vector_service.client:
-                        vector_status = "memory_mode" if app.agentic_gen.vector_service.memory_mode else "connected"
+                        vector_status = "connected"
                         try:
                             collections = app.agentic_gen.vector_service.client.get_collections()
                             vector_collections = len(collections.collections)
@@ -521,7 +521,7 @@ def start_fixed_server():
                 
                 return jsonify({
                     "status": "active",
-                    "mode": "memory" if vector_service.memory_mode else "persistent",
+                    "mode": "persistent",
                     "embedding_model": "all-MiniLM-L6-v2",
                     "embedding_dimension": vector_service.embedding_dim,
                     "statistics": stats,
@@ -551,16 +551,16 @@ def start_fixed_server():
                     cluster_info = vector_service.client.get_cluster_info()
                     return jsonify({
                         "status": "connected",
-                        "mode": "memory" if vector_service.memory_mode else "persistent",
+                        "mode": "persistent",
                         "cluster_info": cluster_info,
                         "collections_count": len(vector_service.collections)
                     })
                 except:
-                    # Fallback for memory mode or simplified info
+                    # Fallback for simplified info
                     collections = vector_service.client.get_collections()
                     return jsonify({
                         "status": "connected",
-                        "mode": "memory" if vector_service.memory_mode else "persistent",
+                        "mode": "persistent",
                         "collections_count": len(collections.collections),
                         "available_collections": [col.name for col in collections.collections]
                     })
