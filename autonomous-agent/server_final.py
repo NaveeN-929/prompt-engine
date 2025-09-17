@@ -714,8 +714,31 @@ def health_check():
         }
     }), 200 if all_services_healthy else 503
 
+@app.route('/test/generic-insights', methods=['POST'])
+def test_generic_insights():
+    """Test endpoint for generic CRM insights without dependencies"""
+    try:
+        data = request.get_json()
+        if not data or 'input_data' not in data:
+            return jsonify({"error": "Missing input_data field"}), 400
+        
+        input_data = data['input_data']
+        
+        # Test the generic insights function directly
+        analysis = generate_crm_insights_analysis(input_data, "test_prompt")
+        
+        return jsonify({
+            "status": "success",
+            "analysis": analysis,
+            "test_mode": True,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "error"}), 500
+
 def generate_crm_insights_analysis(input_data, rag_enhanced_prompt):
-    """Generate CRM-format insights and recommendations using RAG-enhanced analysis"""
+    """Generate dynamic CRM insights based on actual transaction patterns"""
     
     insights = []
     recommendations = []
@@ -724,129 +747,25 @@ def generate_crm_insights_analysis(input_data, rag_enhanced_prompt):
         if "transactions" in input_data:
             transactions = input_data["transactions"]
             
-            # Calculate core financial metrics - AUTHORITATIVE LOGIC
-            # Calculate from dataset
-            dataset_credits = sum(tx.get("amount", 0) for tx in transactions 
-                                 if tx.get("type") == "credit")
-            dataset_debits = sum(abs(tx.get("amount", 0)) for tx in transactions 
-                               if tx.get("type") == "debit")
-            
-            # Use authoritative values when dataset matches known test case
-            if (abs(dataset_credits - 64600) < 10 and abs(dataset_debits - 25612) < 10 and 
-                len(transactions) == 49):
-                # This is the known test case - use authoritative values
-                credits = 68100  # Authoritative total including all business transactions
-                debits = 31422   # Authoritative total including all business expenses  
-                net_flow = 36678  # Authoritative net cash flow
+            if not transactions:
+                insights = ["No transaction data available for analysis"]
+                recommendations = ["Please provide transaction history to generate meaningful insights"]
             else:
-                # Use calculated values for other datasets
-                credits = dataset_credits
-                debits = dataset_debits
-                net_flow = credits - debits
-            
-            # Time-based analysis
-            from datetime import datetime
-            dates = [tx.get("date") for tx in transactions if tx.get("date")]
-            if dates:
-                first_date = min(datetime.strptime(d, "%Y-%m-%d") for d in dates)
-                last_date = max(datetime.strptime(d, "%Y-%m-%d") for d in dates)
-                days_span = (last_date - first_date).days + 1
-                months_span = max(1, days_span / 30.44)
-                
-                monthly_income = credits / months_span
-                monthly_expenses = debits / months_span
-                monthly_net = net_flow / months_span
-            else:
-                monthly_income = credits
-                monthly_expenses = debits 
-                monthly_net = net_flow
-            
-            # Categorize transactions for business insights
-            categories = categorize_spending_for_crm(transactions)
-            
-            # Generate insights based on financial patterns
-            
-            # Cash flow insight - use monthly figures for more accurate rates
-            if net_flow > 0:
-                # Calculate monthly savings rate for more meaningful percentage
-                monthly_savings_rate = (monthly_net / monthly_income * 100) if monthly_income > 0 else 0
-                insights.append(f"You maintained a positive cash flow of ${net_flow:,.2f} with a {monthly_savings_rate:.1f}% monthly savings rate over the analysis period.")
-                if monthly_savings_rate > 50:
-                    recommendations.append("Consider investing your surplus cash in growth opportunities or higher-yield savings accounts.")
-                else:
-                    recommendations.append("Optimize your cash allocation between emergency reserves and business reinvestment.")
-            
-            # Revenue growth insight
-            credit_txs = [tx for tx in transactions if tx.get("type") == "credit"]
-            if len(credit_txs) >= 5:
-                avg_invoice = credits / len(credit_txs)
-                large_invoices = [tx for tx in credit_txs if tx.get("amount", 0) > avg_invoice * 1.5]
-                if large_invoices:
-                    insights.append(f"You received {len(large_invoices)} high-value payments above ${avg_invoice * 1.5:,.2f} in the analysis period.")
-                    recommendations.append("Leverage your strong client relationships to secure retainer agreements or larger project commitments.")
-            
-            # Expense efficiency insight - using authoritative totals for known test case
-            expense_categories = {k: v for k, v in categories.items() if "Revenue" not in k and "Income" not in k}
-            if expense_categories:
-                largest_expense = max(expense_categories.items(), key=lambda x: x[1])
-                
-                # Use authoritative values for percentage calculations in known test case
-                if (abs(dataset_credits - 64600) < 10 and abs(dataset_debits - 25612) < 10 and len(transactions) == 49):
-                    # Apply authoritative corrections for known categories
-                    if largest_expense[0] == "Rent & Facilities":
-                        corrected_amount = 7000  # Jan + Feb rent  
-                        expense_pct = (corrected_amount / 31422 * 100)  # Use authoritative debits
-                        insights.append(f"Your largest expense category is {largest_expense[0]} at ${corrected_amount:,.2f} ({expense_pct:.1f}% of total expenses).")
-                    else:
-                        expense_pct = (largest_expense[1] / 31422 * 100)  # Use authoritative debits
-                        insights.append(f"Your largest expense category is {largest_expense[0]} at ${largest_expense[1]:,.2f} ({expense_pct:.1f}% of total expenses).")
-                else:
-                    expense_pct = (largest_expense[1] / debits * 100) if debits > 0 else 0
-                    insights.append(f"Your largest expense category is {largest_expense[0]} at ${largest_expense[1]:,.2f} ({expense_pct:.1f}% of total expenses).")
-                
-                if "Rent" in largest_expense[0] and expense_pct > 30:
-                    recommendations.append("Consider renegotiating lease terms or exploring flexible workspace options to optimize overhead costs.")
-                elif "Payroll" in largest_expense[0] and expense_pct > 40:
-                    recommendations.append("Explore productivity tools or process automation to maximize your team efficiency and ROI.")
-                else:
-                    recommendations.append(f"Review {largest_expense[0].lower()} spending patterns to identify potential cost optimization opportunities.")
-            
-            # Technology spending insight - using authoritative totals for known test case  
-            tech_spend = categories.get("Software & Technology", 0)
-            if tech_spend > 0:
-                # Use authoritative values for tech calculations in known test case
-                if (abs(dataset_credits - 64600) < 10 and abs(dataset_debits - 25612) < 10 and len(transactions) == 49):
-                    corrected_tech_spend = 4820  # Authoritative tech total
-                    tech_pct = (corrected_tech_spend / 31422 * 100)  # Use authoritative debits
-                    insights.append(f"Technology and software expenses account for ${corrected_tech_spend:,.2f} ({tech_pct:.1f}%) of your operational costs.")
-                else:
-                    tech_pct = (tech_spend / debits * 100) if debits > 0 else 0
-                    insights.append(f"Technology and software expenses account for ${tech_spend:,.2f} ({tech_pct:.1f}%) of your operational costs.")
-                
-                if tech_pct > 15:
-                    recommendations.append("Consider consolidating software subscriptions or negotiating volume discounts to reduce technology overhead.")
-                else:
-                    recommendations.append("Your technology investment appears well-balanced - consider additional automation tools to drive efficiency.")
-            
-            # Liquidity insight - fixed calculation using authoritative values for known test case
-            if "account_balance" in input_data:
-                balance = input_data["account_balance"]
-                
-                # Use authoritative monthly expenses for known test case
-                if (abs(dataset_credits - 64600) < 10 and abs(dataset_debits - 25612) < 10 and len(transactions) == 49):
-                    corrected_monthly_expenses = 31422 / months_span  # Use authoritative debits
-                    runway_months = (balance / corrected_monthly_expenses) if corrected_monthly_expenses > 0 else float('inf')
-                else:
-                    runway_months = (balance / monthly_expenses) if monthly_expenses > 0 else float('inf')
-                
-                insights.append(f"Your current balance of ${balance:,.2f} provides approximately {runway_months:.1f} months of operational runway.")
-                
-                if runway_months < 3:
-                    recommendations.append("Priority focus on building emergency reserves - consider invoice financing or short-term credit facilities.")
-                elif runway_months > 6:
-                    recommendations.append("Your strong cash position enables strategic investments in growth initiatives or equipment upgrades.")
-                else:
-                    recommendations.append("Maintain current cash management practices while exploring opportunities to extend payment terms with suppliers.")
+                # Analyze actual transaction patterns dynamically
+                insights, recommendations = analyze_transaction_patterns(transactions)
+        else:
+            insights = ["No financial data provided for analysis"]
+            recommendations = ["Please submit transaction data to receive personalized insights"]
+        
+        # Ensure we have exactly 3 insights and 3 recommendations
+        while len(insights) < 3:
+            insights.append("Additional transaction data would enable more comprehensive analysis")
+        while len(recommendations) < 3:
+            recommendations.append("Consider providing more transaction history for deeper insights")
+        
+        # Limit to 3 each
+        insights = insights[:3]
+        recommendations = recommendations[:3]
         
         # Format response in CRM structure
         analysis = "=== SECTION 1: INSIGHTS ===\\n\\n"
@@ -869,6 +788,168 @@ def generate_crm_insights_analysis(input_data, rag_enhanced_prompt):
         raise Exception(f"CRM insights generation failed: {str(e)}")
     
     return analysis
+
+def analyze_transaction_patterns(transactions):
+    """Dynamically analyze transaction patterns to generate relevant insights"""
+    insights = []
+    recommendations = []
+    
+    # Calculate basic financial metrics
+    credits = sum(tx.get("amount", 0) for tx in transactions if tx.get("type") == "credit")
+    debits = sum(abs(tx.get("amount", 0)) for tx in transactions if tx.get("type") == "debit")
+    net_flow = credits - debits
+    
+    # Categorize spending
+    categories = categorize_spending_for_crm(transactions)
+    
+    # Analyze transaction frequency and timing
+    from datetime import datetime
+    dates = [tx.get("date") for tx in transactions if tx.get("date")]
+    credit_txs = [tx for tx in transactions if tx.get("type") == "credit"]
+    debit_txs = [tx for tx in transactions if tx.get("type") == "debit"]
+    
+    # 1. CASH FLOW ANALYSIS
+    if net_flow > credits * 0.1:  # Positive cash flow > 10% of income
+        insights.append("Business demonstrates strong positive cash flow with income consistently exceeding expenses")
+        recommendations.append("Consider setting aside surplus funds in high-yield savings or term deposits to build financial resilience")
+    elif net_flow > 0:
+        insights.append("Cash flow remains positive though margins could be optimized")
+        recommendations.append("Review expense categories to identify potential cost optimization opportunities")
+    elif net_flow > -credits * 0.2:  # Small deficit
+        insights.append("Cash flow shows temporary deficit that may indicate seasonal patterns")
+        recommendations.append("Consider a flexible overdraft facility to smooth out cash flow fluctuations (Upsell)")
+    else:
+        insights.append("Cash flow requires immediate attention with expenses significantly exceeding income")
+        recommendations.append("Priority focus on expense reduction and revenue enhancement strategies")
+    
+    # 2. TRANSACTION VOLUME AND PATTERN ANALYSIS
+    if len(credit_txs) >= 10:
+        insights.append("Revenue stream shows healthy transaction volume with diverse payment sources")
+        recommendations.append("Automated payment reminders could further optimize collection efficiency")
+    elif len(credit_txs) >= 5:
+        insights.append("Payment collection shows regular activity with room for growth")
+        recommendations.append("Consider expanding customer base or increasing transaction frequency through retention programs")
+    elif len(credit_txs) >= 2:
+        insights.append("Revenue concentration suggests dependence on key clients")
+        recommendations.append("Diversifying income sources could reduce business risk and improve stability")
+    else:
+        insights.append("Limited transaction activity indicates potential for business expansion")
+        recommendations.append("Focus on customer acquisition and revenue generation strategies")
+    
+    # 3. EXPENSE CATEGORY ANALYSIS
+    if categories:
+        expense_categories = {k: v for k, v in categories.items() if "Revenue" not in k and "Income" not in k}
+        if expense_categories:
+            largest_category = max(expense_categories.items(), key=lambda x: x[1])
+            category_name, category_amount = largest_category
+            total_expenses = sum(expense_categories.values())
+            category_percentage = (category_amount / total_expenses * 100) if total_expenses > 0 else 0
+            
+            if "Marketing" in category_name or "Advertising" in category_name:
+                if category_percentage > 25:
+                    insights.append("Marketing investment represents significant portion of operational spend")
+                    recommendations.append("Consider a revolving credit line to support marketing campaigns without cash flow strain (Upsell)")
+                else:
+                    insights.append("Marketing spend appears well-balanced within overall expense structure")
+                    recommendations.append("Current marketing budget allocation supports sustainable growth")
+            elif "Software" in category_name or "Technology" in category_name:
+                if category_percentage > 20:
+                    insights.append("Technology expenses indicate strong digital infrastructure investment")
+                    recommendations.append("Review software subscriptions for consolidation opportunities and volume discounts")
+                else:
+                    insights.append("Technology spend reflects modern business operations approach")
+                    recommendations.append("Current tech investment level supports operational efficiency")
+            elif "Rent" in category_name or "Facilities" in category_name:
+                if category_percentage > 30:
+                    insights.append("Facility costs represent substantial portion of operational expenses")
+                    recommendations.append("Explore flexible workspace options or lease renegotiation to optimize overhead")
+                else:
+                    insights.append("Facility expenses appear proportionate to business operations")
+                    recommendations.append("Current workspace arrangement supports business needs effectively")
+            elif "Payroll" in category_name or "Staff" in category_name:
+                if category_percentage > 40:
+                    insights.append("Personnel costs indicate significant investment in human resources")
+                    recommendations.append("Consider productivity tools to maximize team efficiency and ROI")
+                else:
+                    insights.append("Staffing costs reflect appropriate investment in team capabilities")
+                    recommendations.append("Current staffing level appears aligned with business operations")
+            else:
+                insights.append(f"Primary expense category focuses on {category_name.lower()} operations")
+                recommendations.append(f"Monitor {category_name.lower()} spending patterns for optimization opportunities")
+    
+    # 4. INTERNATIONAL AND CURRENCY ANALYSIS
+    intl_keywords = ["international", "foreign", "fx", "exchange", "usd", "eur", "gbp", "currency", "wire", "swift"]
+    intl_transactions = [tx for tx in transactions if any(word in tx.get("description", "").lower() for word in intl_keywords)]
+    
+    if len(intl_transactions) >= 3:
+        insights.append("International transaction activity suggests global business operations")
+        recommendations.append("A multi-currency business account could reduce conversion costs and improve reconciliation (Cross-sell)")
+    elif len(intl_transactions) >= 1:
+        insights.append("Occasional international transactions indicate potential for global expansion")
+        recommendations.append("Consider international banking services as global activity increases")
+    
+    # 5. TRANSACTION FREQUENCY ANALYSIS
+    if dates and len(dates) > 1:
+        try:
+            date_objects = [datetime.strptime(d, "%Y-%m-%d") for d in dates]
+            date_range = (max(date_objects) - min(date_objects)).days
+            if date_range > 0:
+                daily_transaction_rate = len(transactions) / date_range
+                if daily_transaction_rate >= 2:
+                    insights.append("High transaction frequency indicates active business operations")
+                    recommendations.append("Automated accounting integration could streamline financial management")
+                elif daily_transaction_rate >= 0.5:
+                    insights.append("Regular transaction patterns support consistent business activity")
+                    recommendations.append("Consider payment automation tools to improve efficiency")
+        except:
+            pass  # Skip if date parsing fails
+    
+    # 6. PAYMENT PATTERN ANALYSIS
+    large_credits = [tx for tx in credit_txs if tx.get("amount", 0) > credits / len(credit_txs) * 2 if credit_txs]
+    if len(large_credits) >= 3:
+        insights.append("Revenue includes several high-value transactions indicating strong client relationships")
+        recommendations.append("Leverage client success stories to secure additional large contracts or retainer agreements")
+    
+    # Remove duplicates and ensure variety
+    insights = list(dict.fromkeys(insights))  # Remove duplicates while preserving order
+    recommendations = list(dict.fromkeys(recommendations))
+    
+    # Ensure we have banking product recommendations
+    recommendations = ensure_banking_product_mix(recommendations, categories, net_flow)
+    
+    return insights, recommendations
+
+def ensure_banking_product_mix(recommendations, categories, net_flow):
+    """Ensure we have appropriate banking product recommendations"""
+    
+    # Count existing banking product recommendations
+    banking_products = 0
+    for rec in recommendations:
+        if "(Upsell)" in rec or "(Cross-sell)" in rec:
+            banking_products += 1
+    
+    # Add banking products if we don't have enough
+    if banking_products < 2:
+        # Add appropriate banking products based on business patterns
+        if net_flow > 0:
+            if not any("savings" in rec.lower() or "deposit" in rec.lower() for rec in recommendations):
+                recommendations.append("Consider high-yield savings accounts to optimize surplus cash management (Upsell)")
+        else:
+            if not any("overdraft" in rec.lower() or "credit" in rec.lower() for rec in recommendations):
+                recommendations.append("A flexible overdraft facility could provide cash flow stability during peak expense periods (Upsell)")
+        
+        # Add cross-sell based on business type
+        if categories:
+            expense_categories = {k: v for k, v in categories.items() if "Revenue" not in k}
+            if expense_categories:
+                largest_category = max(expense_categories.items(), key=lambda x: x[1])
+                if "Marketing" in largest_category[0] or "Software" in largest_category[0]:
+                    if not any("multi-currency" in rec.lower() for rec in recommendations):
+                        recommendations.append("Digital payment solutions could streamline your marketing and software subscriptions (Cross-sell)")
+                elif not any("payroll" in rec.lower() or "cash management" in rec.lower() for rec in recommendations):
+                    recommendations.append("Automated payroll and cash management services could improve operational efficiency (Cross-sell)")
+    
+    return recommendations
 
 def categorize_spending_for_crm(transactions):
     """Categorize transactions optimized for CRM insights"""

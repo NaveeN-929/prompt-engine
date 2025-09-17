@@ -6,6 +6,7 @@ import time
 from typing import Dict, Any, Tuple, List
 from app.templates.base import TemplateRegistry
 from app.templates.banking import (
+    crm_insights_refined,
     transaction_categorization,
     cash_flow_analysis,
     credit_assessment,
@@ -24,6 +25,7 @@ class PromptGenerator:
     def _register_templates(self):
         """Register all available templates"""
         # Register banking templates
+        self.template_registry.register(crm_insights_refined)
         self.template_registry.register(transaction_categorization)
         self.template_registry.register(cash_flow_analysis)
         self.template_registry.register(credit_assessment)

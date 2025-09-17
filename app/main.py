@@ -16,6 +16,7 @@ from config import OLLAMA_HOST, OLLAMA_PORT, OLLAMA_MODEL, FLASK_HOST, FLASK_POR
 
 # Import our components
 from app.generators.agentic_prompt_generator import AgenticPromptGenerator
+from app.generators.prompt_generator import PromptGenerator
 from app.generators.response_formatter import ResponseFormatter
 from app.llm.mock_llm import OllamaLLM
 from app.feedback.feedback_system import FeedbackSystem
@@ -27,6 +28,7 @@ CORS(app)
 # Initialize system components - PURE AGENTIC MODE
 print("🚀 Initializing Pure Agentic Prompt Engine with Vector Database...")
 agentic_generator = AgenticPromptGenerator(enable_vector_db=True)
+prompt_generator = PromptGenerator()
 ollama_llm = OllamaLLM(
     base_url=f"http://{OLLAMA_HOST}:{OLLAMA_PORT}",
     model=OLLAMA_MODEL
@@ -65,7 +67,7 @@ def generate_prompt():
         },
         "context": "core_banking" (optional - AI will auto-detect),
         "data_type": "transaction_history" (optional - AI will auto-detect),
-        "generation_type": "standard" | "reasoning" | "autonomous" | "optimize" (optional)
+        "generation_type": "standard" | "reasoning" | "autonomous" | "optimize" | "crm_insights" (optional)
     }
     """
     try:
@@ -84,9 +86,23 @@ def generate_prompt():
         context = data.get('context')
         data_type = data.get('data_type')
         generation_type = data.get('generation_type', 'standard')
-        
+
         # Choose generation method
-        if generation_type == 'reasoning':
+        if generation_type == 'crm_insights':
+            # Use the refined CRM insights template
+            transaction_data = input_data
+            prompt_text, template_name, prompt_time = prompt_generator.generate_prompt(
+                context="crm_financial_insights",
+                data_type="transaction_history",
+                input_data={"transaction_data": transaction_data}
+            )
+            metadata = {
+                'template_used': template_name,
+                'generation_mode': 'crm_insights',
+                'context': 'crm_financial_insights',
+                'data_type': 'transaction_history'
+            }
+        elif generation_type == 'reasoning':
             reasoning_steps = data.get('reasoning_steps', 5)
             prompt_text, metadata, prompt_time = agentic_generator.generate_multi_step_reasoning_prompt(
                 input_data=input_data,
@@ -119,9 +135,15 @@ def generate_prompt():
             prompt=prompt_text,
             template_name=template_name
         )
-        
-        # Format response to ensure it follows the required two-section structure
-        formatted_response = response_formatter.format_response(response_text)
+
+        # Format response based on generation type
+        if generation_type == 'crm_insights':
+            # Use paired response formatter for CRM insights
+            formatted_result = response_formatter.format_paired_response(response_text)
+            formatted_response = formatted_result['display_output']
+        else:
+            # Use standard two-section formatter for other types
+            formatted_response = response_formatter.format_response(response_text)
         
         total_time = time.time() - start_time
         
@@ -159,6 +181,15 @@ def generate_prompt():
             "vector_accelerated": metadata.get('generation_mode') == 'vector_accelerated',
             "response_structure_validated": response_formatter.validate_response_structure(formatted_response)
         }
+
+        # Add CRM-specific fields if this is a CRM insights request
+        if generation_type == 'crm_insights':
+            response_data.update({
+                "json_output": formatted_result['json_output'],  # For RAG pipeline
+                "display_output": formatted_result['display_output'],  # For CRM display
+                "pairs_count": formatted_result['pairs_count'],
+                "format_type": "paired_insights_recommendations"
+            })
         
         return jsonify(response_data)
         
@@ -519,7 +550,7 @@ def not_found(error):
             "/",
             "/generate",
             "/learn",
-            "/feedback", 
+            "/feedback",
             "/capabilities",
             "/vector/stats",
             "/agentic/analyze",

@@ -4,9 +4,82 @@ Banking and Financial Templates
 
 from app.templates.base import PromptTemplate
 
-# CRM Insights Analysis Template
+# Refined CRM Insights Analysis Template (Updated for RAG Pipeline)
+crm_insights_refined = PromptTemplate(
+    name="crm_insights_refined",
+    context="crm_financial_insights",
+    data_type="transaction_history",
+    template="""
+    Generate up to 5 pairs of insight and recommendation for an SME business, based on the latest transaction and account data.
+
+    Transaction Data: {transaction_data}
+
+    **ANALYSIS REQUIREMENTS:**
+    - Insights must highlight patterns, behaviours, or emerging issues from transaction data
+    - Insights should be slightly broader than basic metrics but remain data-driven and immediately useful to Relationship Managers
+    - Recommendations must be clear, helpful, and 3 out of 5 should include a product/service suggestion from our banking catalog
+    - Use natural, CRM-friendly language throughout — not technical jargon
+    - Language should feel advisory, not salesy — like a helpful banker would say
+    - Each pair must be fully self-contained and not reference other pairs
+
+    **BANKING PRODUCT INTEGRATION:**
+    EXACTLY 3 out of the 5 recommendations MUST include banking product suggestions.
+    Mark these recommendations with (Upsell) or (Cross-sell) labels.
+
+    When suggesting banking products, use these advisory phrases:
+    - "You may benefit from..."
+    - "Consider exploring..."
+    - "Your situation suggests you might find value in..."
+    - "Given your cash flow patterns, you could consider..."
+
+    Available banking products for suggestions:
+    - High-yield savings accounts and term deposits (Upsell)
+    - Flexible overdraft facilities and invoice financing (Upsell)
+    - Multi-currency business accounts (Cross-sell)
+    - Revolving credit lines (Upsell)
+    - Payroll and cash management services (Cross-sell)
+
+    **OUTPUT FORMAT:**
+    Return a JSON array with exactly 5 objects, each containing:
+    {{
+        "insight": "Short, clear observation from transactions or behavioural patterns",
+        "recommendation": "Actionable next step, framed as a smart nudge"
+    }}
+
+    **EXAMPLES OF PAIRED OUTPUT:**
+    [
+        {{
+            "insight": "You've had a positive cash flow for 3 consecutive weeks, with incoming payments consistently exceeding outgoing expenses",
+            "recommendation": "Consider setting aside a portion of this surplus in a high-yield savings account or term deposit to build financial resilience"
+        }},
+        {{
+            "insight": "Recurring supplier payments and payroll costs are now clustering near the same weekly cycle, creating temporary dips in available funds",
+            "recommendation": "To smooth out cash flow, you might explore a flexible overdraft facility or invoice financing during peak outflow weeks"
+        }},
+        {{
+            "insight": "We've detected that most of your larger incoming payments are delayed by 14–18 days after invoicing",
+            "recommendation": "Introducing automated payment reminders could improve cash flow predictability — your RM can assist"
+        }},
+        {{
+            "insight": "Your recent increase in marketing-related spend suggests growth ambitions or campaign activity",
+            "recommendation": "Consider bundling your marketing budget with a revolving credit line to support scalable growth without cash strain (Upsell)"
+        }},
+        {{
+            "insight": "You're processing more international transactions than usual — both incoming and outgoing",
+            "recommendation": "A multi-currency business account could reduce your conversion costs and improve reconciliation (Cross-sell)"
+        }}
+    ]
+
+    Generate insights and recommendations that are immediately actionable for Relationship Managers working with SME clients.
+    """,
+    parameters={
+        "transaction_data": {"type": "json", "required": True}
+    }
+)
+
+# Original CRM Insights Analysis Template (maintained for compatibility)
 crm_insights_analysis = PromptTemplate(
-    name="crm_insights_analysis", 
+    name="crm_insights_analysis",
     context="crm_financial_insights",
     data_type="transaction_history",
     template="""
@@ -24,13 +97,13 @@ crm_insights_analysis = PromptTemplate(
     The format must follow exactly:
 
     === SECTION 1: INSIGHTS ===
-    
+
     Insight 1: [Single-sentence observation, phrased in natural, friendly language].
     Insight 2: [Single-sentence observation, phrased in natural, friendly language].
     [Continue for all meaningful insights discovered]
 
     === SECTION 2: RECOMMENDATIONS ===
-    
+
     Recommendation 1: [Single-sentence advisory or product/service suggestion, positioned as helpful, not salesy].
     Recommendation 2: [Single-sentence advisory or product/service suggestion, positioned as helpful, not salesy].
     [Continue for all relevant recommendations]

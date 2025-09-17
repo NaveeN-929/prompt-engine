@@ -1,8 +1,9 @@
 """
-Response Formatter - Ensures all responses follow the required two-section format
+Response Formatter - Ensures all responses follow the required format (two-section or paired JSON)
 """
 
 import re
+import json
 from typing import Dict, Any, List, Tuple
 
 class ResponseFormatter:
@@ -191,3 +192,171 @@ class ResponseFormatter:
         )
         
         return validation_result
+
+    def format_paired_response(self, response_text: str) -> Dict[str, Any]:
+        """
+        Format response for the refined CRM insights template with paired insights/recommendations
+
+        Args:
+            response_text: Raw response from LLM (expected to be JSON array)
+
+        Returns:
+            Dictionary with 'json_output' for RAG pipeline and 'display_output' for CRM
+        """
+        # Clean the response text first
+        response_text = response_text.strip()
+
+        # Remove any markdown code blocks if present
+        if response_text.startswith('```json'):
+            response_text = response_text[7:]
+        if response_text.startswith('```'):
+            response_text = response_text[3:]
+        if response_text.endswith('```'):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+
+        try:
+            # Try to parse as JSON first
+            if response_text.startswith('['):
+                pairs = json.loads(response_text)
+
+                # Validate the structure
+                if not isinstance(pairs, list):
+                    raise ValueError("Response is not a list")
+
+                # Ensure each item has the required keys
+                validated_pairs = []
+                for i, item in enumerate(pairs):
+                    if isinstance(item, dict) and 'insight' in item and 'recommendation' in item:
+                        validated_pairs.append({
+                            'insight': str(item['insight']).strip(),
+                            'recommendation': str(item['recommendation']).strip()
+                        })
+                    else:
+                        print(f"Warning: Invalid pair at index {i}, skipping")
+
+                pairs = validated_pairs
+
+            else:
+                # If not JSON, try to extract pairs from text
+                pairs = self._extract_json_pairs_from_text(response_text)
+
+            # Ensure we have exactly 5 pairs
+            while len(pairs) < 5:
+                pairs.append({
+                    "insight": "Additional analysis may be needed to identify more patterns",
+                    "recommendation": "Consider providing more transaction data for comprehensive analysis"
+                })
+
+            pairs = pairs[:5]  # Limit to 5 pairs max
+
+            # Create JSON output for RAG pipeline
+            json_output = pairs
+
+            # Create display output with emojis for CRM
+            display_output = self._create_crm_display_format(pairs)
+
+            return {
+                "json_output": json_output,
+                "display_output": display_output,
+                "pairs_count": len(pairs)
+            }
+
+        except (json.JSONDecodeError, ValueError) as e:
+            # If JSON parsing fails, try to extract insights and recommendations from text
+            insights, recommendations = self._extract_sections(response_text)
+
+            # Convert to paired format
+            pairs = self._convert_sections_to_pairs(insights, recommendations)
+
+            json_output = pairs
+            display_output = self._create_crm_display_format(pairs)
+
+            return {
+                "json_output": json_output,
+                "display_output": display_output,
+                "pairs_count": len(pairs)
+            }
+
+    def _extract_json_pairs_from_text(self, response_text: str) -> List[Dict[str, str]]:
+        """Extract insight/recommendation pairs from unstructured text"""
+        pairs = []
+
+        # Split by numbered items or bullet points
+        lines = response_text.split('\n')
+        current_insight = ""
+        current_recommendation = ""
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            # Look for insight patterns
+            if re.search(r'insight\s*\d*:|🔍|insight:', line, re.IGNORECASE):
+                if current_insight and current_recommendation:
+                    pairs.append({
+                        "insight": current_insight.strip(),
+                        "recommendation": current_recommendation.strip()
+                    })
+                current_insight = re.sub(r'insight\s*\d*:|🔍|insight:', '', line, flags=re.IGNORECASE).strip()
+                current_recommendation = ""
+            elif re.search(r'recommendation\s*\d*:|💡|recommendation:', line, re.IGNORECASE):
+                current_recommendation = re.sub(r'recommendation\s*\d*:|💡|recommendation:', '', line, flags=re.IGNORECASE).strip()
+            elif current_insight and not current_recommendation:
+                # Continuation of insight
+                current_insight += " " + line
+
+        # Add the last pair
+        if current_insight and current_recommendation:
+            pairs.append({
+                "insight": current_insight.strip(),
+                "recommendation": current_recommendation.strip()
+            })
+
+        return pairs
+
+    def _convert_sections_to_pairs(self, insights: str, recommendations: str) -> List[Dict[str, str]]:
+        """Convert traditional insights/recommendations sections to paired format"""
+        pairs = []
+
+        # Split insights and recommendations into individual items
+        insight_items = self._split_into_items(insights)
+        recommendation_items = self._split_into_items(recommendations)
+
+        # Create pairs by matching insights with recommendations
+        max_pairs = min(len(insight_items), len(recommendation_items), 5)
+
+        for i in range(max_pairs):
+            pairs.append({
+                "insight": insight_items[i].strip(),
+                "recommendation": recommendation_items[i].strip()
+            })
+
+        return pairs
+
+    def _split_into_items(self, text: str) -> List[str]:
+        """Split text into individual items based on bullets, numbers, or line breaks"""
+        # Split by bullet points, numbers, or line breaks
+        items = re.split(r'[•\-\*\d]+\.?\s*', text)
+        items = [item.strip() for item in items if item.strip()]
+
+        # If no clear separators, try splitting by sentences
+        if len(items) <= 1:
+            items = re.split(r'[.!?]+\s*', text)
+            items = [item.strip() + '.' for item in items if item.strip()]
+
+        return items
+
+    def _create_crm_display_format(self, pairs: List[Dict[str, str]]) -> str:
+        """Create the CRM display format with emojis and banking product labels"""
+        display_lines = []
+
+        for i, pair in enumerate(pairs, 1):
+            display_lines.append(f"🔍 Insight {i}")
+            display_lines.append(f"{pair['insight']}")
+            display_lines.append(f"💡 Recommendation {i}")
+            display_lines.append(f"{pair['recommendation']}")
+            display_lines.append("")  # Empty line between pairs
+
+        return "\n".join(display_lines).strip()
