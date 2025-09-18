@@ -89,7 +89,12 @@ def initialize_rag_service():
         from core.prompt_consumer import PromptConsumerService
         import asyncio
         
-        rag_service = RAGService()
+        # Read Qdrant configuration from environment variables
+        qdrant_host = os.getenv('QDRANT_HOST', 'localhost')
+        qdrant_port = int(os.getenv('QDRANT_PORT', '6333'))
+        logger.info(f"🔗 Connecting to Qdrant at {qdrant_host}:{qdrant_port}")
+        
+        rag_service = RAGService(qdrant_host=qdrant_host, qdrant_port=qdrant_port)
         
         # Initialize in new event loop
         loop = asyncio.new_event_loop()
@@ -310,7 +315,7 @@ def get_status():
         },
         "requirements": {
             "ollama": "Must be running for LLM functionality",
-            "qdrant": "Must be running on localhost:6333 for vector operations"
+            "qdrant": f"Must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')} for vector operations"
         },
         "features": {
             "structured_responses": "enabled",
@@ -380,7 +385,7 @@ def get_vector_status():
                 "status": "error",
                 "error": "Vector database not available",
                 "details": services_status.get("initialization_error", "Qdrant not connected"),
-                "required": "Qdrant container must be running on localhost:6333"
+                "required": f"Qdrant container must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')}"
             }), 503
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
@@ -710,7 +715,7 @@ def health_check():
         },
         "requirements": {
             "ollama": "Must be running for LLM functionality",
-            "qdrant": "Must be running on localhost:6333 for vector operations"
+            "qdrant": f"Must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')} for vector operations"
         }
     }), 200 if all_services_healthy else 503
 
@@ -748,24 +753,27 @@ def generate_crm_insights_analysis(input_data, rag_enhanced_prompt):
             transactions = input_data["transactions"]
             
             if not transactions:
-                insights = ["No transaction data available for analysis"]
+                insights = ["Your account shows no transaction data available for analysis"]
                 recommendations = ["Please provide transaction history to generate meaningful insights"]
             else:
                 # Analyze actual transaction patterns dynamically
                 insights, recommendations = analyze_transaction_patterns(transactions)
         else:
-            insights = ["No financial data provided for analysis"]
+            insights = ["Your submission contains no financial data for analysis"]
             recommendations = ["Please submit transaction data to receive personalized insights"]
         
-        # Ensure we have exactly 3 insights and 3 recommendations
-        while len(insights) < 3:
-            insights.append("Additional transaction data would enable more comprehensive analysis")
-        while len(recommendations) < 3:
+        # Ensure we have at least 2 insights and recommendations for meaningful analysis
+        if len(insights) < 2:
+            insights.append("Your transaction data provides limited analysis opportunities")
+        if len(recommendations) < 2:
             recommendations.append("Consider providing more transaction history for deeper insights")
         
-        # Limit to 3 each
-        insights = insights[:3]
-        recommendations = recommendations[:3]
+        # Dynamic limit based on dataset size - more data = more insights
+        max_insights = min(max(3, len(transactions) // 10), 8)  # 3-8 insights based on data size
+        max_recommendations = min(max(3, len(transactions) // 8), 8)  # 3-8 recommendations
+        
+        insights = insights[:max_insights]
+        recommendations = recommendations[:max_recommendations]
         
         # Format response in CRM structure
         analysis = "=== SECTION 1: INSIGHTS ===\\n\\n"
@@ -810,30 +818,30 @@ def analyze_transaction_patterns(transactions):
     
     # 1. CASH FLOW ANALYSIS
     if net_flow > credits * 0.1:  # Positive cash flow > 10% of income
-        insights.append("Business demonstrates strong positive cash flow with income consistently exceeding expenses")
-        recommendations.append("Consider setting aside surplus funds in high-yield savings or term deposits to build financial resilience")
+        insights.append("Your business demonstrates strong positive cash flow with income consistently exceeding expenses")
+        recommendations.append("Consider high-yield savings accounts and term deposits to optimize your surplus cash management (Upsell)")
     elif net_flow > 0:
-        insights.append("Cash flow remains positive though margins could be optimized")
-        recommendations.append("Review expense categories to identify potential cost optimization opportunities")
+        insights.append("Your cash flow remains positive though margins could be optimized")
+        recommendations.append("A revolving credit line could provide additional working capital flexibility for growth opportunities (Upsell)")
     elif net_flow > -credits * 0.2:  # Small deficit
-        insights.append("Cash flow shows temporary deficit that may indicate seasonal patterns")
-        recommendations.append("Consider a flexible overdraft facility to smooth out cash flow fluctuations (Upsell)")
+        insights.append("Your cash flow shows temporary deficit that may indicate seasonal patterns")
+        recommendations.append("Flexible overdraft facilities and invoice financing could smooth out cash flow fluctuations (Upsell)")
     else:
-        insights.append("Cash flow requires immediate attention with expenses significantly exceeding income")
-        recommendations.append("Priority focus on expense reduction and revenue enhancement strategies")
+        insights.append("Your cash flow requires immediate attention with expenses significantly exceeding income")
+        recommendations.append("Invoice financing could accelerate receivables collection to improve immediate cash position (Upsell)")
     
     # 2. TRANSACTION VOLUME AND PATTERN ANALYSIS
     if len(credit_txs) >= 10:
-        insights.append("Revenue stream shows healthy transaction volume with diverse payment sources")
-        recommendations.append("Automated payment reminders could further optimize collection efficiency")
+        insights.append("Your revenue stream shows healthy transaction volume with diverse payment sources")
+        recommendations.append("Payroll and cash management services could streamline your high-volume transaction processing (Cross-sell)")
     elif len(credit_txs) >= 5:
-        insights.append("Payment collection shows regular activity with room for growth")
-        recommendations.append("Consider expanding customer base or increasing transaction frequency through retention programs")
+        insights.append("Your payment collection shows regular activity with room for growth")
+        recommendations.append("A revolving credit line could support business expansion and customer acquisition initiatives (Upsell)")
     elif len(credit_txs) >= 2:
-        insights.append("Revenue concentration suggests dependence on key clients")
+        insights.append("Your revenue concentration suggests dependence on key clients")
         recommendations.append("Diversifying income sources could reduce business risk and improve stability")
-    else:
-        insights.append("Limited transaction activity indicates potential for business expansion")
+    elif len(credit_txs) == 1:
+        insights.append("Your transaction activity shows limited revenue sources")
         recommendations.append("Focus on customer acquisition and revenue generation strategies")
     
     # 3. EXPENSE CATEGORY ANALYSIS
@@ -847,34 +855,34 @@ def analyze_transaction_patterns(transactions):
             
             if "Marketing" in category_name or "Advertising" in category_name:
                 if category_percentage > 25:
-                    insights.append("Marketing investment represents significant portion of operational spend")
-                    recommendations.append("Consider a revolving credit line to support marketing campaigns without cash flow strain (Upsell)")
+                    insights.append("Your marketing investment represents significant portion of operational spend")
+                    recommendations.append("A revolving credit line could support marketing campaigns without cash flow strain (Upsell)")
                 else:
-                    insights.append("Marketing spend appears well-balanced within overall expense structure")
+                    insights.append("Your marketing spend appears well-balanced within overall expense structure")
                     recommendations.append("Current marketing budget allocation supports sustainable growth")
             elif "Software" in category_name or "Technology" in category_name:
                 if category_percentage > 20:
-                    insights.append("Technology expenses indicate strong digital infrastructure investment")
-                    recommendations.append("Review software subscriptions for consolidation opportunities and volume discounts")
+                    insights.append("Your technology expenses indicate strong digital infrastructure investment")
+                    recommendations.append("Multi-currency business accounts could streamline international software subscriptions and payments (Cross-sell)")
                 else:
-                    insights.append("Technology spend reflects modern business operations approach")
+                    insights.append("Your technology spend reflects modern business operations approach")
                     recommendations.append("Current tech investment level supports operational efficiency")
             elif "Rent" in category_name or "Facilities" in category_name:
                 if category_percentage > 30:
-                    insights.append("Facility costs represent substantial portion of operational expenses")
-                    recommendations.append("Explore flexible workspace options or lease renegotiation to optimize overhead")
+                    insights.append("Your facility costs represent substantial portion of operational expenses")
+                    recommendations.append("Flexible overdraft facilities could help manage large quarterly rent payments (Upsell)")
                 else:
-                    insights.append("Facility expenses appear proportionate to business operations")
+                    insights.append("Your facility expenses appear proportionate to business operations")
                     recommendations.append("Current workspace arrangement supports business needs effectively")
             elif "Payroll" in category_name or "Staff" in category_name:
                 if category_percentage > 40:
-                    insights.append("Personnel costs indicate significant investment in human resources")
-                    recommendations.append("Consider productivity tools to maximize team efficiency and ROI")
+                    insights.append("Your personnel costs indicate significant investment in human resources")
+                    recommendations.append("Payroll and cash management services could streamline employee payment processing (Cross-sell)")
                 else:
-                    insights.append("Staffing costs reflect appropriate investment in team capabilities")
+                    insights.append("Your staffing costs reflect appropriate investment in team capabilities")
                     recommendations.append("Current staffing level appears aligned with business operations")
             else:
-                insights.append(f"Primary expense category focuses on {category_name.lower()} operations")
+                insights.append(f"Your primary expense category focuses on {category_name.lower()} operations")
                 recommendations.append(f"Monitor {category_name.lower()} spending patterns for optimization opportunities")
     
     # 4. INTERNATIONAL AND CURRENCY ANALYSIS
@@ -882,11 +890,11 @@ def analyze_transaction_patterns(transactions):
     intl_transactions = [tx for tx in transactions if any(word in tx.get("description", "").lower() for word in intl_keywords)]
     
     if len(intl_transactions) >= 3:
-        insights.append("International transaction activity suggests global business operations")
-        recommendations.append("A multi-currency business account could reduce conversion costs and improve reconciliation (Cross-sell)")
+        insights.append("Your international transaction activity suggests global business operations")
+        recommendations.append("Multi-currency business accounts could reduce conversion costs and improve reconciliation (Cross-sell)")
     elif len(intl_transactions) >= 1:
-        insights.append("Occasional international transactions indicate potential for global expansion")
-        recommendations.append("Consider international banking services as global activity increases")
+        insights.append("Your occasional international transactions indicate potential for global expansion")
+        recommendations.append("Multi-currency business accounts would be beneficial as global activity increases (Cross-sell)")
     
     # 5. TRANSACTION FREQUENCY ANALYSIS
     if dates and len(dates) > 1:
@@ -896,10 +904,10 @@ def analyze_transaction_patterns(transactions):
             if date_range > 0:
                 daily_transaction_rate = len(transactions) / date_range
                 if daily_transaction_rate >= 2:
-                    insights.append("High transaction frequency indicates active business operations")
-                    recommendations.append("Automated accounting integration could streamline financial management")
+                    insights.append("Your high transaction frequency indicates active business operations")
+                    recommendations.append("Payroll and cash management services could automate your high-volume financial processes (Cross-sell)")
                 elif daily_transaction_rate >= 0.5:
-                    insights.append("Regular transaction patterns support consistent business activity")
+                    insights.append("Your regular transaction patterns support consistent business activity")
                     recommendations.append("Consider payment automation tools to improve efficiency")
         except:
             pass  # Skip if date parsing fails
@@ -907,8 +915,29 @@ def analyze_transaction_patterns(transactions):
     # 6. PAYMENT PATTERN ANALYSIS
     large_credits = [tx for tx in credit_txs if tx.get("amount", 0) > credits / len(credit_txs) * 2 if credit_txs]
     if len(large_credits) >= 3:
-        insights.append("Revenue includes several high-value transactions indicating strong client relationships")
-        recommendations.append("Leverage client success stories to secure additional large contracts or retainer agreements")
+        insights.append("Your revenue includes several high-value transactions indicating strong client relationships")
+        recommendations.append("High-yield savings accounts and term deposits could optimize returns on your large payment receipts (Upsell)")
+    
+    # 7. ADDITIONAL INSIGHTS BASED ON DATASET SIZE
+    if len(transactions) >= 50:
+        insights.append("Your business shows extensive transaction history indicating mature operations")
+        recommendations.append("Advanced analytics and reporting tools could provide deeper business insights")
+    
+    if len(transactions) >= 20:
+        # Add seasonal analysis for larger datasets
+        if dates:
+            try:
+                date_objects = [datetime.strptime(d, "%Y-%m-%d") for d in dates]
+                months = [d.month for d in date_objects]
+                if len(set(months)) >= 3:  # Spans multiple months
+                    insights.append("Your transaction patterns span multiple months showing business continuity")
+                    recommendations.append("Consider quarterly financial reviews to optimize seasonal performance")
+            except:
+                pass
+    
+    if len(debit_txs) >= 15:
+        insights.append("Your expense management shows diverse operational spending patterns")
+        recommendations.append("Expense categorization tools could help identify additional cost optimization opportunities")
     
     # Remove duplicates and ensure variety
     insights = list(dict.fromkeys(insights))  # Remove duplicates while preserving order
@@ -920,7 +949,19 @@ def analyze_transaction_patterns(transactions):
     return insights, recommendations
 
 def ensure_banking_product_mix(recommendations, categories, net_flow):
-    """Ensure we have appropriate banking product recommendations"""
+    """Ensure we have appropriate banking product recommendations using the approved product list"""
+    
+    # Available banking products for suggestions:
+    upsell_products = [
+        "High-yield savings accounts and term deposits could optimize your surplus cash management (Upsell)",
+        "Flexible overdraft facilities and invoice financing could provide cash flow stability (Upsell)", 
+        "A revolving credit line could support business growth and working capital needs (Upsell)"
+    ]
+    
+    crosssell_products = [
+        "Multi-currency business accounts could streamline international transactions and reduce conversion costs (Cross-sell)",
+        "Payroll and cash management services could automate your financial processes and improve efficiency (Cross-sell)"
+    ]
     
     # Count existing banking product recommendations
     banking_products = 0
@@ -928,26 +969,26 @@ def ensure_banking_product_mix(recommendations, categories, net_flow):
         if "(Upsell)" in rec or "(Cross-sell)" in rec:
             banking_products += 1
     
-    # Add banking products if we don't have enough
+    # Add banking products if we don't have enough (target: 2-3 banking products)
     if banking_products < 2:
-        # Add appropriate banking products based on business patterns
+        # Add appropriate upsell based on cash flow
         if net_flow > 0:
-            if not any("savings" in rec.lower() or "deposit" in rec.lower() for rec in recommendations):
-                recommendations.append("Consider high-yield savings accounts to optimize surplus cash management (Upsell)")
+            if not any("savings" in rec.lower() or "term deposit" in rec.lower() for rec in recommendations):
+                recommendations.append(upsell_products[0])  # High-yield savings
         else:
-            if not any("overdraft" in rec.lower() or "credit" in rec.lower() for rec in recommendations):
-                recommendations.append("A flexible overdraft facility could provide cash flow stability during peak expense periods (Upsell)")
+            if not any("overdraft" in rec.lower() or "invoice financing" in rec.lower() for rec in recommendations):
+                recommendations.append(upsell_products[1])  # Overdraft/invoice financing
         
-        # Add cross-sell based on business type
-        if categories:
-            expense_categories = {k: v for k, v in categories.items() if "Revenue" not in k}
-            if expense_categories:
-                largest_category = max(expense_categories.items(), key=lambda x: x[1])
-                if "Marketing" in largest_category[0] or "Software" in largest_category[0]:
+        # Add cross-sell based on business patterns
+        if banking_products < 2:  # Still need more banking products
+            if categories:
+                expense_categories = {k: v for k, v in categories.items() if "Revenue" not in k}
+                if expense_categories and len(expense_categories) >= 3:  # Multiple expense types
+                    if not any("payroll" in rec.lower() or "cash management" in rec.lower() for rec in recommendations):
+                        recommendations.append(crosssell_products[1])  # Payroll services
+                else:
                     if not any("multi-currency" in rec.lower() for rec in recommendations):
-                        recommendations.append("Digital payment solutions could streamline your marketing and software subscriptions (Cross-sell)")
-                elif not any("payroll" in rec.lower() or "cash management" in rec.lower() for rec in recommendations):
-                    recommendations.append("Automated payroll and cash management services could improve operational efficiency (Cross-sell)")
+                        recommendations.append(crosssell_products[0])  # Multi-currency accounts
     
     return recommendations
 

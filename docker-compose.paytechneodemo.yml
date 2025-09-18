@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Autonomous Agent Service
   autonomous-agent:
@@ -13,6 +11,7 @@ services:
       - PROMPT_ENGINE_PORT=5000
       - OLLAMA_HOST=ollama
       - OLLAMA_PORT=11434
+      - OLLAMA_MODEL=llama3
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - FLASK_HOST=0.0.0.0
@@ -20,7 +19,7 @@ services:
       - FLASK_DEBUG=false
     depends_on:
       - prompt-engine
-      - ollama  
+      - ollama
       - qdrant
     networks:
       - paytechneodemo-network
@@ -96,10 +95,47 @@ services:
       - paytechneodemo-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/dashboard"]
+      test: ["CMD", "curl", "-f", "http://localhost:6333/collections"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # Caddy Reverse Proxy & SSL
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    networks:
+      - paytechneodemo-network
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_certs:/data
+      - caddy_config:/config
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    depends_on:
+      - autonomous-agent
+      - prompt-engine
+
+  # Watchtower - Auto Container Updates
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    networks:
+      - paytechneodemo-network
+    command:
+      - "--cleanup"
+      - "--label-enable"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    environment:
+      - WATCHTOWER_POLL_INTERVAL=60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
 
 networks:
   paytechneodemo-network:
@@ -110,3 +146,8 @@ volumes:
     driver: local
   qdrant_data:
     driver: local
+  caddy_certs:
+    driver: local
+  caddy_config:
+    driver: local
+
