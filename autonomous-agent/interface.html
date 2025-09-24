@@ -337,7 +337,7 @@
             }, null, 2);
         }
         
-        function formatAnalysisResponse(analysis) {
+        function formatAnalysisResponse(analysis, validation) {
             // Clean up escaped newlines and format the response
             let formatted = analysis
                 .replace(/\\n/g, '\n')
@@ -378,9 +378,101 @@
                 }
             });
             
+            // Add validation score section at the bottom
+            if (validation) {
+                html += formatValidationSection(validation);
+            }
+            
             return html;
         }
         
+        function formatValidationSection(validation) {
+            if (!validation) return '';
+            
+            const qualityLevel = validation.quality_level || 'unvalidated';
+            const qualityScore = validation.quality_score || 0;
+            const qualityApproved = validation.quality_approved;
+            const validationStatus = validation.validation_status || 'unknown';
+            
+            // Determine colors and icons based on quality level and status
+            let bgColor, textColor, icon, statusText;
+            
+            if (qualityApproved && validationStatus === 'approved') {
+                if (qualityLevel === 'exemplary') {
+                    bgColor = 'rgba(40, 167, 69, 0.15)';
+                    textColor = '#28a745';
+                    icon = '🏆';
+                    statusText = 'Exemplary Quality';
+                } else if (qualityLevel === 'high_quality') {
+                    bgColor = 'rgba(0, 123, 255, 0.15)';
+                    textColor = '#007bff';
+                    icon = '✅';
+                    statusText = 'High Quality';
+                } else if (qualityLevel === 'acceptable') {
+                    bgColor = 'rgba(255, 193, 7, 0.15)';
+                    textColor = '#ffc107';
+                    icon = '👍';
+                    statusText = 'Acceptable Quality';
+                }
+            } else {
+                bgColor = 'rgba(220, 53, 69, 0.15)';
+                textColor = '#dc3545';
+                icon = '⚠️';
+                if (validationStatus === 'service_unavailable') {
+                    statusText = 'Validation Unavailable';
+                } else if (validationStatus === 'validation_error') {
+                    statusText = 'Validation Error';
+                } else {
+                    statusText = 'Unvalidated';
+                }
+            }
+            
+            return `
+                <div class="section-header" style="margin-top: 20px;">🔒 VALIDATION RESULTS</div>
+                <div style="background: ${bgColor}; border-left: 4px solid ${textColor}; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                        <div style="display: flex; align-items: center;">
+                            <span style="font-size: 1.2em; margin-right: 8px;">${icon}</span>
+                            <strong style="color: ${textColor};">${statusText}</strong>
+                        </div>
+                        <div style="background: ${textColor}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">
+                            Score: ${(qualityScore * 100).toFixed(1)}%
+                        </div>
+                    </div>
+                    ${validation.criteria_scores ? formatCriteriaScores(validation.criteria_scores) : ''}
+                    ${validation.validation_time ? `<div style="font-size: 0.85em; color: #666; margin-top: 8px;">Validation Time: ${(validation.validation_time * 1000).toFixed(0)}ms</div>` : ''}
+                </div>
+            `;
+        }
+        
+        function formatCriteriaScores(criteriaScores) {
+            if (!criteriaScores || typeof criteriaScores !== 'object') return '';
+            
+            let html = '<div style="margin-top: 10px; font-size: 0.9em;">';
+            html += '<div style="font-weight: bold; margin-bottom: 5px;">Quality Criteria:</div>';
+            html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">';
+            
+            Object.entries(criteriaScores).forEach(([criterion, score]) => {
+                const percentage = (score * 100).toFixed(0);
+                let barColor = '#dc3545'; // Red for low scores
+                if (score >= 0.8) barColor = '#28a745'; // Green for high scores
+                else if (score >= 0.65) barColor = '#ffc107'; // Yellow for medium scores
+                
+                html += `
+                    <div style="background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px;">
+                        <div style="font-weight: 500; text-transform: capitalize; margin-bottom: 3px;">${criterion.replace(/_/g, ' ')}</div>
+                        <div style="background: #e9ecef; height: 6px; border-radius: 3px; overflow: hidden;">
+                            <div style="background: ${barColor}; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.8em; margin-top: 2px;">${percentage}%</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
+            return html;
+        }
+
         function formatSectionContent(content) {
             // Format the content with proper line breaks and styling
             return content
@@ -423,7 +515,7 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Analysis completed successfully');
+                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Analysis completed successfully', result.validation);
                     timeEl.textContent = `${result.processing_time?.toFixed(3)}s`;
                     
                     if (result.rag_metadata?.rag_enabled) {
@@ -496,7 +588,7 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Agentic analysis completed successfully');
+                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Agentic analysis completed successfully', result.validation);
                     timeEl.textContent = `${result.processing_time?.toFixed(3)}s`;
                     
                     ragEl.textContent = `Agentic RAG: ${result.rag_metadata?.context_items_used || 0} items`;
@@ -676,7 +768,7 @@
                     let details = `
                         <h4>Validation Service Details:</h4>
                         <p><strong>Status:</strong> ${status.status}</p>
-                        <p><strong>URL:</strong> ${status.url || 'http://localhost:5002'}</p>
+                        <p><strong>URL:</strong> ${status.url || 'Not configured'}</p>
                         <p><strong>Response Time:</strong> ${(status.response_time * 1000).toFixed(0)}ms</p>
                         <p><strong>Integration:</strong> ${status.integration_initialized ? 'Active' : 'Inactive'}</p>
                         <p><strong>Connection:</strong> ${status.service_connected ? 'Connected' : 'Disconnected'}</p>

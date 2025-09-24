@@ -413,7 +413,7 @@ def get_status():
         "requirements": {
             "ollama": "Must be running for LLM functionality",
             "qdrant": f"Must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')} for vector operations",
-            "validation_service": f"Must be running on {services_status.get('validation_service_url', 'http://localhost:5002')} for blocking validation"
+            "validation_service": f"Must be running on {services_status.get('validation_service_url', 'validator:5002')} for blocking validation"
         },
         "features": {
             "structured_responses": "enabled",
@@ -515,7 +515,7 @@ def get_validation_status():
                 "details": services_status.get("validation_health", {}).get("error", "Service not initialized"),
                 "integration_initialized": services_status.get("validation_initialized", False),
                 "service_connected": services_status.get("validation_connected", False),
-                "required": f"Validation service must be running on {services_status.get('validation_service_url', 'http://localhost:5002')}",
+                "required": f"Validation service must be running on {services_status.get('validation_service_url', 'validator:5002')}",
                 "health_status": services_status.get("validation_health", {"status": "unknown"})
             }), 503
     except Exception as e:
@@ -674,8 +674,8 @@ def process_full_pipeline():
         
         processing_time = time.time() - start_time
         
-        # Create response
-        response_data = {
+        # Create initial response
+        initial_response_data = {
             "request_id": f"pipeline_{int(time.time())}",
             "status": "success",
             "analysis": analysis,
@@ -687,8 +687,57 @@ def process_full_pipeline():
                 "transaction_count": len(input_data.get("transactions", [])),
                 "has_balance": "account_balance" in input_data
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "pipeline_used": "complete_rag_enhanced_with_validation"
         }
+        
+        # Step 5: BLOCKING VALIDATION - Validate response before user delivery
+        if validation_service and services_status.get("validation_initialized", False):
+            logger.info("🔍 Applying blocking validation before user delivery (Full Pipeline)")
+            
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                # Apply blocking validation with quality gates
+                should_deliver, validated_response = loop.run_until_complete(
+                    validation_service.validate_and_gate_response(
+                        initial_response_data, 
+                        input_data,
+                        retry_callback=None  # Could implement retry logic here
+                    )
+                )
+                
+                loop.close()
+                
+                if should_deliver:
+                    response_data = validated_response
+                    logger.info(f"✅ Full Pipeline response approved for delivery (quality: {validated_response.get('validation', {}).get('quality_level', 'unknown')})")
+                else:
+                    # This case should not occur with current implementation, but handle gracefully
+                    logger.warning("⚠️ Full Pipeline response failed validation but delivering with warnings")
+                    response_data = validated_response
+                
+            except Exception as validation_error:
+                logger.error(f"❌ Validation error in Full Pipeline: {validation_error}")
+                # If validation fails, return response with validation error metadata
+                response_data = initial_response_data.copy()
+                response_data["validation"] = {
+                    "quality_approved": False,
+                    "validation_status": "validation_error",
+                    "error": str(validation_error),
+                    "quality_level": "unvalidated",
+                    "quality_score": 0.0
+                }
+        else:
+            logger.info("⚠️ Validation service not available - delivering unvalidated response (Full Pipeline)")
+            response_data = initial_response_data.copy()
+            response_data["validation"] = {
+                "quality_approved": False,
+                "validation_status": "service_unavailable",
+                "quality_level": "unvalidated",
+                "quality_score": 0.0
+            }
         
         # Store in history
         interaction_history.append(response_data)
@@ -800,8 +849,8 @@ def process_agentic_pipeline():
         
         processing_time = time.time() - start_time
         
-        # Create response
-        response_data = {
+        # Create initial response
+        initial_response_data = {
             "request_id": f"agentic_{int(time.time())}",
             "status": "success",
             "analysis": analysis,
@@ -813,8 +862,57 @@ def process_agentic_pipeline():
                 "transaction_count": len(input_data.get("transactions", [])),
                 "has_balance": "account_balance" in input_data
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "pipeline_used": "agentic_rag_enhanced_with_validation"
         }
+        
+        # Step 4: BLOCKING VALIDATION - Validate response before user delivery
+        if validation_service and services_status.get("validation_initialized", False):
+            logger.info("🔍 Applying blocking validation before user delivery (Agentic Pipeline)")
+            
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                # Apply blocking validation with quality gates
+                should_deliver, validated_response = loop.run_until_complete(
+                    validation_service.validate_and_gate_response(
+                        initial_response_data, 
+                        input_data,
+                        retry_callback=None  # Could implement retry logic here
+                    )
+                )
+                
+                loop.close()
+                
+                if should_deliver:
+                    response_data = validated_response
+                    logger.info(f"✅ Agentic Pipeline response approved for delivery (quality: {validated_response.get('validation', {}).get('quality_level', 'unknown')})")
+                else:
+                    # This case should not occur with current implementation, but handle gracefully
+                    logger.warning("⚠️ Agentic Pipeline response failed validation but delivering with warnings")
+                    response_data = validated_response
+                
+            except Exception as validation_error:
+                logger.error(f"❌ Validation error in Agentic Pipeline: {validation_error}")
+                # If validation fails, return response with validation error metadata
+                response_data = initial_response_data.copy()
+                response_data["validation"] = {
+                    "quality_approved": False,
+                    "validation_status": "validation_error",
+                    "error": str(validation_error),
+                    "quality_level": "unvalidated",
+                    "quality_score": 0.0
+                }
+        else:
+            logger.info("⚠️ Validation service not available - delivering unvalidated response (Agentic Pipeline)")
+            response_data = initial_response_data.copy()
+            response_data["validation"] = {
+                "quality_approved": False,
+                "validation_status": "service_unavailable",
+                "quality_level": "unvalidated",
+                "quality_score": 0.0
+            }
         
         # Store in history
         interaction_history.append(response_data)
@@ -912,7 +1010,7 @@ def health_check():
         "requirements": {
             "ollama": "Must be running for LLM functionality",
             "qdrant": f"Must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')} for vector operations",
-            "validation_service": f"Optional - running on {services_status.get('validation_service_url', 'http://localhost:5002')} for blocking validation"
+            "validation_service": f"Optional - running on {services_status.get('validation_service_url', 'validator:5002')} for blocking validation"
         }
     }), 200 if all_services_healthy else 503
 

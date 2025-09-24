@@ -23,14 +23,14 @@ BASE_CONFIG = {
 VALIDATION_LLM_CONFIG = {
     "primary_validator": {
         "model_name": "llama3.2:3b",  # Smaller, faster model for validation
-        "host": "http://localhost:11434",
+        "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
         "max_tokens": 2000,
         "temperature": 0.1,  # Low temperature for consistent validation
         "timeout": 30
     },
     "speed_validator": {
         "model_name": "llama3.2:1b",  # Even smaller model for fast validation
-        "host": "http://localhost:11434", 
+        "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"), 
         "max_tokens": 1000,
         "temperature": 0.2,
         "timeout": 15
@@ -61,8 +61,8 @@ PROMPT_ENGINE_CONFIG = {
 
 # Vector Database Configuration - Using same Qdrant instance with different collections
 VECTOR_DB_CONFIG = {
-    "host": "localhost",
-    "port": 6333,  # Same Qdrant instance as main project
+    "host": os.getenv("QDRANT_HOST", "localhost"),
+    "port": int(os.getenv("QDRANT_PORT", "6333")),  # Same Qdrant instance as main project
     "collections": {
         "validated_responses": "validation_high_quality_responses",
         "validation_patterns": "validation_successful_patterns", 

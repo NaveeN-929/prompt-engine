@@ -6,6 +6,7 @@ Provides blocking validation integration for the autonomous agent
 import asyncio
 import json
 import logging
+import os
 import time
 import requests
 from typing import Dict, Any, Optional, Tuple
@@ -20,9 +21,16 @@ class ValidationIntegrationService:
     """
     
     def __init__(self, 
-                 validation_url: str = "http://localhost:5002",
+                 validation_url: str = None,
                  quality_threshold: float = 0.65,
                  max_retry_attempts: int = 2):
+        
+        # Use environment variables for Docker deployment
+        if validation_url is None:
+            # Use VALIDATOR_HOST for service discovery to avoid conflict with VALIDATION_HOST (bind address)
+            validation_host = os.getenv('VALIDATOR_HOST', os.getenv('VALIDATION_HOST', 'localhost'))
+            validation_port = os.getenv('VALIDATOR_PORT', os.getenv('VALIDATION_PORT', '5002'))
+            validation_url = f"http://{validation_host}:{validation_port}"
         self.validation_url = validation_url
         self.quality_threshold = quality_threshold
         self.max_retry_attempts = max_retry_attempts

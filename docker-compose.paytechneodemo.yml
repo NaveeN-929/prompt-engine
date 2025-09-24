@@ -14,11 +14,14 @@ services:
       - OLLAMA_MODEL=llama3
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
+      - VALIDATION_HOST=validator
+      - VALIDATION_PORT=5002
       - FLASK_HOST=0.0.0.0
       - FLASK_PORT=5001
       - FLASK_DEBUG=false
     depends_on:
       - prompt-engine
+      - validator
       - ollama
       - qdrant
     networks:
@@ -58,6 +61,39 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # Validation Service
+  validator:
+    image: paytechneodemo/validator:latest
+    container_name: paytechneodemo-validator
+    ports:
+      - "5002:5002"
+    environment:
+      - DOCKER_ENV=true
+      - VALIDATION_HOST=0.0.0.0
+      - VALIDATION_PORT=5002
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5002
+      - FLASK_DEBUG=false
+    depends_on:
+      - ollama
+      - qdrant
+    networks:
+      - paytechneodemo-network
+    volumes:
+      - validator_training_data:/app/training_data
+      - validator_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # Ollama LLM Service
   ollama:
@@ -119,6 +155,7 @@ services:
     depends_on:
       - autonomous-agent
       - prompt-engine
+      - validator
 
   # Watchtower - Auto Container Updates
   watchtower:
@@ -145,6 +182,10 @@ volumes:
   ollama_data:
     driver: local
   qdrant_data:
+    driver: local
+  validator_training_data:
+    driver: local
+  validator_logs:
     driver: local
   caddy_certs:
     driver: local
