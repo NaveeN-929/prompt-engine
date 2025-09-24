@@ -1,0 +1,21 @@
+# Minimal Requirements for Response Validation LLM System
+# Install these first, then add optional components as needed
+
+# Core Framework
+Flask>=2.3.0
+Flask-CORS>=4.0.0
+requests>=2.30.0
+
+# Vector Database (install what's available)
+qdrant-client>=1.7.1
+
+# Basic NLP (optional - can work without)
+sentence-transformers>=2.0.0
+
+# Data Processing
+numpy>=1.21.0
+pandas>=1.5.0
+
+# Utilities
+python-dateutil>=2.8.0
+

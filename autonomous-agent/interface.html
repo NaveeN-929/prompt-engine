@@ -41,6 +41,15 @@
             margin: 5px;
             display: inline-block;
         }
+        .badge.validation-active {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+        .badge.validation-warning {
+            background: linear-gradient(45deg, #ffc107, #fd7e14);
+        }
+        .badge.validation-error {
+            background: linear-gradient(45deg, #dc3545, #e74c3c);
+        }
         .status-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -191,6 +200,7 @@
             <span class="badge">Vector Accelerated</span>
             <span class="badge">Knowledge Augmented</span>
             <span class="badge">Real-time Analysis</span>
+            <span class="badge" id="validationBadge">🔒 Blocking Validation</span>
             <p>Advanced AI-powered financial analysis with Retrieval Augmented Generation</p>
         </div>
         
@@ -211,6 +221,10 @@
                 <strong>🔗 Prompt Engine</strong><br>
                 <span id="promptEngineStatus">🔄 Checking...</span>
             </div>
+            <div class="status-card" id="validationCard">
+                <strong>🔒 Validation Service</strong><br>
+                <span id="validationStatus">🔄 Checking...</span>
+            </div>
         </div>
         
         <div style="text-align: center; margin: 15px 0;">
@@ -222,15 +236,16 @@
             <div class="tab active" onclick="switchTab('analysis')">Analysis</div>
             <div class="tab" onclick="switchTab('rag')">RAG Status</div>
             <div class="tab" onclick="switchTab('vector')">Vector DB</div>
+            <div class="tab" onclick="switchTab('validation')">Validation</div>
             <div class="tab" onclick="switchTab('history')">History</div>
         </div>
         
         <div id="analysis" class="tab-content active">
             <div class="section">
-                <h3>RAG-Enhanced Analysis Pipeline</h3>
-                <p><strong>Step 1:</strong> Financial data → <strong>Step 2:</strong> Prompt Engine → <strong>Step 3:</strong> RAG Enhancement → <strong>Step 4:</strong> Final Analysis</p>
+                <h3>RAG-Enhanced Analysis Pipeline with Blocking Validation</h3>
+                <p><strong>Step 1:</strong> Financial data → <strong>Step 2:</strong> Prompt Engine → <strong>Step 3:</strong> RAG Enhancement → <strong>Step 4:</strong> Analysis Generation → <strong>Step 5:</strong> 🔒 Validation Quality Gates → <strong>Step 6:</strong> Validated Response</p>
                 <div style="margin: 15px 0; padding: 10px; background: rgba(0,212,255,0.1); border-radius: 6px;">
-                    <strong>Input:</strong> Provide financial data that will be sent to the prompt-engine to generate a structured prompt, which will then be enhanced with RAG knowledge augmentation.
+                    <strong>Input:</strong> Provide financial data that will be sent to the prompt-engine to generate a structured prompt, enhanced with RAG knowledge augmentation, and validated through blocking quality gates before delivery.
                 </div>
                 <textarea id="analysisData" placeholder='{"transactions": [{"date": "2024-01-15", "amount": 1500.00, "type": "credit", "description": "Salary"}], "account_balance": 2250.00}'></textarea>
                 <br>
@@ -254,6 +269,15 @@
                 <h3>Vector Database Status</h3>
                 <div id="vectorDetails">Loading...</div>
                 <button class="button" onclick="refreshVector()">Refresh</button>
+            </div>
+        </div>
+        
+        <div id="validation" class="tab-content">
+            <div class="section">
+                <h3>Validation Service Status</h3>
+                <div id="validationDetails">Loading...</div>
+                <button class="button" onclick="refreshValidation()">Refresh Status</button>
+                <button class="button secondary" onclick="refreshValidationService()">Force Refresh</button>
             </div>
         </div>
         
@@ -290,6 +314,9 @@
             }
             if (tabName === 'vector') {
                 refreshVector();
+            }
+            if (tabName === 'validation') {
+                refreshValidation();
             }
             if (tabName === 'history') {
                 refreshHistory();
@@ -407,6 +434,34 @@
                         ragEl.style.background = 'rgba(255, 193, 7, 0.3)';
                     }
                     
+                    // Clean up any existing validation indicators
+                    const existingValidationEl = document.querySelector('.result-header .rag-indicator[style*="margin-left"]');
+                    if (existingValidationEl) {
+                        existingValidationEl.remove();
+                    }
+                    
+                    // Update validation indicator if validation data is present
+                    if (result.validation) {
+                        const validationEl = document.createElement('span');
+                        validationEl.className = 'rag-indicator';
+                        validationEl.style.marginLeft = '10px';
+                        
+                        const qualityLevel = result.validation.quality_level || 'unknown';
+                        const qualityScore = result.validation.overall_score || 0;
+                        
+                        validationEl.textContent = `Validation: ${qualityLevel} (${(qualityScore * 100).toFixed(0)}%)`;
+                        
+                        if (qualityLevel === 'exemplary' || qualityLevel === 'high_quality') {
+                            validationEl.style.background = 'rgba(40, 167, 69, 0.3)';
+                        } else if (qualityLevel === 'acceptable') {
+                            validationEl.style.background = 'rgba(255, 193, 7, 0.3)';
+                        } else {
+                            validationEl.style.background = 'rgba(220, 53, 69, 0.3)';
+                        }
+                        
+                        document.querySelector('.result-header > div').appendChild(validationEl);
+                    }
+                    
                     updateStats();
                 } else {
                     content.innerHTML = '<div class="error">Pipeline Error: ' + (result.error || 'Unknown error') + '</div>';
@@ -446,6 +501,28 @@
                     
                     ragEl.textContent = `Agentic RAG: ${result.rag_metadata?.context_items_used || 0} items`;
                     ragEl.style.background = 'rgba(138, 43, 226, 0.3)';
+                    
+                    // Update validation indicator if validation data is present
+                    if (result.validation) {
+                        const validationEl = document.createElement('span');
+                        validationEl.className = 'rag-indicator';
+                        validationEl.style.marginLeft = '10px';
+                        
+                        const qualityLevel = result.validation.quality_level || 'unknown';
+                        const qualityScore = result.validation.overall_score || 0;
+                        
+                        validationEl.textContent = `Validation: ${qualityLevel} (${(qualityScore * 100).toFixed(0)}%)`;
+                        
+                        if (qualityLevel === 'exemplary' || qualityLevel === 'high_quality') {
+                            validationEl.style.background = 'rgba(40, 167, 69, 0.3)';
+                        } else if (qualityLevel === 'acceptable') {
+                            validationEl.style.background = 'rgba(255, 193, 7, 0.3)';
+                        } else {
+                            validationEl.style.background = 'rgba(220, 53, 69, 0.3)';
+                        }
+                        
+                        document.querySelector('.result-header > div').appendChild(validationEl);
+                    }
                     
                     updateStats();
                 } else {
@@ -580,6 +657,165 @@
             }
         }
         
+        async function refreshValidation() {
+            try {
+                console.log('Fetching Validation status...');
+                const response = await fetch('/validation/status');
+                const status = await response.json();
+                
+                console.log('Validation Response:', { ok: response.ok, status: response.status, data: status });
+                
+                const statusEl = document.getElementById('validationStatus');
+                const cardEl = document.getElementById('validationCard');
+                
+                if (response.ok && status.status === 'healthy') {
+                    console.log('Validation service is healthy, updating UI...');
+                    statusEl.innerHTML = '✅ Active';
+                    cardEl.className = 'status-card status-active';
+                    
+                    let details = `
+                        <h4>Validation Service Details:</h4>
+                        <p><strong>Status:</strong> ${status.status}</p>
+                        <p><strong>URL:</strong> ${status.url || 'http://localhost:5002'}</p>
+                        <p><strong>Response Time:</strong> ${(status.response_time * 1000).toFixed(0)}ms</p>
+                        <p><strong>Integration:</strong> ${status.integration_initialized ? 'Active' : 'Inactive'}</p>
+                        <p><strong>Connection:</strong> ${status.service_connected ? 'Connected' : 'Disconnected'}</p>
+                        <p><strong>Blocking Validation:</strong> ${status.blocking_validation_enabled ? 'Enabled' : 'Disabled'}</p>
+                    `;
+                    
+                    // Add integration statistics if available
+                    if (status.integration_stats && status.integration_stats.validation_stats) {
+                        const stats = status.integration_stats.validation_stats;
+                        details += `
+                            <h5>Integration Statistics:</h5>
+                            <p><strong>Total Validations:</strong> ${stats.total_validations || 0}</p>
+                            <p><strong>Passed:</strong> ${stats.passed_validations || 0}</p>
+                            <p><strong>Failed:</strong> ${stats.failed_validations || 0}</p>
+                            <p><strong>Avg Time:</strong> ${(stats.average_validation_time || 0).toFixed(3)}s</p>
+                        `;
+                    }
+                    
+                    // Add service data if available
+                    if (status.service_data) {
+                        details += '<h5>Service Health:</h5>';
+                        Object.keys(status.service_data).forEach(key => {
+                            if (typeof status.service_data[key] === 'object') {
+                                details += `<p><strong>${key}:</strong> [Object]</p>`;
+                            } else {
+                                details += `<p><strong>${key}:</strong> ${status.service_data[key]}</p>`;
+                            }
+                        });
+                    }
+                    
+                    document.getElementById('validationDetails').innerHTML = details;
+                    
+                    // Update validation badge
+                    updateValidationBadge('active');
+                } else {
+                    // Handle error response (HTTP 503 or other errors)
+                    const errorStatus = status.status || 'Error';
+                    statusEl.innerHTML = errorStatus === 'service_unavailable' ? '⚠️ Unavailable' : '❌ Error';
+                    cardEl.className = errorStatus === 'service_unavailable' ? 'status-card status-warning' : 'status-card status-error';
+                    
+                    // Update validation badge
+                    updateValidationBadge(errorStatus === 'service_unavailable' ? 'warning' : 'error');
+                    
+                    let details = `
+                        <h4>Validation Service Details:</h4>
+                        <p><strong>Status:</strong> ${errorStatus}</p>
+                        <p><strong>Integration:</strong> ${status.integration_initialized ? 'Active' : 'Inactive'}</p>
+                        <p><strong>Connection:</strong> ${status.service_connected ? 'Connected' : 'Disconnected'}</p>
+                    `;
+                    
+                    if (status.error) {
+                        details += `<p><strong>Error:</strong> ${status.error}</p>`;
+                    }
+                    
+                    if (status.details) {
+                        details += `<p><strong>Details:</strong> ${status.details}</p>`;
+                    }
+                    
+                    if (status.required) {
+                        details += `<p><strong>Required:</strong> ${status.required}</p>`;
+                    }
+                    
+                    // Show health status if available
+                    if (status.health_status) {
+                        details += `<p><strong>Health Status:</strong> ${status.health_status.status || 'Unknown'}</p>`;
+                        if (status.health_status.error) {
+                            details += `<p><strong>Health Error:</strong> ${status.health_status.error}</p>`;
+                        }
+                    }
+                    
+                    document.getElementById('validationDetails').innerHTML = details;
+                }
+                    
+            } catch (error) {
+                console.error('Validation status fetch error:', error);
+                document.getElementById('validationDetails').innerHTML = `
+                    <h4>Validation Service Details:</h4>
+                    <p><strong>Status:</strong> Connection Error</p>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+                document.getElementById('validationStatus').textContent = '❌ Error';
+                document.getElementById('validationCard').className = 'status-card status-error';
+                
+                // Update validation badge
+                updateValidationBadge('error');
+            }
+        }
+        
+        function updateValidationBadge(status) {
+            const badge = document.getElementById('validationBadge');
+            if (!badge) return;
+            
+            // Remove all validation classes
+            badge.classList.remove('validation-active', 'validation-warning', 'validation-error');
+            
+            switch (status) {
+                case 'active':
+                    badge.classList.add('validation-active');
+                    badge.textContent = '🔒 Blocking Validation';
+                    break;
+                case 'warning':
+                    badge.classList.add('validation-warning');
+                    badge.textContent = '⚠️ Validation Unavailable';
+                    break;
+                case 'error':
+                    badge.classList.add('validation-error');
+                    badge.textContent = '❌ Validation Error';
+                    break;
+                default:
+                    badge.textContent = '🔒 Validation Unknown';
+            }
+        }
+        
+        async function refreshValidationService() {
+            try {
+                console.log('Force refreshing validation service status...');
+                const response = await fetch('/validation/refresh', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                
+                console.log('Validation Refresh Response:', { ok: response.ok, status: response.status, data: result });
+                
+                if (response.ok && result.status === 'success') {
+                    console.log('Validation service refreshed successfully');
+                    // Refresh the status display after successful refresh
+                    await refreshValidation();
+                } else {
+                    console.error('Validation service refresh failed:', result);
+                    alert('Failed to refresh validation service: ' + (result.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                console.error('Validation service refresh error:', error);
+                alert('Error refreshing validation service: ' + error.message);
+            }
+        }
+        
         async function refreshHistory() {
             try {
                 const response = await fetch('/history');
@@ -627,6 +863,12 @@
         
         function clearResults() {
             document.getElementById('resultsContainer').style.display = 'none';
+            
+            // Clean up any validation indicators
+            const existingValidationEl = document.querySelector('.result-header .rag-indicator[style*="margin-left"]');
+            if (existingValidationEl) {
+                existingValidationEl.remove();
+            }
         }
         
         async function checkPromptEngineStatus() {
@@ -676,7 +918,8 @@
                 await Promise.all([
                     refreshRAG(),
                     refreshVector(), 
-                    checkPromptEngineStatus()
+                    checkPromptEngineStatus(),
+                    refreshValidation()
                 ]);
                 
             } catch (error) {

@@ -17,7 +17,7 @@ crm_insights_refined = PromptTemplate(
     **ANALYSIS REQUIREMENTS:**
     - Insights must highlight patterns, behaviours, or emerging issues from transaction data
     - Insights should be slightly broader than basic metrics but remain data-driven and immediately useful to Relationship Managers
-    - Recommendations must be clear, helpful, and 3 out of 5 should include a product/service suggestion from our banking catalog
+    - Recommendations must be clear, helpful, and 3 out of 5 should include a product/service suggestion from our banking catalogue
     - Use natural, CRM-friendly language throughout — not technical jargon
     - Language should feel advisory, not salesy — like a helpful banker would say
     - Each pair must be fully self-contained and not reference other pairs
@@ -83,7 +83,7 @@ crm_insights_analysis = PromptTemplate(
     context="crm_financial_insights",
     data_type="transaction_history",
     template="""
-    Based on customer transaction, card, and behavioral data across the provided time period, extract business insights followed by clear, proactive recommendations.
+    Based on customer transaction, card, and behavioural data across the provided time period, extract business insights followed by clear, proactive recommendations.
 
     Transaction Data: {transaction_data}
 
@@ -139,7 +139,7 @@ transaction_categorization = PromptTemplate(
     context="core_banking",
     data_type="transaction_history",
     template="""
-    Analyze the following business transaction data and categorize each transaction:
+    Analyse the following business transaction data and categorise each transaction:
     
     {transaction_data}
     
@@ -205,7 +205,7 @@ cash_flow_analysis = PromptTemplate(
     context="lending_decision",
     data_type="time_series_data",
     template="""
-    Analyze cash flow patterns from this SME's transaction history:
+    Analyse cash flow patterns from this SME's transaction history:
     
     {time_series_data}
     
@@ -425,7 +425,7 @@ card_spend_analysis = PromptTemplate(
     context="card_data",
     data_type="card_transactions",
     template="""
-    Analyze business card transactions:
+    Analyse business card transactions:
     {card_transactions}
     
     Identify:
@@ -492,9 +492,9 @@ card_spend_analysis = PromptTemplate(
 credit_utilization = PromptTemplate(
     name="credit_utilization",
     context="risk_assessment",
-    data_type="card_behavior",
+    data_type="card_behaviour",
     template="""
-    Analyze credit card usage behavior:
+    Analyse credit card usage behaviour:
     - Monthly statements: {statements}
     - Payment history: {payment_history}
     

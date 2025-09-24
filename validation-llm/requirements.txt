@@ -1,0 +1,30 @@
+# Response Validation LLM System Requirements
+
+# Core Framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# HTTP Requests
+requests==2.31.0
+
+# Vector Database - using compatible version
+qdrant-client>=1.7.1,<2.0.0
+
+# Embeddings and NLP - using more flexible versions
+sentence-transformers>=2.2.0,<3.0.0
+transformers>=4.30.0,<5.0.0
+torch>=1.13.0
+
+# Data Processing - using flexible versions
+numpy>=1.21.0,<2.0.0
+pandas>=1.5.0,<3.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+
+# Optional: Development and Testing
+pytest>=7.0.0,<8.0.0
+pytest-asyncio>=0.20.0,<1.0.0
+
+# Optional: Performance Monitoring
+psutil>=5.8.0,<6.0.0

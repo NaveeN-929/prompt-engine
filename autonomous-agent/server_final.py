@@ -43,10 +43,12 @@ CORS(app)
 rag_service = None
 prompt_consumer = None
 response_formatter = None
+validation_service = None
 services_status = {
     "rag_initialized": False,
     "vector_connected": False,
     "prompt_engine_connected": False,
+    "validation_initialized": False,
     "initialization_error": None
 }
 
@@ -74,7 +76,7 @@ rag_stats = {
 
 def initialize_rag_service():
     """Initialize RAG service in background"""
-    global rag_service, prompt_consumer, services_status
+    global rag_service, prompt_consumer, validation_service, services_status
     
     try:
         # Wait for Docker services to be ready
@@ -136,12 +138,46 @@ def initialize_rag_service():
         response_formatter = ResponseFormatter()
         logger.info("✅ Response formatter initialized")
         
+        # Initialize validation service
+        try:
+            from core.validation_integration import ValidationIntegrationService
+            validation_service = ValidationIntegrationService()
+            
+            # Comprehensive validation service status checking
+            validation_available = validation_service.is_validation_service_available()
+            services_status["validation_initialized"] = True  # Service integration initialized
+            services_status["validation_connected"] = validation_available  # Service actually available
+            services_status["validation_service_url"] = validation_service.validation_url
+            
+            if validation_available:
+                logger.info("✅ Validation service integration initialized and service available")
+                # Test validation service health
+                try:
+                    validation_health = validation_service.get_validation_service_health()
+                    services_status["validation_health"] = validation_health
+                    logger.info(f"✅ Validation service health check passed: {validation_health.get('status', 'unknown')}")
+                except Exception as health_error:
+                    logger.warning(f"⚠️ Validation service health check failed: {health_error}")
+                    services_status["validation_health"] = {"status": "health_check_failed", "error": str(health_error)}
+            else:
+                logger.warning("⚠️ Validation service integration initialized but service unavailable")
+                services_status["validation_health"] = {"status": "service_unavailable"}
+                
+        except Exception as validation_error:
+            logger.warning(f"⚠️ Validation service integration failed: {validation_error}")
+            services_status["validation_initialized"] = False
+            services_status["validation_connected"] = False
+            services_status["validation_health"] = {"status": "initialization_failed", "error": str(validation_error)}
+        
     except Exception as e:
         logger.warning(f"⚠️ Service initialization failed: {e}")
         services_status["initialization_error"] = str(e)
         services_status["rag_initialized"] = False
         services_status["vector_connected"] = False
         services_status["prompt_engine_connected"] = False
+        services_status["validation_initialized"] = False
+        services_status["validation_connected"] = False
+        services_status["validation_health"] = {"status": "initialization_error", "error": str(e)}
 
 # Start initialization in background
 threading.Thread(target=initialize_rag_service, daemon=True).start()
@@ -263,36 +299,91 @@ def analyze():
         # Step 3: Generate CRM insights and recommendations
         analysis = generate_crm_insights_analysis(input_data, rag_enhanced_prompt)
         
-        processing_time = time.time() - start_time
-        
-        # Update statistics
-        agent_statistics["successful_requests"] += 1
-        agent_statistics["total_processing_time"] += processing_time
-        agent_statistics["average_processing_time"] = (
-            agent_statistics["total_processing_time"] / agent_statistics["successful_requests"]
-        )
-        
-        # Create response
-        response_data = {
+        # Create initial response
+        initial_response_data = {
             "request_id": f"req_{int(time.time())}",
             "status": "success",
             "analysis": analysis,
-            "processing_time": processing_time,
+            "processing_time": time.time() - start_time,
             "rag_metadata": rag_metadata,
             "input_summary": {
                 "transaction_count": len(input_data.get("transactions", [])),
                 "has_balance": "account_balance" in input_data
             },
-            "pipeline_used": "complete_rag_enhanced",
+            "pipeline_used": "complete_rag_enhanced_with_validation",
             "timestamp": datetime.now().isoformat()
         }
         
+        # Step 4: BLOCKING VALIDATION - Validate response before user delivery
+        if validation_service and services_status.get("validation_initialized", False):
+            logger.info("🔍 Applying blocking validation before user delivery")
+            
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                # Apply blocking validation with quality gates
+                should_deliver, validated_response = loop.run_until_complete(
+                    validation_service.validate_and_gate_response(
+                        initial_response_data, 
+                        input_data,
+                        retry_callback=None  # Could implement retry logic here
+                    )
+                )
+                
+                loop.close()
+                
+                if should_deliver:
+                    final_response = validated_response
+                    logger.info(f"✅ Response approved for delivery (quality: {validated_response.get('validation', {}).get('quality_level', 'unknown')})")
+                else:
+                    # This case should not occur with current implementation, but handle gracefully
+                    logger.warning("⚠️ Response failed validation but delivering with warnings")
+                    final_response = validated_response
+                
+            except Exception as validation_error:
+                logger.error(f"❌ Validation failed: {validation_error}")
+                # Deliver response with validation error noted
+                final_response = initial_response_data.copy()
+                final_response["validation"] = {
+                    "quality_level": "unknown",
+                    "overall_score": 0.0,
+                    "validation_timestamp": datetime.now().isoformat(),
+                    "quality_approved": True,
+                    "validation_status": "validation_error",
+                    "validation_error": str(validation_error),
+                    "quality_note": "Response delivered due to validation system error"
+                }
+        else:
+            # No validation service available - deliver with note
+            logger.warning("⚠️ Validation service not available - delivering response without validation")
+            final_response = initial_response_data.copy()
+            final_response["validation"] = {
+                "quality_level": "unknown",
+                "overall_score": 0.0,
+                "validation_timestamp": datetime.now().isoformat(),
+                "quality_approved": True,
+                "validation_status": "service_unavailable",
+                "quality_note": "Response delivered without validation - validation service unavailable"
+            }
+        
+        # Update final processing time
+        final_processing_time = time.time() - start_time
+        final_response["processing_time"] = final_processing_time
+        
+        # Update statistics
+        agent_statistics["successful_requests"] += 1
+        agent_statistics["total_processing_time"] += final_processing_time
+        agent_statistics["average_processing_time"] = (
+            agent_statistics["total_processing_time"] / agent_statistics["successful_requests"]
+        )
+        
         # Store in history
-        interaction_history.append(response_data)
+        interaction_history.append(final_response)
         if len(interaction_history) > 50:
             interaction_history[:] = interaction_history[-40:]
         
-        return jsonify(response_data)
+        return jsonify(final_response)
         
     except Exception as e:
         agent_statistics["failed_requests"] += 1
@@ -311,16 +402,25 @@ def get_status():
         "services": {
             "rag_service": "active" if services_status["rag_initialized"] else "error",
             "vector_database": "connected" if services_status["vector_connected"] else "error",
-            "response_formatter": "active" if response_formatter else "unavailable"
+            "response_formatter": "active" if response_formatter else "unavailable",
+            "validation_service": {
+                "integration": "active" if services_status.get("validation_initialized", False) else "error",
+                "connection": "connected" if services_status.get("validation_connected", False) else "disconnected",
+                "health": services_status.get("validation_health", {}).get("status", "unknown"),
+                "url": services_status.get("validation_service_url", "unknown")
+            }
         },
         "requirements": {
             "ollama": "Must be running for LLM functionality",
-            "qdrant": f"Must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')} for vector operations"
+            "qdrant": f"Must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')} for vector operations",
+            "validation_service": f"Must be running on {services_status.get('validation_service_url', 'http://localhost:5002')} for blocking validation"
         },
         "features": {
             "structured_responses": "enabled",
-            "two_section_format": "insights + recommendations"
-        }
+            "two_section_format": "insights + recommendations",
+            "blocking_validation": "enabled" if services_status.get("validation_connected", False) else "unavailable"
+        },
+        "validation_stats": validation_service.get_validation_statistics() if validation_service else {"status": "unavailable"}
     })
 
 @app.route('/validate/response', methods=['POST'])
@@ -389,6 +489,73 @@ def get_vector_status():
             }), 503
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route('/validation/status', methods=['GET'])
+def get_validation_status():
+    """Get validation service status"""
+    try:
+        if services_status.get("validation_initialized", False) and validation_service:
+            # Get detailed validation service status
+            detailed_status = validation_service.get_validation_service_detailed_status()
+            
+            # Add integration-specific information
+            detailed_status.update({
+                "integration_initialized": services_status.get("validation_initialized", False),
+                "service_connected": services_status.get("validation_connected", False),
+                "initialization_time": services_status.get("validation_init_time"),
+                "blocking_validation_enabled": services_status.get("validation_connected", False)
+            })
+            
+            return jsonify(detailed_status)
+        else:
+            # Return error status when validation service is unavailable
+            return jsonify({
+                "status": "error",
+                "error": "Validation service not available",
+                "details": services_status.get("validation_health", {}).get("error", "Service not initialized"),
+                "integration_initialized": services_status.get("validation_initialized", False),
+                "service_connected": services_status.get("validation_connected", False),
+                "required": f"Validation service must be running on {services_status.get('validation_service_url', 'http://localhost:5002')}",
+                "health_status": services_status.get("validation_health", {"status": "unknown"})
+            }), 503
+    except Exception as e:
+        return jsonify({
+            "status": "error", 
+            "error": str(e),
+            "integration_initialized": services_status.get("validation_initialized", False),
+            "service_connected": services_status.get("validation_connected", False)
+        }), 500
+
+@app.route('/validation/refresh', methods=['POST'])
+def refresh_validation_status():
+    """Refresh validation service status"""
+    try:
+        if validation_service:
+            # Refresh status
+            refresh_result = validation_service.refresh_service_status()
+            
+            # Update global service status
+            services_status["validation_connected"] = refresh_result["service_available"]
+            services_status["validation_health"] = refresh_result["health_data"]
+            
+            return jsonify({
+                "status": "success",
+                "refresh_result": refresh_result,
+                "updated_status": {
+                    "validation_connected": services_status["validation_connected"],
+                    "validation_health": services_status["validation_health"]
+                }
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "error": "Validation service integration not initialized"
+            }), 500
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": str(e)
+        }), 500
 
 @app.route('/history', methods=['GET'])
 def get_history():
@@ -696,26 +863,56 @@ def get_prompt_engine_status():
 def health_check():
     """Health check endpoint"""
     # Only return healthy if all required services are available
+    # Note: validation service is optional for basic functionality
     all_services_healthy = (
         services_status["rag_initialized"] and 
         services_status["vector_connected"] and 
         services_status["prompt_engine_connected"]
     )
     
+    # Enhanced health with validation service
+    all_services_with_validation_healthy = (
+        all_services_healthy and
+        services_status.get("validation_connected", False)
+    )
+    
+    # Determine overall health status
+    if all_services_with_validation_healthy:
+        health_status = "healthy"
+        mode = "rag_enhanced_with_blocking_validation"
+    elif all_services_healthy:
+        health_status = "healthy_without_validation"
+        mode = "rag_enhanced_pipeline"
+    else:
+        health_status = "unhealthy"
+        mode = "basic_only"
+    
     return jsonify({
-        "status": "healthy" if all_services_healthy else "unhealthy",
-        "mode": "rag_enhanced_pipeline" if all_services_healthy else "basic_only",
-        "version": "2.0.0-pipeline",
+        "status": health_status,
+        "mode": mode,
+        "version": "2.0.0-pipeline-with-validation",
         "timestamp": datetime.now().isoformat(),
         "services": {
             "rag_service": services_status["rag_initialized"],
             "vector_database": services_status["vector_connected"],
             "prompt_engine": services_status["prompt_engine_connected"],
+            "validation_service": {
+                "integration": services_status.get("validation_initialized", False),
+                "connection": services_status.get("validation_connected", False),
+                "health": services_status.get("validation_health", {}).get("status", "unknown")
+            },
             "initialization_complete": services_status["rag_initialized"]
+        },
+        "capabilities": {
+            "basic_analysis": all_services_healthy,
+            "rag_enhanced_analysis": all_services_healthy,
+            "blocking_validation": services_status.get("validation_connected", False),
+            "quality_gates": services_status.get("validation_connected", False)
         },
         "requirements": {
             "ollama": "Must be running for LLM functionality",
-            "qdrant": f"Must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')} for vector operations"
+            "qdrant": f"Must be running on {os.getenv('QDRANT_HOST', 'localhost')}:{os.getenv('QDRANT_PORT', '6333')} for vector operations",
+            "validation_service": f"Optional - running on {services_status.get('validation_service_url', 'http://localhost:5002')} for blocking validation"
         }
     }), 200 if all_services_healthy else 503
 
@@ -788,7 +985,7 @@ def generate_crm_insights_analysis(input_data, rag_enhanced_prompt):
         analysis += "\\n=== ANALYSIS METADATA ===\\n"
         analysis += "✅ Generated through complete RAG pipeline\\n"
         analysis += "✅ Enhanced with vector knowledge base\\n"
-        analysis += "✅ Business context optimized for CRM integration\\n"
+        analysis += "✅ Business context optimised for CRM integration\\n"
         analysis += "✅ No fallback methods used\\n"
         
     except Exception as e:
@@ -798,7 +995,7 @@ def generate_crm_insights_analysis(input_data, rag_enhanced_prompt):
     return analysis
 
 def analyze_transaction_patterns(transactions):
-    """Dynamically analyze transaction patterns to generate relevant insights"""
+    """Dynamically analyse transaction patterns to generate relevant insights"""
     insights = []
     recommendations = []
     
@@ -819,9 +1016,9 @@ def analyze_transaction_patterns(transactions):
     # 1. CASH FLOW ANALYSIS
     if net_flow > credits * 0.1:  # Positive cash flow > 10% of income
         insights.append("Your business demonstrates strong positive cash flow with income consistently exceeding expenses")
-        recommendations.append("Consider high-yield savings accounts and term deposits to optimize your surplus cash management (Upsell)")
+        recommendations.append("Consider high-yield savings accounts and term deposits to optimise your surplus cash management (Upsell)")
     elif net_flow > 0:
-        insights.append("Your cash flow remains positive though margins could be optimized")
+        insights.append("Your cash flow remains positive though margins could be optimised")
         recommendations.append("A revolving credit line could provide additional working capital flexibility for growth opportunities (Upsell)")
     elif net_flow > -credits * 0.2:  # Small deficit
         insights.append("Your cash flow shows temporary deficit that may indicate seasonal patterns")
@@ -916,7 +1113,7 @@ def analyze_transaction_patterns(transactions):
     large_credits = [tx for tx in credit_txs if tx.get("amount", 0) > credits / len(credit_txs) * 2 if credit_txs]
     if len(large_credits) >= 3:
         insights.append("Your revenue includes several high-value transactions indicating strong client relationships")
-        recommendations.append("High-yield savings accounts and term deposits could optimize returns on your large payment receipts (Upsell)")
+        recommendations.append("High-yield savings accounts and term deposits could optimise returns on your large payment receipts (Upsell)")
     
     # 7. ADDITIONAL INSIGHTS BASED ON DATASET SIZE
     if len(transactions) >= 50:
@@ -931,13 +1128,13 @@ def analyze_transaction_patterns(transactions):
                 months = [d.month for d in date_objects]
                 if len(set(months)) >= 3:  # Spans multiple months
                     insights.append("Your transaction patterns span multiple months showing business continuity")
-                    recommendations.append("Consider quarterly financial reviews to optimize seasonal performance")
+                    recommendations.append("Consider quarterly financial reviews to optimise seasonal performance")
             except:
                 pass
     
     if len(debit_txs) >= 15:
         insights.append("Your expense management shows diverse operational spending patterns")
-        recommendations.append("Expense categorization tools could help identify additional cost optimization opportunities")
+        recommendations.append("Expense categorisation tools could help identify additional cost optimisation opportunities")
     
     # Remove duplicates and ensure variety
     insights = list(dict.fromkeys(insights))  # Remove duplicates while preserving order
@@ -953,7 +1150,7 @@ def ensure_banking_product_mix(recommendations, categories, net_flow):
     
     # Available banking products for suggestions:
     upsell_products = [
-        "High-yield savings accounts and term deposits could optimize your surplus cash management (Upsell)",
+        "High-yield savings accounts and term deposits could optimise your surplus cash management (Upsell)",
         "Flexible overdraft facilities and invoice financing could provide cash flow stability (Upsell)", 
         "A revolving credit line could support business growth and working capital needs (Upsell)"
     ]
@@ -993,7 +1190,7 @@ def ensure_banking_product_mix(recommendations, categories, net_flow):
     return recommendations
 
 def categorize_spending_for_crm(transactions):
-    """Categorize transactions optimized for CRM insights"""
+    """Categorise transactions optimised for CRM insights"""
     categories = {}
     
     for tx in transactions:
@@ -1014,7 +1211,7 @@ def categorize_spending_for_crm(transactions):
                 categories["Rent & Facilities"] = categories.get("Rent & Facilities", 0) + amount
             elif any(word in desc for word in ["payroll", "salary", "salaries", "staff"]):
                 categories["Payroll & Staffing"] = categories.get("Payroll & Staffing", 0) + amount
-            # Comprehensive tech categorization to capture all $4,820
+            # Comprehensive tech categorisation to capture all $4,820
             elif (any(word in desc for word in ["saas", "software", "license", "cloud", "hosting", "aws", "microsoft", "zoom", "github", "figma", "crm", "domain", "vpn", "website", "dev tools", "analytics", "platform"]) 
                   or (any(word in desc for word in ["subscription"]) and any(word in desc for word in ["email", "tools", "pro", "annual", "monthly"]) and not any(word in desc for word in ["parking", "vehicle"]))
                   or (any(word in desc for word in ["equipment", "printer"]) and any(word in desc for word in ["office", "purchase", "ink", "toner"]))
@@ -1040,7 +1237,7 @@ def categorize_spending_for_crm(transactions):
     return categories
 
 def categorize_spending(transactions):
-    """Categorize transactions for business financial analysis"""
+    """Categorise transactions for business financial analysis"""
     categories = {}
     
     for tx in transactions:
