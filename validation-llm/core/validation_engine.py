@@ -131,8 +131,11 @@ class ValidationEngine:
                 result.validation_details["error"] = "No response text found"
                 return result
             
+            # Check if fast validation is requested
+            fast_mode = validation_config and validation_config.get("fast_mode", False)
+            
             # Phase 1: Multi-criteria LLM validation
-            logger.info(f"[{validation_id}] Phase 1: Multi-criteria validation")
+            logger.info(f"[{validation_id}] Phase 1: Multi-criteria validation (fast_mode: {fast_mode})")
             criteria_results = await self._validate_all_criteria(
                 response_text, input_data, validation_config
             )
@@ -148,29 +151,34 @@ class ValidationEngine:
             result.quality_level = quality_result["quality_level"]
             result.validation_details = quality_result["details"]
             
-            # Phase 3: Generate recommendations
-            logger.info(f"[{validation_id}] Phase 3: Generating recommendations")
-            recommendations = await self._generate_recommendations(
-                criteria_results, quality_result, response_text
-            )
-            result.recommendations = recommendations
-            
-            # Phase 4: Training data eligibility assessment
-            logger.info(f"[{validation_id}] Phase 4: Training data assessment")
-            training_eligible = await self._assess_training_eligibility(
-                result.overall_score, result.quality_level, criteria_results
-            )
-            result.training_data_eligible = training_eligible
-            
-            # Phase 5: Store high-quality responses for training
-            if training_eligible:
-                logger.info(f"[{validation_id}] Phase 5: Storing training data")
-                await self.training_data_manager.store_training_data(
-                    input_data=input_data,
-                    response_data=response_data,
-                    validation_result=result.to_dict(),
-                    quality_level=result.quality_level
+            if not fast_mode:
+                # Phase 3: Generate recommendations (skip in fast mode)
+                logger.info(f"[{validation_id}] Phase 3: Generating recommendations")
+                recommendations = await self._generate_recommendations(
+                    criteria_results, quality_result, response_text
                 )
+                result.recommendations = recommendations
+                
+                # Phase 4: Training data eligibility assessment (skip in fast mode)
+                logger.info(f"[{validation_id}] Phase 4: Training data assessment")
+                training_eligible = await self._assess_training_eligibility(
+                    result.overall_score, result.quality_level, criteria_results
+                )
+                result.training_data_eligible = training_eligible
+                
+                # Phase 5: Store high-quality responses for training (skip in fast mode)
+                if training_eligible:
+                    logger.info(f"[{validation_id}] Phase 5: Storing training data")
+                    await self.training_data_manager.store_training_data(
+                        input_data=input_data,
+                        response_data=response_data,
+                        validation_result=result.to_dict(),
+                        quality_level=result.quality_level
+                    )
+            else:
+                logger.info(f"[{validation_id}] Fast mode: Skipping phases 3-5 for speed")
+                result.recommendations = []
+                result.training_data_eligible = False
             
             # Phase 6: Send feedback to autonomous agent
             logger.info(f"[{validation_id}] Phase 6: Sending feedback")

@@ -24,16 +24,16 @@ VALIDATION_LLM_CONFIG = {
     "primary_validator": {
         "model_name": "llama3.2:3b",  # Smaller, faster model for validation
         "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-        "max_tokens": 2000,
+        "max_tokens": 200,  # Very small for testing
         "temperature": 0.1,  # Low temperature for consistent validation
-        "timeout": 30
+        "timeout": None  # No timeout for testing
     },
     "speed_validator": {
         "model_name": "llama3.2:1b",  # Even smaller model for fast validation
         "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"), 
-        "max_tokens": 1000,
+        "max_tokens": 100,  # Very small for testing
         "temperature": 0.2,
-        "timeout": 15
+        "timeout": None  # No timeout for testing
     }
 }
 

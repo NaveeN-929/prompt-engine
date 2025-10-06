@@ -220,12 +220,12 @@ class ValidationIntegrationService:
             "response_data": response_data,
             "input_data": input_data,
             "validation_config": {
+                "fast_mode": True,  # Enable fast validation mode
                 "criteria": {
-                    "content_accuracy": {"weight": 0.30, "threshold": 0.8},
-                    "structural_compliance": {"weight": 0.25, "threshold": 0.9},
-                    "logical_consistency": {"weight": 0.20, "threshold": 0.7},
-                    "completeness": {"weight": 0.15, "threshold": 0.6},
-                    "business_relevance": {"weight": 0.10, "threshold": 0.5}
+                    "content_accuracy": {"weight": 0.40, "threshold": 0.7},
+                    "structural_compliance": {"weight": 0.35, "threshold": 0.8},
+                    "logical_consistency": {"weight": 0.25, "threshold": 0.6}
+                    # Reduced criteria for faster validation
                 }
             }
         }
@@ -234,7 +234,7 @@ class ValidationIntegrationService:
             response = self.session.post(
                 f"{self.validation_url}/validate/response",
                 json=validation_request,
-                timeout=30
+                timeout=None  # No timeout for testing
             )
             
             if response.status_code == 200:

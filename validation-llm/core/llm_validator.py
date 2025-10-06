@@ -185,12 +185,19 @@ class LLMValidator:
             "stream": False
         }
         
-        # Make request to Ollama
-        response = self.session.post(
-            f"{llm_config['host']}/api/generate",
-            json=payload,
-            timeout=llm_config["timeout"]
-        )
+        # Make async request to Ollama using asyncio
+        loop = asyncio.get_event_loop()
+        
+        def make_request():
+            timeout = llm_config.get("timeout")
+            return self.session.post(
+                f"{llm_config['host']}/api/generate",
+                json=payload,
+                timeout=timeout  # Will be None for no timeout
+            )
+        
+        # Run the blocking request in a thread pool
+        response = await loop.run_in_executor(None, make_request)
         
         if response.status_code != 200:
             raise RuntimeError(f"LLM request failed: HTTP {response.status_code}")
@@ -350,11 +357,17 @@ class LLMValidator:
                 "stream": False
             }
             
-            response = self.session.post(
-                f"{self.llm_config['host']}/api/generate",
-                json=payload,
-                timeout=10
-            )
+            # Make async request using thread pool
+            loop = asyncio.get_event_loop()
+            
+            def make_test_request():
+                return self.session.post(
+                    f"{self.llm_config['host']}/api/generate",
+                    json=payload,
+                    timeout=None  # No timeout for testing
+                )
+            
+            response = await loop.run_in_executor(None, make_test_request)
             
             if response.status_code == 200:
                 return {"available": True, "status": "connected"}

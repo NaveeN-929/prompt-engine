@@ -244,7 +244,7 @@
             }, null, 2);
         }
         
-        function formatAnalysisResponse(analysis) {
+        function formatAnalysisResponse(analysis, validation) {
             // Clean up escaped newlines and format the response
             let formatted = analysis
                 .replace(/\\n/g, '\n')
@@ -285,6 +285,11 @@
                 }
             });
             
+            // Add validation section at the bottom
+            if (validation) {
+                html += formatValidationSection(validation);
+            }
+            
             return html;
         }
         
@@ -308,6 +313,96 @@
                 .join('');
         }
         
+        function formatValidationSection(validation) {
+            if (!validation) return '';
+            
+            const qualityLevel = validation.quality_level || 'unvalidated';
+            const qualityScore = validation.quality_score || 0;
+            const qualityApproved = validation.quality_approved;
+            const validationStatus = validation.validation_status || 'unknown';
+            
+            // Determine colors and icons based on quality level and status
+            let bgColor, textColor, icon, statusText;
+            
+            if (qualityApproved && validationStatus === 'approved') {
+                if (qualityLevel === 'exemplary') {
+                    bgColor = 'rgba(40, 167, 69, 0.15)';
+                    textColor = '#28a745';
+                    icon = '🏆';
+                    statusText = 'Exemplary Quality';
+                } else if (qualityLevel === 'high_quality') {
+                    bgColor = 'rgba(0, 123, 255, 0.15)';
+                    textColor = '#007bff';
+                    icon = '✅';
+                    statusText = 'High Quality';
+                } else if (qualityLevel === 'acceptable') {
+                    bgColor = 'rgba(255, 193, 7, 0.15)';
+                    textColor = '#ffc107';
+                    icon = '👍';
+                    statusText = 'Acceptable Quality';
+                }
+            } else {
+                bgColor = 'rgba(220, 53, 69, 0.15)';
+                textColor = '#dc3545';
+                icon = '⚠️';
+                if (validationStatus === 'service_unavailable') {
+                    statusText = 'Validation Unavailable';
+                } else if (validationStatus === 'validation_error') {
+                    statusText = 'Validation Error';
+                } else {
+                    statusText = 'Unvalidated';
+                }
+            }
+            
+            let html = `
+                <div class="section-header" style="margin-top: 20px;">🔒 VALIDATION RESULTS</div>
+                <div style="background: ${bgColor}; border-left: 4px solid ${textColor}; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                        <div style="display: flex; align-items: center;">
+                            <span style="font-size: 1.2em; margin-right: 8px;">${icon}</span>
+                            <strong style="color: ${textColor};">${statusText}</strong>
+                        </div>
+                        <div style="background: ${textColor}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">
+                            Score: ${(qualityScore * 100).toFixed(1)}%
+                        </div>
+                    </div>
+            `;
+            
+            // Add criteria scores if available
+            if (validation.criteria_scores) {
+                html += '<div style="margin-top: 10px; font-size: 0.9em;">';
+                html += '<div style="font-weight: bold; margin-bottom: 5px;">Quality Criteria:</div>';
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">';
+                
+                Object.entries(validation.criteria_scores).forEach(([criterion, score]) => {
+                    const percentage = (score * 100).toFixed(0);
+                    let barColor = '#dc3545'; // Red for low scores
+                    if (score >= 0.8) barColor = '#28a745'; // Green for high scores
+                    else if (score >= 0.65) barColor = '#ffc107'; // Yellow for medium scores
+                    
+                    html += `
+                        <div style="background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px;">
+                            <div style="font-weight: 500; text-transform: capitalize; margin-bottom: 3px;">${criterion.replace(/_/g, ' ')}</div>
+                            <div style="background: #e9ecef; height: 6px; border-radius: 3px; overflow: hidden;">
+                                <div style="background: ${barColor}; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
+                            </div>
+                            <div style="text-align: right; font-size: 0.8em; margin-top: 2px;">${percentage}%</div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            }
+            
+            // Add validation time if available
+            if (validation.validation_time) {
+                html += `<div style="font-size: 0.85em; color: #666; margin-top: 8px;">Validation Time: ${(validation.validation_time * 1000).toFixed(0)}ms</div>`;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+        
         async function processFullPipeline() {
             const data = document.getElementById('analysisData').value;
             const container = document.getElementById('resultsContainer');
@@ -325,6 +420,7 @@
                 const inputData = JSON.parse(data);
                 
                 log('Sending request to /pipeline/full');
+                log('🔒 Validation will be performed during pipeline processing...');
                 const response = await fetch('/pipeline/full', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -336,7 +432,27 @@
                 
                 if (response.ok) {
                     log('Pipeline completed successfully');
-                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Analysis completed successfully');
+                    
+                    // Debug validation information
+                    if (result.validation) {
+                        log('🔒 VALIDATION DEBUG:');
+                        log(`   Quality Level: ${result.validation.quality_level || 'unknown'}`);
+                        log(`   Quality Score: ${result.validation.quality_score || 0}`);
+                        log(`   Quality Approved: ${result.validation.quality_approved}`);
+                        log(`   Validation Status: ${result.validation.validation_status || 'unknown'}`);
+                        log(`   Validation Time: ${result.validation.validation_time || 0}ms`);
+                        
+                        if (result.validation.criteria_scores) {
+                            log('   Criteria Scores:');
+                            Object.entries(result.validation.criteria_scores).forEach(([criterion, score]) => {
+                                log(`     - ${criterion}: ${score}`);
+                            });
+                        }
+                    } else {
+                        log('⚠️ No validation data in response');
+                    }
+                    
+                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Analysis completed successfully', result.validation);
                     const time = result.processing_time?.toFixed(3) || '0.0';
                     timeEl.textContent = `${time}s`;
                     updateStatus('Complete', time);
@@ -382,6 +498,7 @@
                 const inputData = JSON.parse(data);
                 
                 log('Sending request to /pipeline/agentic');
+                log('🔒 Validation will be performed during agentic pipeline processing...');
                 const response = await fetch('/pipeline/agentic', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -393,7 +510,27 @@
                 
                 if (response.ok) {
                     log('Agentic pipeline completed successfully');
-                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Agentic analysis completed successfully');
+                    
+                    // Debug validation information
+                    if (result.validation) {
+                        log('🔒 AGENTIC VALIDATION DEBUG:');
+                        log(`   Quality Level: ${result.validation.quality_level || 'unknown'}`);
+                        log(`   Quality Score: ${result.validation.quality_score || 0}`);
+                        log(`   Quality Approved: ${result.validation.quality_approved}`);
+                        log(`   Validation Status: ${result.validation.validation_status || 'unknown'}`);
+                        log(`   Validation Time: ${result.validation.validation_time || 0}ms`);
+                        
+                        if (result.validation.criteria_scores) {
+                            log('   Criteria Scores:');
+                            Object.entries(result.validation.criteria_scores).forEach(([criterion, score]) => {
+                                log(`     - ${criterion}: ${score}`);
+                            });
+                        }
+                    } else {
+                        log('⚠️ No validation data in agentic response');
+                    }
+                    
+                    content.innerHTML = formatAnalysisResponse(result.analysis || 'Agentic analysis completed successfully', result.validation);
                     const time = result.processing_time?.toFixed(3) || '0.0';
                     timeEl.textContent = `${time}s`;
                     updateStatus('Complete', time);
