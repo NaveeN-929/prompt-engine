@@ -1,21 +1,22 @@
 # Minimal Requirements for Response Validation LLM System
-# Install these first, then add optional components as needed
+# Python 3.13+ Compatible - Install these first
 
 # Core Framework
 Flask>=2.3.0
 Flask-CORS>=4.0.0
-requests>=2.30.0
+requests>=2.31.0
 
-# Vector Database (install what's available)
+# Vector Database
 qdrant-client>=1.7.1
 
-# Basic NLP (optional - can work without)
-sentence-transformers>=2.0.0
-
-# Data Processing
-numpy>=1.21.0
-pandas>=1.5.0
+# Data Processing (Python 3.13 compatible)
+numpy>=1.24.0
+pandas>=2.0.0
 
 # Utilities
 python-dateutil>=2.8.0
+
+# Note: PyTorch and sentence-transformers excluded due to Python 3.13 compatibility
+# The validation system will work with basic text processing
+# For advanced NLP features, consider using Python 3.12 or wait for PyTorch 3.13 support
 

@@ -390,7 +390,7 @@
             if (!validation) return '';
             
             const qualityLevel = validation.quality_level || 'unvalidated';
-            const qualityScore = validation.quality_score || 0;
+            const qualityScore = validation.overall_score || validation.quality_score || 0;
             const qualityApproved = validation.quality_approved;
             const validationStatus = validation.validation_status || 'unknown';
             
@@ -428,19 +428,19 @@
             }
             
             return `
-                <div class="section-header" style="margin-top: 20px;">🔒 VALIDATION RESULTS</div>
-                <div style="background: ${bgColor}; border-left: 4px solid ${textColor}; padding: 15px; border-radius: 8px; margin: 10px 0;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                        <div style="display: flex; align-items: center;">
-                            <span style="font-size: 1.2em; margin-right: 8px;">${icon}</span>
-                            <strong style="color: ${textColor};">${statusText}</strong>
+                <div style="background: ${bgColor}; border-left: 2px solid ${textColor}; padding: 6px 10px; border-radius: 4px; margin: 6px 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.85em; font-weight: 600; color: #666;">VALIDATION RESULTS</span>
+                            <span style="font-size: 0.9em; margin-right: 3px;">${icon}</span>
+                            <strong style="color: ${textColor}; font-size: 0.85em;">${statusText}</strong>
                         </div>
-                        <div style="background: ${textColor}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">
-                            Score: ${(qualityScore * 100).toFixed(1)}%
+                        <div style="background: ${textColor}; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8em;">
+                            Quality Score: ${(qualityScore * 100).toFixed(1)}%
                         </div>
                     </div>
                     ${validation.criteria_scores ? formatCriteriaScores(validation.criteria_scores) : ''}
-                    ${validation.validation_time ? `<div style="font-size: 0.85em; color: #666; margin-top: 8px;">Validation Time: ${(validation.validation_time * 1000).toFixed(0)}ms</div>` : ''}
+                    ${validation.validation_time ? `<div style="font-size: 0.75em; color: #888; margin-top: 6px; text-align: right;">Validation Time: ${(validation.validation_time * 1000).toFixed(0)}ms</div>` : ''}
                 </div>
             `;
         }
@@ -448,9 +448,9 @@
         function formatCriteriaScores(criteriaScores) {
             if (!criteriaScores || typeof criteriaScores !== 'object') return '';
             
-            let html = '<div style="margin-top: 10px; font-size: 0.9em;">';
-            html += '<div style="font-weight: bold; margin-bottom: 5px;">Quality Criteria:</div>';
-            html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">';
+            let html = '<div style="margin-top: 8px; font-size: 0.85em;">';
+            html += '<div style="font-weight: 600; margin-bottom: 4px; font-size: 0.9em;">Quality Criteria:</div>';
+            html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px;">';
             
             Object.entries(criteriaScores).forEach(([criterion, score]) => {
                 const percentage = (score * 100).toFixed(0);
@@ -459,12 +459,12 @@
                 else if (score >= 0.65) barColor = '#ffc107'; // Yellow for medium scores
                 
                 html += `
-                    <div style="background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px;">
-                        <div style="font-weight: 500; text-transform: capitalize; margin-bottom: 3px;">${criterion.replace(/_/g, ' ')}</div>
-                        <div style="background: #e9ecef; height: 6px; border-radius: 3px; overflow: hidden;">
+                    <div style="background: rgba(0,0,0,0.03); padding: 6px 8px; border-radius: 4px;">
+                        <div style="font-weight: 500; text-transform: capitalize; margin-bottom: 2px; font-size: 0.9em;">${criterion.replace(/_/g, ' ')}</div>
+                        <div style="background: #e9ecef; height: 5px; border-radius: 2px; overflow: hidden;">
                             <div style="background: ${barColor}; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
                         </div>
-                        <div style="text-align: right; font-size: 0.8em; margin-top: 2px;">${percentage}%</div>
+                        <div style="text-align: right; font-size: 0.8em; margin-top: 1px;">${percentage}%</div>
                     </div>
                 `;
             });
@@ -541,14 +541,22 @@
                         const qualityLevel = result.validation.quality_level || 'unknown';
                         const qualityScore = result.validation.overall_score || 0;
                         
-                        validationEl.textContent = `Validation: ${qualityLevel} (${(qualityScore * 100).toFixed(0)}%)`;
-                        
-                        if (qualityLevel === 'exemplary' || qualityLevel === 'high_quality') {
-                            validationEl.style.background = 'rgba(40, 167, 69, 0.3)';
-                        } else if (qualityLevel === 'acceptable') {
-                            validationEl.style.background = 'rgba(255, 193, 7, 0.3)';
+                        // Only show validation if we have a meaningful score
+                        if (qualityScore > 0) {
+                            validationEl.textContent = `Validation: ${(qualityScore * 100).toFixed(0)}%`;
                         } else {
-                            validationEl.style.background = 'rgba(220, 53, 69, 0.3)';
+                            validationEl.textContent = `Validation: Unvalidated`;
+                        }
+                        
+                        // Color coding based on actual score
+                        if (qualityScore >= 0.8) {
+                            validationEl.style.background = 'rgba(40, 167, 69, 0.3)'; // Green for high quality
+                        } else if (qualityScore >= 0.6) {
+                            validationEl.style.background = 'rgba(255, 193, 7, 0.3)'; // Yellow for acceptable
+                        } else if (qualityScore > 0) {
+                            validationEl.style.background = 'rgba(255, 152, 0, 0.3)'; // Orange for poor
+                        } else {
+                            validationEl.style.background = 'rgba(220, 53, 69, 0.3)'; // Red for unvalidated
                         }
                         
                         document.querySelector('.result-header > div').appendChild(validationEl);
@@ -603,14 +611,22 @@
                         const qualityLevel = result.validation.quality_level || 'unknown';
                         const qualityScore = result.validation.overall_score || 0;
                         
-                        validationEl.textContent = `Validation: ${qualityLevel} (${(qualityScore * 100).toFixed(0)}%)`;
-                        
-                        if (qualityLevel === 'exemplary' || qualityLevel === 'high_quality') {
-                            validationEl.style.background = 'rgba(40, 167, 69, 0.3)';
-                        } else if (qualityLevel === 'acceptable') {
-                            validationEl.style.background = 'rgba(255, 193, 7, 0.3)';
+                        // Only show validation if we have a meaningful score
+                        if (qualityScore > 0) {
+                            validationEl.textContent = `Validation: ${(qualityScore * 100).toFixed(0)}%`;
                         } else {
-                            validationEl.style.background = 'rgba(220, 53, 69, 0.3)';
+                            validationEl.textContent = `Validation: Unvalidated`;
+                        }
+                        
+                        // Color coding based on actual score
+                        if (qualityScore >= 0.8) {
+                            validationEl.style.background = 'rgba(40, 167, 69, 0.3)'; // Green for high quality
+                        } else if (qualityScore >= 0.6) {
+                            validationEl.style.background = 'rgba(255, 193, 7, 0.3)'; // Yellow for acceptable
+                        } else if (qualityScore > 0) {
+                            validationEl.style.background = 'rgba(255, 152, 0, 0.3)'; // Orange for poor
+                        } else {
+                            validationEl.style.background = 'rgba(220, 53, 69, 0.3)'; // Red for unvalidated
                         }
                         
                         document.querySelector('.result-header > div').appendChild(validationEl);
@@ -867,7 +883,7 @@
             switch (status) {
                 case 'active':
                     badge.classList.add('validation-active');
-                    badge.textContent = '🔒 Blocking Validation';
+                    badge.textContent = '🔒 Validation Active';
                     break;
                 case 'warning':
                     badge.classList.add('validation-warning');

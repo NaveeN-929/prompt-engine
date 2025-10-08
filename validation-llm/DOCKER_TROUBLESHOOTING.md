@@ -160,8 +160,7 @@ docker-compose up -d
 ### Model Reinstallation
 ```bash
 # Access Ollama container directly
-docker exec -it paytechneodemo-ollama ollama pull llama3.2:3b
-docker exec -it paytechneodemo-ollama ollama pull llama3.2:1b
+docker exec -it paytechneodemo-ollama ollama pull mistral:latest
 
 # Verify models
 docker exec paytechneodemo-ollama ollama list

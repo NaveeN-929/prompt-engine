@@ -126,8 +126,8 @@ def main():
         print(f"      • {model}")
     
     # Define required models
-    required_models = ["llama3.2:3b", "llama3.2:1b"]
-    alternative_models = ["llama3.1:8b", "llama2:7b", "phi3:3.8b"]
+    required_models = ["phi3:3.8b"]
+    alternative_models = ["mistral:latest", "llama3.1:8b"]
     
     print(f"\n🎯 Required models for validation:")
     for model in required_models:

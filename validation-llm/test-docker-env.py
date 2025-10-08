@@ -71,7 +71,7 @@ def test_service_connectivity():
             models = [model["name"] for model in data.get("models", [])]
             print(f"   📦 Available models: {len(models)}")
             
-            required_models = ["llama3.2:3b", "llama3.2:1b"]
+            required_models = ["mistral:latest"]
             for model in required_models:
                 if any(model in available_model for available_model in models):
                     print(f"   ✅ Model {model} available")

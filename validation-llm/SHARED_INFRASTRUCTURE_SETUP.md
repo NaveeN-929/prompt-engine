@@ -22,8 +22,7 @@ The validation system is designed to **share resources** with your existing setu
 │  │ (Port 11434)    │              │ (Port 6333)     │           │
 │  │                 │              │                 │           │
 │  │ • llama3.1:8b   │              │ Main Collections│           │
-│  │ • llama3.2:3b   │◄─────────────┤ + Validation    │           │
-│  │ • llama3.2:1b   │              │   Collections   │           │
+│  │ • mistral:latest│◄─────────────┤ + Validation    │           │
 │  └─────────────────┘              └─────────────────┘           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -32,11 +31,11 @@ The validation system is designed to **share resources** with your existing setu
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
 │ Prompt Engine   │  │ Autonomous      │  │ Validation      │
 │ (Port 5000)     │  │ Agent           │  │ System          │
-│                 │  │ (Port 8000)     │  │ (Port 5002)     │
+│                 │  │ (Port 5001)     │  │ (Port 5002)     │
 │ Uses:           │  │                 │  │                 │
 │ • llama3.1:8b   │  │ Uses:           │  │ Uses:           │
-│ • Main Qdrant   │  │ • Prompt Engine │  │ • llama3.2:3b   │
-│   Collections   │  │ • Main LLM      │  │ • llama3.2:1b   │
+│ • Main Qdrant   │  │ • Prompt Engine │  │ • mistral:latest│
+│   Collections   │  │ • Main LLM      │  │                 │
 └─────────────────┘  │ • Qdrant RAG    │  │ • Validation    │
                      └─────────────────┘  │   Collections   │
                                           └─────────────────┘
@@ -57,7 +56,7 @@ curl http://localhost:6333/dashboard
 
 # Check existing services
 curl http://localhost:5000/health      # Prompt Engine
-curl http://localhost:8000/agent/status # Autonomous Agent
+curl http://localhost:5001/agent/status # Autonomous Agent
 ```
 
 ### 2. Setup Validation Models
@@ -75,8 +74,7 @@ python setup_models.py
 ```
 
 This will pull:
-- `llama3.2:3b` - Primary validation model (smaller than main llama3.1:8b)
-- `llama3.2:1b` - Speed validation model (very fast)
+- `mistral:latest` - Primary validation model (efficient and fast)
 
 ### 3. Configure Shared Resources
 
@@ -86,12 +84,12 @@ The configuration is already set up to share resources:
 ```python
 VALIDATION_LLM_CONFIG = {
     "primary_validator": {
-        "model_name": "llama3.2:3b",      # Different from main project
+        "model_name": "mistral:latest",   # Using mistral for validation
         "host": "http://localhost:11434",  # Same Ollama instance
         "temperature": 0.1,               # Low temp for consistency
     },
     "speed_validator": {
-        "model_name": "llama3.2:1b",      # Fast validation model
+        "model_name": "mistral:latest",   # Same model for speed validation
         "host": "http://localhost:11434",  # Same Ollama instance
         "temperature": 0.2,
     }
@@ -156,8 +154,7 @@ curl -X POST http://localhost:5002/validate/response \
 |---------|---------------|---------|----------------|
 | Prompt Engine | `llama3.1:8b` | Prompt generation | High accuracy |
 | Autonomous Agent | Uses Prompt Engine | Response generation | Via prompt engine |
-| Validation System | `llama3.2:3b` | Response validation | Lower resource |
-| Speed Validation | `llama3.2:1b` | Fast validation | Minimal resource |
+| Validation System | `mistral:latest` | Response validation | Efficient resource |
 
 ### Qdrant Collections
 
@@ -174,7 +171,7 @@ Collections are **completely separate** - no conflicts or data mixing.
 |---------|------|---------|
 | Prompt Engine | 5000 | Main prompt generation |
 | Validation System | 5002 | Response validation |
-| Autonomous Agent | 8000 | Analysis endpoint |
+| Autonomous Agent | 5001 | Analysis endpoint |
 | Ollama | 11434 | LLM API (shared) |
 | Qdrant | 6333 | Vector DB (shared) |
 

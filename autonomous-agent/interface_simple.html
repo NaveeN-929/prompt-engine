@@ -171,12 +171,12 @@
         </div>
         
         <div class="pipeline-info">
-            <strong>Step 1:</strong> Financial data → <strong>Step 2:</strong> Prompt Engine → <strong>Step 3:</strong> RAG Enhancement → <strong>Step 4:</strong> Final Analysis
+            <strong>Step 1:</strong> Financial data → <strong>Step 2:</strong> Prompt Engine → <strong>Step 3:</strong> RAG Enhancement → <strong>Step 4:</strong> Analysis Generation → <strong>Step 5:</strong> Validation → <strong>Step 6:</strong> Validated Response
         </div>
         
         <div class="section">
             <h3>Financial Data Input</h3>
-            <p>Provide financial data that will be sent to the prompt-engine to generate a structured prompt, which will then be enhanced with RAG knowledge augmentation.</p>
+            <p>Provide financial data that will be sent through the complete pipeline: Prompt generation → RAG enhancement → Analysis generation → Validation quality gates.</p>
             
             <textarea id="analysisData" placeholder='{"transactions": [{"date": "2024-01-15", "amount": 1500.00, "type": "credit", "description": "Salary"}], "account_balance": 2250.00}'></textarea>
             
@@ -317,7 +317,7 @@
             if (!validation) return '';
             
             const qualityLevel = validation.quality_level || 'unvalidated';
-            const qualityScore = validation.quality_score || 0;
+            const qualityScore = validation.overall_score || validation.quality_score || 0;
             const qualityApproved = validation.quality_approved;
             const validationStatus = validation.validation_status || 'unknown';
             
@@ -355,24 +355,24 @@
             }
             
             let html = `
-                <div class="section-header" style="margin-top: 20px;">🔒 VALIDATION RESULTS</div>
-                <div style="background: ${bgColor}; border-left: 4px solid ${textColor}; padding: 15px; border-radius: 8px; margin: 10px 0;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                        <div style="display: flex; align-items: center;">
-                            <span style="font-size: 1.2em; margin-right: 8px;">${icon}</span>
-                            <strong style="color: ${textColor};">${statusText}</strong>
+                <div style="background: ${bgColor}; border-left: 2px solid ${textColor}; padding: 6px 10px; border-radius: 4px; margin: 6px 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.85em; font-weight: 600; color: #666;">VALIDATION RESULTS</span>
+                            <span style="font-size: 0.9em; margin-right: 3px;">${icon}</span>
+                            <strong style="color: ${textColor}; font-size: 0.85em;">${statusText}</strong>
                         </div>
-                        <div style="background: ${textColor}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">
-                            Score: ${(qualityScore * 100).toFixed(1)}%
+                        <div style="background: ${textColor}; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8em;">
+                            Quality Score: ${(qualityScore * 100).toFixed(1)}%
                         </div>
                     </div>
             `;
             
             // Add criteria scores if available
             if (validation.criteria_scores) {
-                html += '<div style="margin-top: 10px; font-size: 0.9em;">';
-                html += '<div style="font-weight: bold; margin-bottom: 5px;">Quality Criteria:</div>';
-                html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">';
+                html += '<div style="margin-top: 8px; font-size: 0.85em;">';
+                html += '<div style="font-weight: 600; margin-bottom: 4px; font-size: 0.9em;">Quality Criteria:</div>';
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px;">';
                 
                 Object.entries(validation.criteria_scores).forEach(([criterion, score]) => {
                     const percentage = (score * 100).toFixed(0);
@@ -381,12 +381,12 @@
                     else if (score >= 0.65) barColor = '#ffc107'; // Yellow for medium scores
                     
                     html += `
-                        <div style="background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px;">
-                            <div style="font-weight: 500; text-transform: capitalize; margin-bottom: 3px;">${criterion.replace(/_/g, ' ')}</div>
-                            <div style="background: #e9ecef; height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div style="background: rgba(0,0,0,0.03); padding: 6px 8px; border-radius: 4px;">
+                            <div style="font-weight: 500; text-transform: capitalize; margin-bottom: 2px; font-size: 0.9em;">${criterion.replace(/_/g, ' ')}</div>
+                            <div style="background: #e9ecef; height: 5px; border-radius: 2px; overflow: hidden;">
                                 <div style="background: ${barColor}; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
                             </div>
-                            <div style="text-align: right; font-size: 0.8em; margin-top: 2px;">${percentage}%</div>
+                            <div style="text-align: right; font-size: 0.8em; margin-top: 1px;">${percentage}%</div>
                         </div>
                     `;
                 });
@@ -396,7 +396,7 @@
             
             // Add validation time if available
             if (validation.validation_time) {
-                html += `<div style="font-size: 0.85em; color: #666; margin-top: 8px;">Validation Time: ${(validation.validation_time * 1000).toFixed(0)}ms</div>`;
+                html += `<div style="font-size: 0.75em; color: #888; margin-top: 6px; text-align: right;">Validation Time: ${(validation.validation_time * 1000).toFixed(0)}ms</div>`;
             }
             
             html += '</div>';
@@ -420,7 +420,7 @@
                 const inputData = JSON.parse(data);
                 
                 log('Sending request to /pipeline/full');
-                log('🔒 Validation will be performed during pipeline processing...');
+                log('Validation will be performed during pipeline processing...');
                 const response = await fetch('/pipeline/full', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -435,12 +435,12 @@
                     
                     // Debug validation information
                     if (result.validation) {
-                        log('🔒 VALIDATION DEBUG:');
+                        log('VALIDATION DEBUG:');
                         log(`   Quality Level: ${result.validation.quality_level || 'unknown'}`);
-                        log(`   Quality Score: ${result.validation.quality_score || 0}`);
+                        log(`   Quality Score: ${((result.validation.overall_score || result.validation.quality_score || 0) * 100).toFixed(1)}%`);
                         log(`   Quality Approved: ${result.validation.quality_approved}`);
                         log(`   Validation Status: ${result.validation.validation_status || 'unknown'}`);
-                        log(`   Validation Time: ${result.validation.validation_time || 0}ms`);
+                        log(`   Validation Time: ${((result.validation.validation_time || 0) * 1000).toFixed(0)}ms`);
                         
                         if (result.validation.criteria_scores) {
                             log('   Criteria Scores:');
@@ -498,7 +498,7 @@
                 const inputData = JSON.parse(data);
                 
                 log('Sending request to /pipeline/agentic');
-                log('🔒 Validation will be performed during agentic pipeline processing...');
+                log('Validation will be performed during agentic pipeline processing...');
                 const response = await fetch('/pipeline/agentic', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -513,12 +513,12 @@
                     
                     // Debug validation information
                     if (result.validation) {
-                        log('🔒 AGENTIC VALIDATION DEBUG:');
+                        log('AGENTIC VALIDATION DEBUG:');
                         log(`   Quality Level: ${result.validation.quality_level || 'unknown'}`);
-                        log(`   Quality Score: ${result.validation.quality_score || 0}`);
+                        log(`   Quality Score: ${((result.validation.overall_score || result.validation.quality_score || 0) * 100).toFixed(1)}%`);
                         log(`   Quality Approved: ${result.validation.quality_approved}`);
                         log(`   Validation Status: ${result.validation.validation_status || 'unknown'}`);
-                        log(`   Validation Time: ${result.validation.validation_time || 0}ms`);
+                        log(`   Validation Time: ${((result.validation.validation_time || 0) * 1000).toFixed(0)}ms`);
                         
                         if (result.validation.criteria_scores) {
                             log('   Criteria Scores:');

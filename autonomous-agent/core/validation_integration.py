@@ -271,6 +271,7 @@ class ValidationIntegrationService:
             "overall_score": overall_score,
             "validation_timestamp": datetime.now().isoformat(),
             "quality_approved": False,
+            "validation_status": "pending",
             "validation_details": validation_data
         }
         
@@ -278,6 +279,7 @@ class ValidationIntegrationService:
         if quality_level in ["exemplary", "high_quality"]:
             # Excellent quality - immediate delivery
             enhanced_response["validation"]["quality_approved"] = True
+            enhanced_response["validation"]["validation_status"] = "approved"
             enhanced_response["validation"]["quality_note"] = f"High quality response ({quality_level})"
             logger.info(f"Response approved: {quality_level} quality (score: {overall_score:.3f})")
             return True, enhanced_response
@@ -285,6 +287,7 @@ class ValidationIntegrationService:
         elif quality_level == "acceptable" and overall_score >= self.quality_threshold:
             # Acceptable quality - deliver with improvement notes
             enhanced_response["validation"]["quality_approved"] = True
+            enhanced_response["validation"]["validation_status"] = "approved"
             enhanced_response["validation"]["quality_note"] = "Acceptable quality with improvement opportunities"
             enhanced_response["validation"]["improvement_suggestions"] = validation_data.get("recommendations", [])
             logger.info(f"Response approved: acceptable quality (score: {overall_score:.3f})")
@@ -311,6 +314,7 @@ class ValidationIntegrationService:
             
             # Poor quality - deliver with warnings (user preference to see responses)
             enhanced_response["validation"]["quality_approved"] = False
+            enhanced_response["validation"]["validation_status"] = "approved_with_warnings"
             enhanced_response["validation"]["quality_warning"] = f"Response quality below threshold (score: {overall_score:.3f})"
             enhanced_response["validation"]["quality_issues"] = validation_data.get("recommendations", [])
             

@@ -1014,6 +1014,70 @@ def health_check():
         }
     }), 200 if all_services_healthy else 503
 
+@app.route('/agent/status', methods=['GET'])
+def agent_status():
+    """Agent-specific status endpoint for validation system"""
+    try:
+        all_services_healthy = (
+            services_status["rag_initialized"] and
+            services_status["vector_connected"] and
+            services_status["prompt_engine_connected"]
+        )
+        
+        return jsonify({
+            "status": "healthy" if all_services_healthy else "degraded",
+            "agent_name": "AutonomousFinancialAgent",
+            "version": "1.0.0",
+            "capabilities": {
+                "financial_analysis": True,
+                "rag_enhanced_analysis": services_status["rag_initialized"],
+                "vector_operations": services_status["vector_connected"],
+                "prompt_integration": services_status["prompt_engine_connected"]
+            },
+            "statistics": agent_statistics,
+            "timestamp": datetime.now().isoformat()
+        }), 200 if all_services_healthy else 503
+        
+    except Exception as e:
+        logger.error(f"Error getting agent status: {e}")
+        return jsonify({"error": str(e), "status": "error"}), 500
+
+@app.route('/feedback/validation', methods=['POST'])
+def receive_validation_feedback():
+    """Receive validation feedback from the validation system"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        # Log the feedback for learning purposes
+        feedback_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "validation_result": data.get("validation_result", {}),
+            "response_data": data.get("response_data", {}),
+            "input_data": data.get("input_data", {}),
+            "feedback_type": "validation"
+        }
+        
+        # Store feedback in interaction history for learning
+        interaction_history.append(feedback_entry)
+        
+        # Keep only last 1000 entries to prevent memory issues
+        if len(interaction_history) > 1000:
+            interaction_history.pop(0)
+        
+        logger.info(f"Received validation feedback: {data.get('validation_result', {}).get('overall_quality', 'unknown')}")
+        
+        return jsonify({
+            "status": "success",
+            "message": "Feedback received and stored",
+            "timestamp": feedback_entry["timestamp"]
+        })
+        
+    except Exception as e:
+        logger.error(f"Error processing validation feedback: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/test/generic-insights', methods=['POST'])
 def test_generic_insights():
     """Test endpoint for generic CRM insights without dependencies"""

@@ -68,7 +68,7 @@ docker run -d -p 6333:6333 -p 6334:6334 qdrant/qdrant
 
 # 3. Start your existing services
 python server.py                    # Prompt Engine (port 5000)
-python autonomous-agent/server_final.py  # Autonomous Agent (port 8000)
+python autonomous-agent/server_final.py  # Autonomous Agent (port 5001)
 
 # 4. Setup validation models (first time only)
 cd validation-llm
@@ -128,7 +128,7 @@ import json
 
 class IntegratedAnalysisService:
     def __init__(self):
-        self.agent_url = "http://localhost:8000"
+        self.agent_url = "http://localhost:5001"
         self.validation_url = "http://localhost:5002"  # Updated port
     
     async def analyze_with_validation(self, input_data):

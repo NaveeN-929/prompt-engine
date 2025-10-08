@@ -14,7 +14,7 @@ def test_ollama_keep_alive():
     
     # Test with keep_alive option to keep model in memory
     payload = {
-        "model": "llama3.2:1b",
+        "model": "mistral:latest",
         "prompt": "Test response for validation.",
         "options": {
             "num_predict": 50,
@@ -140,12 +140,11 @@ def suggest_immediate_fixes():
     
     print("\n⚡ OPTION 2: Use Faster Model Only")
     print("   - Edit validation-llm/config.py")
-    print("   - Change primary_validator model to 'llama3.2:1b'")
+    print("   - Change primary_validator model to 'mistral:latest'")
     print("   - Reduce timeout to 10 seconds")
     
     print("\n🚀 OPTION 3: Pre-warm Models")
-    print("   - Run: ollama run llama3.2:1b")
-    print("   - Run: ollama run llama3.2:3b")
+    print("   - Run: ollama run mistral:latest")
     print("   - This keeps models loaded in memory")
     
     print("\n📊 EXPECTED RESULTS AFTER FIX:")

@@ -19,8 +19,7 @@ echo "✅ Ollama is accessible"
 
 # Models needed for validation
 MODELS=(
-    "llama3.2:3b"
-    "llama3.2:1b"
+    "mistral"
 )
 
 echo ""

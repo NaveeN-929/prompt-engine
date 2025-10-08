@@ -13,14 +13,13 @@ The Response Validation LLM System operates with **NO FALLBACKS** or mock respon
 ollama serve
 
 # Required models must be available
-ollama pull llama3.2:3b  # Primary validation model
-ollama pull llama3.2:1b  # Speed validation model
+ollama pull mistral:latest  # Primary validation model
 ```
 
 **Verification**:
 ```bash
 curl http://localhost:11434/api/tags
-# Should return list including llama3.2:3b and llama3.2:1b
+# Should return list including mistral:latest
 ```
 
 ### 2. Qdrant Vector Database
@@ -198,8 +197,7 @@ The validation system requires:
 2. **"Cannot connect to validation LLM"**
    ```bash
    # Pull required models
-   ollama pull llama3.2:3b
-   ollama pull llama3.2:1b
+   ollama pull mistral:latest
    ```
 
 3. **"Validation processing failed"**
@@ -219,7 +217,7 @@ The system validates configuration at startup:
 # All required models must be specified
 VALIDATION_LLM_CONFIG = {
     "primary_validator": {
-        "model_name": "llama3.2:3b",  # MUST exist
+        "model_name": "mistral:latest",  # MUST exist
         "host": "http://localhost:11434",  # MUST be accessible
     }
 }

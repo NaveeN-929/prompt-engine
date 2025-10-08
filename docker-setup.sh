@@ -117,7 +117,7 @@ setup_ollama() {
     print_status "Setting up Ollama model..."
     
     # Get model from .env or use default
-    MODEL=$(grep OLLAMA_MODEL .env | cut -d '=' -f2 | tr -d '"' || echo "llama3.1:8b")
+    MODEL=$(grep OLLAMA_MODEL docker.env | cut -d '=' -f2 | tr -d '"' || echo "llama3.1:8b")
     
     print_status "Pulling model: $MODEL"
     docker exec -it prompt-engine-ollama ollama pull $MODEL || {

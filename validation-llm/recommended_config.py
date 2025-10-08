@@ -3,14 +3,14 @@
 
 VALIDATION_LLM_CONFIG = {
     "primary_validator": {
-        "model_name": "llama3.2:3b",
+        "model_name": "mistral:latest",
         "host": "http://localhost:11434",
         "max_tokens": 2000,
         "temperature": 0.1,
         "timeout": 30
     },
     "speed_validator": {
-        "model_name": "llama3.2:1b",
+        "model_name": "mistral:latest",
         "host": "http://localhost:11434", 
         "max_tokens": 1000,
         "temperature": 0.2,

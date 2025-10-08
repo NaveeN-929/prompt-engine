@@ -50,7 +50,7 @@ def test_ollama_connectivity():
             print(f"   ✅ Ollama connection: {elapsed:.3f}s")
             print(f"   📦 Available models: {len(models)}")
             
-            required_models = ["llama3.2:3b", "llama3.2:1b"]
+            required_models = ["mistral:latest"]
             for model in required_models:
                 if any(model in m for m in models):
                     print(f"   ✅ Model {model}: Available")
@@ -68,7 +68,7 @@ def test_simple_ollama_request():
     print("-" * 30)
     
     payload = {
-        "model": "llama3.2:1b",
+        "model": "mistral:latest",
         "prompt": "Say 'OK' and nothing else.",
         "options": {"num_predict": 5, "temperature": 0.1},
         "stream": False

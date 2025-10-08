@@ -19,27 +19,32 @@ BASE_CONFIG = {
     }
 }
 
-# LLM Configuration for Validation - Using different model for validation
+# LLM Configuration for Validation - Optimized for speed and reliability
+# Development setup: Ollama in Docker, validation system locally
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+if not OLLAMA_HOST.startswith("http"):
+    OLLAMA_HOST = f"http://{OLLAMA_HOST}:11434"
+
 VALIDATION_LLM_CONFIG = {
     "primary_validator": {
-        "model_name": "llama3.2:3b",  # Smaller, faster model for validation
-        "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-        "max_tokens": 200,  # Very small for testing
+        "model_name": "mistral:latest",  # Using mistral for reliable validation
+        "host": OLLAMA_HOST,
+        "max_tokens": 100,  # Reduced for faster validation
         "temperature": 0.1,  # Low temperature for consistent validation
-        "timeout": None  # No timeout for testing
+        "timeout": 15  # Reduced timeout for faster response
     },
     "speed_validator": {
-        "model_name": "llama3.2:1b",  # Even smaller model for fast validation
-        "host": os.getenv("OLLAMA_HOST", "http://localhost:11434"), 
-        "max_tokens": 100,  # Very small for testing
+        "model_name": "mistral:latest",  # Using same model for consistency
+        "host": OLLAMA_HOST, 
+        "max_tokens": 50,  # Very small for speed
         "temperature": 0.2,
-        "timeout": None  # No timeout for testing
+        "timeout": 10  # Reduced timeout for speed validation
     }
 }
 
 # Autonomous Agent Integration
 AUTONOMOUS_AGENT_CONFIG = {
-    "base_url": "http://localhost:8000",
+    "base_url": "http://localhost:5001",
     "endpoints": {
         "analyze": "/analyze",
         "status": "/agent/status",
@@ -57,6 +62,16 @@ PROMPT_ENGINE_CONFIG = {
         "status": "/system/status"
     },
     "timeout": 30
+}
+
+# Fast Validation Configuration
+FAST_VALIDATION_CONFIG = {
+    "enabled": True,
+    "timeout_seconds": 20,  # Reduced maximum time for entire validation
+    "criteria_timeout": 5,  # Reduced maximum time per validation criterion
+    "skip_phases": ["detailed_analysis", "cross_validation", "training_data_storage"],
+    "min_score_threshold": 0.3,  # Minimum score to consider valid
+    "fallback_score": 0.5  # Fallback score when validation fails
 }
 
 # Vector Database Configuration - Using same Qdrant instance with different collections

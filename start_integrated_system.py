@@ -168,7 +168,7 @@ class ServiceManager:
         main_models = ["llama3.1:8b"]
         
         # Models for validation system  
-        validation_models = ["llama3.2:3b", "llama3.2:1b"]
+        validation_models = ["mistral:latest"]
         
         all_models = main_models + validation_models
         

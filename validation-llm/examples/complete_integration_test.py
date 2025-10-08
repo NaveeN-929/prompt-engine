@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 # Test configuration
-AUTONOMOUS_AGENT_URL = "http://localhost:8000"
+AUTONOMOUS_AGENT_URL = "http://localhost:5001"
 VALIDATION_SYSTEM_URL = "http://localhost:5002"
 PROMPT_ENGINE_URL = "http://localhost:5000"
 

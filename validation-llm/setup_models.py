@@ -175,14 +175,12 @@ def setup_validation_models():
     
     # Required models for validation
     required_models = [
-        "llama3.2:3b",  # Primary validation model
-        "llama3.2:1b"   # Speed validation model
+        "mistral:latest"  # Using mistral for validation
     ]
     
     # Alternative models if the above aren't available
     alternative_models = [
-        "llama3.1:8b",  # Fallback to main project model
-        "llama2:7b",    # Another fallback
+        "mistral",      # Fallback without tag
         "phi3:3.8b"     # Smaller alternative
     ]
     
@@ -282,8 +280,8 @@ def create_model_config():
     speed_model = None
     
     # Preferred models in order of preference
-    preferred_primary = ["llama3.2:3b", "llama3.1:8b", "llama2:7b", "phi3:3.8b"]
-    preferred_speed = ["llama3.2:1b", "llama3.2:3b", "phi3:3.8b"]
+    preferred_primary = ["mistral:latest", "mistral", "phi3:3.8b"]
+    preferred_speed = ["mistral:latest", "mistral", "phi3:3.8b"]
     
     for model in preferred_primary:
         if model in available_models:

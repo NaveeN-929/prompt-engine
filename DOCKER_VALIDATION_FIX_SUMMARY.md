@@ -104,7 +104,7 @@ docker exec paytechneodemo-validator python test-docker-env.py
 ✅ All imports successful
 🎉 Starting validation server...
 Initializing Response Validation Engine...
-✅ Connected to validation LLM: llama3.2:3b
+✅ Connected to validation LLM: mistral:latest
 ✅ Validation Engine initialization completed successfully
 ```
 

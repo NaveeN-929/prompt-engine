@@ -8,7 +8,7 @@ import os
 # Update these values for your local or remote Ollama instance
 OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'localhost')  # Local Ollama instance
 OLLAMA_PORT = os.getenv('OLLAMA_PORT', '11434')
-OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')  # Llama 3.1 8B for financial analysis
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'mistral:latest')  # Mistral for efficient prompt generation
 
 # Flask Configuration
 FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')

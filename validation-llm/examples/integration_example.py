@@ -76,7 +76,7 @@ class ValidationIntegrationExample:
     """
     
     def __init__(self, 
-                 autonomous_agent_url: str = "http://localhost:8000",
+                 autonomous_agent_url: str = "http://localhost:5001",
                  validation_system_url: str = "http://localhost:5002"):
         self.autonomous_agent_url = autonomous_agent_url
         self.validation_system_url = validation_system_url

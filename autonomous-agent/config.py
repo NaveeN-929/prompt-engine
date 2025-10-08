@@ -13,7 +13,7 @@ PROMPT_ENGINE_URL = f"http://{PROMPT_ENGINE_HOST}:{PROMPT_ENGINE_PORT}"
 # LLM Configuration (Multiple LLM Support)
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
 OLLAMA_PORT = int(os.getenv("OLLAMA_PORT", "11434"))
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")  # Llama 3.1 8B for complex reasoning
 
 # OpenAI API (Optional - for comparison/validation)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

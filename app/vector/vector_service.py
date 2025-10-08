@@ -6,7 +6,14 @@ import time
 import json
 import hashlib
 from typing import Dict, Any, List, Tuple, Optional
-from sentence_transformers import SentenceTransformer
+# Conditional import for Python 3.13 compatibility
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    print("⚠️ sentence-transformers not available (Python 3.13 compatibility)")
+    SentenceTransformer = None
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from qdrant_client.http.models import Distance, VectorParams, PointStruct
@@ -33,28 +40,33 @@ class VectorService:
             print("🚫 Vector database unavailable - no fallbacks allowed")
             raise Exception(f"Qdrant database unavailable at {qdrant_host}:{qdrant_port}. Vector database is required for operation.")
         
-        # Initialize embedding model with safer loading
-        try:
-            print("🧠 Loading sentence transformer model...")
-            # Use device='cpu' to avoid tensor device issues
-            self.embedder = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
-            self.embedding_dim = 384  # Dimension for all-MiniLM-L6-v2
-            print("✅ Sentence transformer loaded successfully")
-        except Exception as e:
-            print(f"⚠️ Error loading sentence transformer: {e}")
-            print("🔄 Trying alternative loading method...")
+        # Initialize embedding model with Python 3.13 compatibility
+        if SENTENCE_TRANSFORMERS_AVAILABLE:
             try:
-                # Alternative: Load with trust_remote_code and explicit device
-                import torch
-                torch.set_num_threads(1)  # Reduce thread conflicts
-                self.embedder = SentenceTransformer('all-MiniLM-L6-v2', device='cpu', trust_remote_code=True)
-                self.embedding_dim = 384
-                print("✅ Sentence transformer loaded with alternative method")
-            except Exception as e2:
-                print(f"❌ Failed to load sentence transformer: {e2}")
-                print("📝 Disabling vector embeddings")
-                self.embedder = None
-                self.embedding_dim = 384
+                print("🧠 Loading sentence transformer model...")
+                # Use device='cpu' to avoid tensor device issues
+                self.embedder = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+                self.embedding_dim = 384  # Dimension for all-MiniLM-L6-v2
+                print("✅ Sentence transformer loaded successfully")
+            except Exception as e:
+                print(f"⚠️ Error loading sentence transformer: {e}")
+                print("🔄 Trying alternative loading method...")
+                try:
+                    # Alternative: Load with trust_remote_code and explicit device
+                    import torch
+                    torch.set_num_threads(1)  # Reduce thread conflicts
+                    self.embedder = SentenceTransformer('all-MiniLM-L6-v2', device='cpu', trust_remote_code=True)
+                    self.embedding_dim = 384
+                    print("✅ Sentence transformer loaded with alternative method")
+                except Exception as e2:
+                    print(f"❌ Failed to load sentence transformer: {e2}")
+                    print("📝 Disabling vector embeddings")
+                    self.embedder = None
+                    self.embedding_dim = 384
+        else:
+            print("📝 Sentence transformers not available - using basic text processing")
+            self.embedder = None
+            self.embedding_dim = 384
         
         # Collection names
         self.collections = {
@@ -102,8 +114,8 @@ class VectorService:
     def _create_embedding(self, text: str) -> List[float]:
         """Create vector embedding for text"""
         if not self.embedder:
-            print("⚠️ Embedder not available, using dummy embedding")
-            return [0.0] * self.embedding_dim
+            # Create a simple hash-based embedding for Python 3.13 compatibility
+            return self._create_simple_embedding(text)
             
         try:
             # Use CPU device explicitly and no_grad for efficiency
@@ -114,8 +126,37 @@ class VectorService:
                 return embedding.tolist()
         except Exception as e:
             print(f"❌ Error creating embedding: {e}")
-            # Return a dummy embedding of correct dimensions
-            return [0.0] * self.embedding_dim
+            # Fallback to simple embedding
+            return self._create_simple_embedding(text)
+    
+    def _create_simple_embedding(self, text: str) -> List[float]:
+        """Create a simple hash-based embedding for Python 3.13 compatibility"""
+        import hashlib
+        import math
+        
+        # Create a deterministic hash-based embedding
+        hash_obj = hashlib.sha256(text.encode('utf-8'))
+        hash_bytes = hash_obj.digest()
+        
+        # Convert to float values between -1 and 1
+        embedding = []
+        for i in range(0, len(hash_bytes), 4):
+            if len(embedding) >= self.embedding_dim:
+                break
+                
+            # Take 4 bytes and convert to float
+            chunk = hash_bytes[i:i+4]
+            if len(chunk) == 4:
+                # Convert to signed integer then normalize
+                value = int.from_bytes(chunk, byteorder='big', signed=True)
+                normalized = math.tanh(value / (2**31))  # Normalize to [-1, 1]
+                embedding.append(normalized)
+        
+        # Pad or truncate to exact dimension
+        while len(embedding) < self.embedding_dim:
+            embedding.append(0.0)
+        
+        return embedding[:self.embedding_dim]
     
     def _data_to_text(self, data: Dict[str, Any]) -> str:
         """Convert input data to searchable text"""
