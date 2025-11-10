@@ -1,0 +1,66 @@
+{
+  "transactions": [
+    {
+      "date": "2025-10-13",
+      "amount": 367206.54,
+      "type": "credit",
+      "description": "Working capital loan"
+    },
+    {
+      "date": "2025-10-16",
+      "amount": -74378.07,
+      "type": "debit",
+      "description": "Line of credit payment"
+    },
+    {
+      "date": "2025-10-20",
+      "amount": -20689.83,
+      "type": "debit",
+      "description": "Marketing campaign"
+    },
+    {
+      "date": "2025-10-21",
+      "amount": 70500.71,
+      "type": "credit",
+      "description": "Consulting services payment"
+    },
+    {
+      "date": "2025-10-24",
+      "amount": -8688.33,
+      "type": "debit",
+      "description": "Cloud services"
+    },
+    {
+      "date": "2025-10-29",
+      "amount": -95954.89,
+      "type": "debit",
+      "description": "Wholesale purchase"
+    },
+    {
+      "date": "2025-10-30",
+      "amount": -2278.48,
+      "type": "debit",
+      "description": "Building maintenance"
+    },
+    {
+      "date": "2025-11-01",
+      "amount": 38720.46,
+      "type": "credit",
+      "description": "Bulk invoice payment"
+    },
+    {
+      "date": "2025-11-04",
+      "amount": -8151.37,
+      "type": "debit",
+      "description": "Business software subscription"
+    },
+    {
+      "date": "2025-11-08",
+      "amount": 10989.94,
+      "type": "credit",
+      "description": "Professional services rendered"
+    }
+  ],
+  "account_balance": 687398.7,
+  "customer_id": "ENT_0001"
+}
