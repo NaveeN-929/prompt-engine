@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /Users/naveen/Documents/Paytech/repos/prompt-engine/prompt
+set -gx VIRTUAL_ENV /Users/naveen/Pictures/prompt-engine/prompt
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

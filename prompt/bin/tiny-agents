@@ -1,4 +1,4 @@
-#!/Users/naveen/Documents/Paytech/repos/prompt-engine/prompt/bin/python3.12
+#!/Users/naveen/Pictures/prompt-engine/prompt/bin/python3.12
 import sys
 from huggingface_hub.inference._mcp.cli import app
 if __name__ == '__main__':

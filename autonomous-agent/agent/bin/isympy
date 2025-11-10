@@ -1,4 +1,4 @@
-#!/Users/naveen/Documents/Paytech/repos/prompt-engine/autonomous-agent/agent/bin/python3.12
+#!/Users/naveen/Pictures/prompt-engine/autonomous-agent/agent/bin/python3.12
 import sys
 from isympy import main
 if __name__ == '__main__':
