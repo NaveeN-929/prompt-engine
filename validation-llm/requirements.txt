@@ -2,7 +2,7 @@
 # Python 3.13+ Compatible (without PyTorch dependencies)
 
 # Core Framework
-Flask>=2.3.0
+Flask[async]>=2.3.0
 Flask-CORS>=4.0.0
 
 # HTTP Requests
