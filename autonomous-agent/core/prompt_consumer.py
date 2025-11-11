@@ -205,9 +205,11 @@ class PromptConsumerService:
                                      prompt_result: str,
                                      agent_response: str,
                                      quality_score: float,
-                                     user_feedback: str) -> Dict[str, Any]:
+                                     user_feedback: str,
+                                     validation_result: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         Submit learning feedback to prompt engine
+        NOW includes validation_result for quality improvement learning
         """
         try:
             feedback_request = {
@@ -215,7 +217,8 @@ class PromptConsumerService:
                 "prompt_result": prompt_result,
                 "agent_response": agent_response,
                 "quality_score": quality_score,
-                "user_feedback": user_feedback
+                "user_feedback": user_feedback,
+                "validation_result": validation_result  # NEW: Include validation details
             }
             
             response = self.session.post(

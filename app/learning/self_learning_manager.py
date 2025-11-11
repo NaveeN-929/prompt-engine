@@ -125,6 +125,9 @@ class SelfLearningManager:
         self.successful_interactions = 0
         self.learning_sessions = 0
         
+        # Quality improvement engine (NEW - for actual quality improvement)
+        self.quality_engine = None  # Initialized later to avoid circular imports
+        
         # Adaptive thresholds
         self.adaptive_thresholds = {
             'quality_gate': 0.7,
@@ -138,6 +141,14 @@ class SelfLearningManager:
         
         # Knowledge domains
         self.domain_expertise = defaultdict(lambda: {'count': 0, 'avg_quality': 0.5})
+        
+        # Initialize quality improvement engine
+        try:
+            from app.learning.quality_improvement_engine import QualityImprovementEngine
+            self.quality_engine = QualityImprovementEngine(self)
+        except Exception as e:
+            print(f"⚠️ Quality engine initialization failed: {e}")
+            self.quality_engine = None
         
         print("🧠 Advanced Self-Learning Manager initialized")
         
@@ -193,6 +204,16 @@ class SelfLearningManager:
             # Track performance trends
             self._track_performance(quality_score, metadata)
             
+            # **NEW: Quality improvement analysis**
+            quality_improvements = {}
+            if self.quality_engine and validation_result:
+                quality_improvements = await self.quality_engine.analyze_and_improve(
+                    input_data=input_data,
+                    prompt_used=prompt_result.get('prompt', ''),
+                    validation_result=validation_result,
+                    metadata=metadata
+                )
+            
             # Adaptive threshold adjustment
             await self._adjust_adaptive_thresholds()
             
@@ -208,6 +229,7 @@ class SelfLearningManager:
                 "patterns_linked": len(prompt_pattern.linked_patterns),
                 "vector_storage": "enabled" if self.vector_service else "disabled",
                 "adaptive_thresholds": self.adaptive_thresholds.copy(),
+                "quality_improvements": quality_improvements,  # NEW: Improvement analysis
                 "learning_metrics": self.get_learning_metrics(),
                 "timestamp": datetime.now().isoformat()
             }
@@ -515,6 +537,27 @@ class SelfLearningManager:
             del self.patterns[pattern_id]
             if pattern_id in self.pattern_graph:
                 del self.pattern_graph[pattern_id]
+    
+    async def get_quality_improved_prompt(self,
+                                         input_data: Dict[str, Any],
+                                         context: Optional[str] = None) -> Optional[str]:
+        """
+        NEW METHOD: Get quality-improved prompt based on past validation feedback
+        This is the key to improving quality over time!
+        """
+        if not self.quality_engine:
+            return None
+        
+        improved = await self.quality_engine.get_improved_prompt_for_input(
+            input_data=input_data,
+            context=context
+        )
+        
+        if improved and improved.get('confidence', 0) > 0.75:
+            print(f"🎯 Using quality-improved prompt (based on {improved['based_on_quality']:.2f} quality score)")
+            return improved['improved_prompt']
+        
+        return None
     
     async def find_similar_successful_patterns(self, 
                                               input_data: Dict[str, Any],

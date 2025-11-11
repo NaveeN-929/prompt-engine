@@ -401,6 +401,70 @@ def start_fixed_server():
                 traceback.print_exc()
                 return jsonify({"error": str(e), "status": "error"}), 500
         
+        @app.route('/learn', methods=['POST'])
+        def learn_from_interaction():
+            """
+            Submit feedback for the agentic system to learn from (with vector storage)
+            NOW WITH QUALITY IMPROVEMENT: Learns from validation scores to improve prompts
+            """
+            try:
+                if not app.agentic_gen:
+                    return jsonify({"error": "Agentic generator not available", "status": "error"}), 503
+                
+                data = request.get_json()
+                required_fields = ['input_data', 'prompt_result', 'llm_response']
+                
+                if not data or not all(field in data for field in required_fields):
+                    return jsonify({"error": f"Missing required fields: {required_fields}"}), 400
+                
+                # Extract validation_result for quality improvement
+                validation_result = data.get('validation_result')
+                
+                print(f"📚 Learning from interaction (validation score: {validation_result.get('overall_score') if validation_result else 'N/A'})")
+                
+                # Submit learning data with enhanced vector storage AND quality improvement
+                app.agentic_gen.learn_from_interaction(
+                    input_data=data['input_data'],
+                    prompt_result=data['prompt_result'],
+                    llm_response=data['llm_response'],
+                    quality_score=data.get('quality_score'),
+                    user_feedback=data.get('user_feedback'),
+                    metadata=data.get('metadata', {}),
+                    validation_result=validation_result  # NEW: Pass validation details
+                )
+                
+                response_data = {
+                    "message": "Learning data submitted successfully",
+                    "status": "success"
+                }
+                
+                # Add quality improvement info if available
+                if validation_result and hasattr(app.agentic_gen, 'self_learning_manager') and app.agentic_gen.self_learning_manager:
+                    response_data["quality_improvement_active"] = True
+                    response_data["validation_score"] = validation_result.get('overall_score', 'N/A')
+                    print(f"✅ Quality improvement learning complete")
+                
+                return jsonify(response_data)
+                
+            except Exception as e:
+                print(f"Learning error: {e}")
+                import traceback
+                traceback.print_exc()
+                return jsonify({"error": str(e), "status": "error"}), 500
+
+        @app.route('/health', methods=['GET'])
+        def health_check():
+            """Health check endpoint"""
+            try:
+                status = {
+                    "status": "healthy",
+                    "service": "prompt-engine",
+                    "agentic_generator": "available" if app.agentic_gen else "unavailable",
+                    "quality_improvement": "enabled" if (app.agentic_gen and hasattr(app.agentic_gen, 'self_learning_manager') and app.agentic_gen.self_learning_manager) else "disabled"
+                }
+                return jsonify(status), 200
+            except Exception as e:
+                return jsonify({"status": "unhealthy", "error": str(e)}), 500
 
         @app.route('/system/status')
         def system_status():

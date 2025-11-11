@@ -54,6 +54,16 @@ class AgenticPromptGenerator:
         else:
             print("Vector service disabled - using memory-based agentic mode")
         
+        # NEW: Quality-aware self-learning manager
+        self.self_learning_manager = None
+        try:
+            from app.learning.self_learning_manager import SelfLearningManager
+            self.self_learning_manager = SelfLearningManager(vector_service=self.vector_service)
+            print("🧠 Quality Improvement Engine enabled - prompts will improve over time")
+        except Exception as e:
+            print(f"⚠️ Quality improvement unavailable: {e}")
+            self.self_learning_manager = None
+        
         # Learning and adaptation systems (legacy - now enhanced by vector DB)
         self.interaction_history = []
         self.learning_weights = {}
@@ -238,8 +248,64 @@ class AgenticPromptGenerator:
         if not input_data:
             raise ValueError("Input data is required for agentic prompt generation")
         
-        # VECTOR-POWERED OPTIMIZATION
-        # Check vector database for similar patterns first
+        # NEW: QUALITY IMPROVEMENT CHECK (HIGHEST PRIORITY)
+        # Check for quality-improved prompts from validation feedback
+        if self.self_learning_manager:
+            try:
+                import asyncio
+                # Check if we're already in an async context
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # We're in async context, but can't await - schedule for next iteration
+                        pass
+                    else:
+                        improved_prompt = loop.run_until_complete(
+                            self.self_learning_manager.get_quality_improved_prompt(
+                                input_data=input_data,
+                                context=context
+                            )
+                        )
+                        if improved_prompt:
+                            processing_time = time.time() - start_time
+                            metadata = {
+                                "template_used": "quality_improved",
+                                "context": context or "auto_inferred",
+                                "data_type": data_type or "auto_inferred",
+                                "generation_mode": "quality_optimized",
+                                "quality_improvement_applied": True,
+                                "processing_time": processing_time,
+                                "timestamp": datetime.now().isoformat()
+                            }
+                            print(f"🎯 Using quality-improved prompt (learned from past validation feedback)")
+                            return improved_prompt, metadata, processing_time
+                except RuntimeError:
+                    # No event loop, create one
+                    improved_prompt = asyncio.run(
+                        self.self_learning_manager.get_quality_improved_prompt(
+                            input_data=input_data,
+                            context=context
+                        )
+                    )
+                    if improved_prompt:
+                        processing_time = time.time() - start_time
+                        metadata = {
+                            "template_used": "quality_improved",
+                            "context": context or "auto_inferred",
+                            "data_type": data_type or "auto_inferred",
+                            "generation_mode": "quality_optimized",
+                            "quality_improvement_applied": True,
+                            "processing_time": processing_time,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                        print(f"🎯 Using quality-improved prompt (learned from past validation feedback)")
+                        return improved_prompt, metadata, processing_time
+            except Exception as e:
+                print(f"⚠️ Quality improvement check failed: {e}")
+                # Continue to normal generation
+        
+        # VECTOR-POWERED OPTIMIZATION (Second priority - for speed)
+        # Check vector database for similar patterns
         if self.vector_service:
             similar_prompts = self.vector_service.find_similar_prompts(input_data, limit=3, min_similarity=0.8)
             if similar_prompts:
@@ -570,10 +636,12 @@ The previous response did not follow the required format. Please restructure you
                                 llm_response: str, 
                                 quality_score: float = None,
                                 user_feedback: str = None,
-                                metadata: Dict[str, Any] = None) -> None:
+                                metadata: Dict[str, Any] = None,
+                                validation_result: Dict[str, Any] = None) -> None:
         """
         Learn from interaction results to improve future prompt generation
         Enhanced with vector database storage for ultra-fast retrieval
+        NOW WITH QUALITY IMPROVEMENT ENGINE for better prompts over time
         """
         interaction = {
             "timestamp": datetime.now().isoformat(),
@@ -583,8 +651,50 @@ The previous response did not follow the required format. Please restructure you
             "quality_score": quality_score or 0.5,
             "user_feedback": user_feedback,
             "data_analysis": self._analyze_input_data(input_data),
-            "metadata": metadata or {}
+            "metadata": metadata or {},
+            "validation_result": validation_result
         }
+        
+        # NEW: QUALITY IMPROVEMENT ENGINE LEARNING
+        # Feed data to self-learning manager for quality improvement
+        if self.self_learning_manager and validation_result:
+            try:
+                import asyncio
+                # Prepare data for quality improvement learning
+                prompt_data = {
+                    "prompt": prompt_result,
+                    "metadata": metadata or {}
+                }
+                analysis_data = {
+                    "llm_response": llm_response,
+                    "status": "completed"
+                }
+                
+                try:
+                    loop = asyncio.get_event_loop()
+                    if not loop.is_running():
+                        loop.run_until_complete(
+                            self.self_learning_manager.learn_from_complete_interaction(
+                                input_data=input_data,
+                                prompt_result=prompt_data,
+                                analysis_result=analysis_data,
+                                validation_result=validation_result,
+                                metadata=metadata or {}
+                            )
+                        )
+                except RuntimeError:
+                    asyncio.run(
+                        self.self_learning_manager.learn_from_complete_interaction(
+                            input_data=input_data,
+                            prompt_result=prompt_data,
+                            analysis_result=analysis_data,
+                            validation_result=validation_result,
+                            metadata=metadata or {}
+                        )
+                    )
+                print(f"📚 Quality improvement learning complete (score: {quality_score:.2f})")
+            except Exception as e:
+                print(f"⚠️ Quality improvement learning failed: {e}")
         
         # VECTOR DATABASE LEARNING
         # Store successful patterns in vector database for fast retrieval
@@ -596,7 +706,7 @@ The previous response did not follow the required format. Please restructure you
                 metadata=metadata or {},
                 quality_score=quality_score
             )
-            print(f"Stored successful pattern in vector database (quality: {quality_score:.2f})")
+            print(f"💾 Stored successful pattern in vector database (quality: {quality_score:.2f})")
         
         # Legacy learning systems (used when vector service is disabled)
         self.interaction_history.append(interaction)

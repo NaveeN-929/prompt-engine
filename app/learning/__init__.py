@@ -6,12 +6,14 @@ from app.learning.self_learning_manager import SelfLearningManager, LearningPatt
 from app.learning.knowledge_graph_service import KnowledgeGraphService
 from app.learning.cross_component_bridge import CrossComponentBridge
 from app.learning.learning_analytics import LearningAnalytics
+from app.learning.quality_improvement_engine import QualityImprovementEngine
 
 __all__ = [
     'SelfLearningManager',
     'LearningPattern',
     'KnowledgeGraphService',
     'CrossComponentBridge',
-    'LearningAnalytics'
+    'LearningAnalytics',
+    'QualityImprovementEngine'
 ]
 

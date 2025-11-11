@@ -129,7 +129,7 @@ class AutonomousAgent:
             # Phase 7: Learning Feedback
             logger.info(f"[{request_id}] Phase 7: Submitting learning feedback")
             await self._submit_learning_feedback(
-                input_data, prompt_result, final_result, confidence_result
+                input_data, prompt_result, final_result, confidence_result, validation_result
             )
             
             processing_time = time.time() - start_time
@@ -360,10 +360,26 @@ class AutonomousAgent:
     async def _submit_learning_feedback(self, input_data: Dict[str, Any],
                                       prompt_result: Dict[str, Any],
                                       final_result: Dict[str, Any],
-                                      confidence_result: Dict[str, Any]):
+                                      confidence_result: Dict[str, Any],
+                                      validation_result: Dict[str, Any] = None):
         """Phase 7: Submit learning feedback to prompt engine"""
         
         quality_score = confidence_result["overall_score"]
+        
+        # NEW: Create proper validation_result format for quality improvement
+        validation_data = None
+        if validation_result:
+            validation_data = {
+                "overall_score": quality_score,
+                "criteria_scores": {
+                    "accuracy": confidence_result.get("component_scores", {}).get("data_grounding", quality_score),
+                    "completeness": confidence_result.get("component_scores", {}).get("comprehensive_coverage", quality_score),
+                    "clarity": confidence_result.get("component_scores", {}).get("logical_consistency", quality_score),
+                    "relevance": quality_score,
+                    "structural_compliance": validation_result.get("structural_compliance", {}).get("score", quality_score)
+                },
+                "timestamp": validation_result.get("timestamp", "")
+            }
         
         # Only submit feedback for high-quality responses
         if quality_score >= self.config["learning"]["feedback_threshold"]:
@@ -373,7 +389,8 @@ class AutonomousAgent:
                     prompt_result=prompt_result["prompt"],
                     agent_response=final_result["response"],
                     quality_score=quality_score,
-                    user_feedback=f"Autonomous agent quality score: {quality_score:.3f}"
+                    user_feedback=f"Autonomous agent quality score: {quality_score:.3f}",
+                    validation_result=validation_data  # NEW: Pass validation details
                 )
     
     async def _apply_quality_gate(self, gate_name: str, gate_config: Dict[str, Any],
