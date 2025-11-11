@@ -29,6 +29,10 @@ class Settings:
         "./keys/keystore.json"
     )
     
+    # Redis configuration
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+    REDIS_TTL: int = int(os.getenv("REDIS_TTL", "86400"))  # 24 hours default
+    
     # Service URLs
     REPERSONALIZATION_SERVICE_URL: str = os.getenv(
         "REPERSONALIZATION_SERVICE_URL",

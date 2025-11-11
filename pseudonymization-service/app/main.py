@@ -27,7 +27,11 @@ CORS(app)
 
 # Initialize services
 key_manager = KeyManager(settings.KEY_STORE_PATH)
-pseudonymizer = Pseudonymizer(key_manager)
+pseudonymizer = Pseudonymizer(
+    key_manager,
+    redis_url=settings.REDIS_URL,
+    redis_ttl=settings.REDIS_TTL
+)
 
 # Root endpoint
 @app.route('/', methods=['GET'])

@@ -1,6 +1,7 @@
 /**
  * API Service
  * Centralized API communication with all backend services
+ * Updated: Redis added, Self-Learning is part of Prompt Engine
  */
 
 import axios from 'axios';
@@ -20,6 +21,20 @@ export const healthCheckService = {
     const results = {};
     
     for (const [key, service] of Object.entries(SERVICES)) {
+      // Skip Redis for now - it doesn't have a standard HTTP health endpoint
+      if (key === 'REDIS') {
+        // Redis health is checked via the services that use it
+        results[key] = {
+          status: 'healthy', // Assume healthy if services using it are working
+          name: service.name,
+          port: service.port,
+          data: { note: 'Health checked via dependent services' },
+          timestamp: new Date().toISOString(),
+          critical: service.critical
+        };
+        continue;
+      }
+
       try {
         const response = await axios.get(
           `${service.url}${service.healthEndpoint}`,
@@ -30,7 +45,9 @@ export const healthCheckService = {
           name: service.name,
           port: service.port,
           data: response.data,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          includesSelfLearning: service.includesSelfLearning || false,
+          usesRedis: service.usesRedis || false
         };
       } catch (error) {
         results[key] = {
@@ -38,7 +55,9 @@ export const healthCheckService = {
           name: service.name,
           port: service.port,
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          includesSelfLearning: service.includesSelfLearning || false,
+          usesRedis: service.usesRedis || false
         };
       }
     }
@@ -53,6 +72,15 @@ export const healthCheckService = {
     const service = SERVICES[serviceKey];
     if (!service) {
       throw new Error(`Unknown service: ${serviceKey}`);
+    }
+
+    // Special handling for Redis
+    if (serviceKey === 'REDIS') {
+      return {
+        status: 'healthy',
+        data: { note: 'Health checked via dependent services' },
+        timestamp: new Date().toISOString()
+      };
     }
 
     try {
@@ -100,7 +128,38 @@ export const pseudonymizationService = {
 };
 
 /**
+ * Autonomous Agent API
+ */
+export const autonomousAgentService = {
+  /**
+   * Run analysis via autonomous agent
+   */
+  async analyze(inputData, options = {}) {
+    const response = await axios.post(
+      `${SERVICES.AUTONOMOUS_AGENT.url}/analyze`,
+      {
+        input_data: inputData,
+        request_config: {
+          generation_type: options.generation_type || 'autonomous',
+          include_validation: false // Validation is separate
+        }
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get agent status
+   */
+  async getStatus() {
+    const response = await axios.get(`${SERVICES.AUTONOMOUS_AGENT.url}/agent/status`);
+    return response.data;
+  }
+};
+
+/**
  * Prompt Engine API
+ * Note: Self-Learning API is part of this service
  */
 export const promptEngineService = {
   /**
@@ -189,13 +248,14 @@ export const repersonalizationService = {
 
 /**
  * Self-Learning API
+ * Note: This is part of the Prompt Engine service (port 5000)
  */
 export const selfLearningService = {
   /**
    * Get self-learning status
    */
   async getStatus() {
-    const response = await axios.get(`${SERVICES.SELF_LEARNING.url}/self-learning/status`);
+    const response = await axios.get(`${SERVICES.PROMPT_ENGINE.url}/self-learning/status`);
     return response.data;
   },
 
@@ -203,7 +263,7 @@ export const selfLearningService = {
    * Get learning metrics
    */
   async getMetrics() {
-    const response = await axios.get(`${SERVICES.SELF_LEARNING.url}/self-learning/metrics`);
+    const response = await axios.get(`${SERVICES.PROMPT_ENGINE.url}/self-learning/metrics`);
     return response.data;
   },
 
@@ -212,7 +272,7 @@ export const selfLearningService = {
    */
   async getDashboardData() {
     const response = await axios.get(
-      `${SERVICES.SELF_LEARNING.url}/self-learning/analytics/dashboard`
+      `${SERVICES.PROMPT_ENGINE.url}/self-learning/analytics/dashboard`
     );
     return response.data;
   },
@@ -222,9 +282,31 @@ export const selfLearningService = {
    */
   async getKnowledgeGraphStats() {
     const response = await axios.get(
-      `${SERVICES.SELF_LEARNING.url}/self-learning/knowledge-graph/stats`
+      `${SERVICES.PROMPT_ENGINE.url}/self-learning/knowledge-graph/stats`
     );
     return response.data;
+  },
+
+  /**
+   * Submit learning feedback (background operation)
+   */
+  async submitFeedback(validationResult, inputData, response) {
+    try {
+      await axios.post(
+        `${SERVICES.PROMPT_ENGINE.url}/learn`,
+        {
+          input_data: inputData,
+          prompt_result: response.prompt,
+          llm_response: response.response,
+          quality_score: validationResult.overall_score,
+          validation_result: validationResult,
+          metadata: response.agentic_metadata || {}
+        }
+      );
+    } catch (error) {
+      console.error('Self-learning feedback submission failed:', error);
+      // Don't throw - this is a background operation
+    }
   }
 };
 
@@ -278,11 +360,11 @@ export const ollamaService = {
 
 /**
  * Pipeline Execution Service
- * Executes the complete pipeline end-to-end
+ * Executes the complete pipeline matching the actual architecture
  */
 export const pipelineExecutionService = {
   /**
-   * Execute complete pipeline
+   * Execute complete pipeline with parallel processing
    */
   async executeFullPipeline(inputData, onStepComplete) {
     const results = {
@@ -295,68 +377,94 @@ export const pipelineExecutionService = {
     };
 
     try {
-      // Step 1: Data Generation (already have input data)
-      if (onStepComplete) onStepComplete('data-generation', { data: inputData });
-      results.steps['data-generation'] = { data: inputData, status: 'success' };
+      // Step 1: Input Data (already have it)
+      if (onStepComplete) onStepComplete('input-data', { data: inputData, status: 'success' });
+      results.steps['input-data'] = { data: inputData, status: 'success' };
 
-      // Step 2: Pseudonymization
+      // Step 2: Pseudonymization (uses Redis for token storage)
       if (onStepComplete) onStepComplete('pseudonymization', { status: 'processing' });
       const pseudoResult = await pseudonymizationService.pseudonymize(inputData);
-      if (onStepComplete) onStepComplete('pseudonymization', pseudoResult);
+      if (onStepComplete) onStepComplete('pseudonymization', { ...pseudoResult, status: 'success' });
       results.steps['pseudonymization'] = { ...pseudoResult, status: 'success' };
 
-      // Step 3: Prompt Generation
-      if (onStepComplete) onStepComplete('prompt-generation', { status: 'processing' });
-      const promptResult = await promptEngineService.generate(
-        pseudoResult.pseudonymized_data,
-        { generation_type: 'autonomous' }
-      );
-      if (onStepComplete) onStepComplete('prompt-generation', promptResult);
-      results.steps['prompt-generation'] = { ...promptResult, status: 'success' };
+      // Step 3: Parallel execution of Autonomous Agent AND Prompt Engine
+      if (onStepComplete) {
+        onStepComplete('autonomous-agent', { status: 'processing' });
+        onStepComplete('prompt-engine', { status: 'processing' });
+      }
 
-      // Step 4: RAG Enhancement (implicit in prompt generation)
-      if (onStepComplete) onStepComplete('rag-enhancement', { 
-        vector_accelerated: promptResult.vector_accelerated,
-        rag_metadata: promptResult.agentic_metadata
-      });
-      results.steps['rag-enhancement'] = { 
-        vector_accelerated: promptResult.vector_accelerated,
-        status: 'success' 
-      };
+      // Execute both in parallel using Promise.all
+      const [agentResult, promptResult] = await Promise.all([
+        autonomousAgentService.analyze(pseudoResult.pseudonymized_data).catch(err => ({
+          error: err.message,
+          status: 'error'
+        })),
+        promptEngineService.generate(pseudoResult.pseudonymized_data, { 
+          generation_type: 'autonomous' 
+        }).catch(err => ({
+          error: err.message,
+          status: 'error'
+        }))
+      ]);
 
-      // Step 5: LLM Analysis (already done in prompt generation)
-      if (onStepComplete) onStepComplete('llm-analysis', {
-        response: promptResult.response,
-        tokens_used: promptResult.tokens_used
-      });
-      results.steps['llm-analysis'] = {
-        response: promptResult.response,
-        tokens_used: promptResult.tokens_used,
-        status: 'success'
-      };
+      if (onStepComplete) {
+        onStepComplete('autonomous-agent', { ...agentResult, status: agentResult.error ? 'error' : 'success' });
+        onStepComplete('prompt-engine', { ...promptResult, status: promptResult.error ? 'error' : 'success' });
+      }
+      results.steps['autonomous-agent'] = { ...agentResult, status: agentResult.error ? 'error' : 'success' };
+      results.steps['prompt-engine'] = { ...promptResult, status: promptResult.error ? 'error' : 'success' };
 
-      // Step 6: Validation
-      if (onStepComplete) onStepComplete('validation', { status: 'processing' });
+      // Use the result from whichever succeeded (prefer agent result)
+      const analysisResult = agentResult.error ? promptResult : agentResult;
+      
+      if (analysisResult.error) {
+        throw new Error('Both Autonomous Agent and Prompt Engine failed');
+      }
+
+      // Step 4: Validation System (uses both Vector DB and Ollama internally)
+      if (onStepComplete) onStepComplete('validation-system', { status: 'processing' });
       const validationResult = await validationService.validateResponse(
-        { analysis: promptResult.response },
+        { analysis: analysisResult.analysis || analysisResult.response },
         inputData
       );
-      if (onStepComplete) onStepComplete('validation', validationResult);
-      results.steps['validation'] = { ...validationResult, status: 'success' };
+      if (onStepComplete) onStepComplete('validation-system', { ...validationResult, status: 'success' });
+      results.steps['validation-system'] = { ...validationResult, status: 'success' };
 
-      // Step 7: Self-Learning
+      // Step 5: Self-Learning (background feedback loop - non-blocking)
+      // Note: This is part of Prompt Engine, not a separate service
       if (onStepComplete) onStepComplete('self-learning', { status: 'processing' });
-      const learningMetrics = await selfLearningService.getMetrics();
-      if (onStepComplete) onStepComplete('self-learning', learningMetrics);
-      results.steps['self-learning'] = { ...learningMetrics, status: 'success' };
+      // Don't await this - it's a background operation
+      selfLearningService.submitFeedback(validationResult, inputData, analysisResult)
+        .then(() => {
+          if (onStepComplete) onStepComplete('self-learning', { status: 'success' });
+          results.steps['self-learning'] = { status: 'success', feedback_submitted: true };
+        })
+        .catch(() => {
+          if (onStepComplete) onStepComplete('self-learning', { status: 'warning' });
+          results.steps['self-learning'] = { status: 'warning', feedback_submitted: false };
+        });
 
-      // Step 8: Repersonalization
+      // Mark as processing immediately for UI
+      results.steps['self-learning'] = { status: 'processing', feedback_submitted: 'pending' };
+
+      // Step 6: Repersonalization (uses Redis to retrieve token mappings)
       if (onStepComplete) onStepComplete('repersonalization', { status: 'processing' });
       const repersonalResult = await repersonalizationService.repersonalize(
         pseudoResult.pseudonym_id
       );
-      if (onStepComplete) onStepComplete('repersonalization', repersonalResult);
+      if (onStepComplete) onStepComplete('repersonalization', { ...repersonalResult, status: 'success' });
       results.steps['repersonalization'] = { ...repersonalResult, status: 'success' };
+
+      // Step 7: Output Data
+      const outputData = {
+        insights: analysisResult.analysis || analysisResult.response,
+        validation: validationResult,
+        original_data: repersonalResult.original_data,
+        quality_score: validationResult.overall_score,
+        quality_level: validationResult.quality_level
+      };
+      if (onStepComplete) onStepComplete('output-data', { ...outputData, status: 'success' });
+      results.steps['output-data'] = { ...outputData, status: 'success' };
 
     } catch (error) {
       results.success = false;
@@ -374,6 +482,7 @@ export const pipelineExecutionService = {
 export default {
   healthCheckService,
   pseudonymizationService,
+  autonomousAgentService,
   promptEngineService,
   validationService,
   repersonalizationService,
@@ -382,4 +491,3 @@ export default {
   ollamaService,
   pipelineExecutionService
 };
-

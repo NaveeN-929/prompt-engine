@@ -7,7 +7,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import MetricCard from '../common/MetricCard';
 import StatusIndicator from '../common/StatusIndicator';
-import { SERVICES } from '../../utils/pipelineConfig';
+import { PIPELINE_STEPS, SERVICES } from '../../utils/pipelineConfig';
 import { formatDuration } from '../../utils/dataFormatter';
 
 const MetricsDashboard = ({ healthStatus, pipelineState }) => {
@@ -43,14 +43,15 @@ const MetricsDashboard = ({ healthStatus, pipelineState }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Calculate service health summary
-  const serviceHealth = Object.entries(healthStatus || {}).map(([key, data]) => ({
-    name: data.name,
-    status: data.status,
-  }));
+  // Calculate service health summary - safely handle undefined healthStatus
+  const serviceHealth = healthStatus ? Object.entries(healthStatus).map(([key, data]) => ({
+    name: data.name || key,
+    status: data.status || 'unknown',
+  })) : [];
 
   const healthyCount = serviceHealth.filter(s => s.status === 'healthy').length;
   const unhealthyCount = serviceHealth.filter(s => s.status === 'unhealthy').length;
+  const totalServices = serviceHealth.length || 1; // Prevent division by zero
 
   const healthPieData = [
     { name: 'Healthy', value: healthyCount, color: '#10B981' },
@@ -62,6 +63,8 @@ const MetricsDashboard = ({ healthStatus, pipelineState }) => {
     step => step.status === 'success'
   ).length;
 
+  const totalSteps = PIPELINE_STEPS.length; // Fixed: PIPELINE_STEPS is an array
+
   const totalTime = pipelineState?.endTime && pipelineState?.startTime
     ? pipelineState.endTime - pipelineState.startTime
     : 0;
@@ -72,15 +75,15 @@ const MetricsDashboard = ({ healthStatus, pipelineState }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Services Healthy"
-          value={`${healthyCount}/${serviceHealth.length}`}
+          value={`${healthyCount}/${totalServices}`}
           icon={Activity}
           color="success"
-          trend={healthyCount === serviceHealth.length ? 'up' : 'down'}
-          trendValue={`${Math.round((healthyCount / serviceHealth.length) * 100)}%`}
+          trend={healthyCount === totalServices ? 'up' : 'down'}
+          trendValue={`${Math.round((healthyCount / totalServices) * 100)}%`}
         />
         <MetricCard
           title="Pipeline Steps"
-          value={`${completedSteps}/${Object.keys(PIPELINE_STEPS).length || 8}`}
+          value={`${completedSteps}/${totalSteps}`}
           icon={CheckCircle}
           color="processing"
           subtitle={pipelineState?.isRunning ? 'Running...' : 'Idle'}
@@ -94,9 +97,9 @@ const MetricsDashboard = ({ healthStatus, pipelineState }) => {
         />
         <MetricCard
           title="System Status"
-          value={healthyCount === serviceHealth.length ? 'Operational' : 'Degraded'}
-          icon={healthyCount === serviceHealth.length ? CheckCircle : AlertCircle}
-          color={healthyCount === serviceHealth.length ? 'success' : 'error'}
+          value={healthyCount === totalServices ? 'Operational' : 'Degraded'}
+          icon={healthyCount === totalServices ? CheckCircle : AlertCircle}
+          color={healthyCount === totalServices ? 'success' : 'error'}
         />
       </div>
 
@@ -246,30 +249,35 @@ const MetricsDashboard = ({ healthStatus, pipelineState }) => {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Service Status
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {serviceHealth.map((service, index) => (
-            <div 
-              key={index}
-              className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {service.name}
-                </span>
-                <StatusIndicator status={service.status} showLabel={false} size="sm" />
+        {serviceHealth.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {serviceHealth.map((service, index) => (
+              <div 
+                key={index}
+                className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {service.name}
+                  </span>
+                  <StatusIndicator status={service.status} showLabel={false} size="sm" />
+                </div>
+                <div className={`text-xs capitalize font-medium ${
+                  service.status === 'healthy' ? 'text-success' : 'text-error'
+                }`}>
+                  {service.status}
+                </div>
               </div>
-              <div className={`text-xs capitalize font-medium ${
-                service.status === 'healthy' ? 'text-success' : 'text-error'
-              }`}>
-                {service.status}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p>Loading service health status...</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default MetricsDashboard;
-

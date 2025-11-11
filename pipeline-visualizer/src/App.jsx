@@ -58,9 +58,16 @@ function App() {
   // Generate step statuses for visualization components
   const stepStatuses = useMemo(() => {
     const statuses = {};
-    const steps = ['data-generation', 'pseudonymization', 'prompt-generation', 
-                   'rag-enhancement', 'llm-analysis', 'validation', 
-                   'self-learning', 'repersonalization'];
+    const steps = [
+      'input-data',
+      'pseudonymization', 
+      'autonomous-agent', 
+      'prompt-engine',
+      'validation-system', 
+      'self-learning', 
+      'repersonalization',
+      'output-data'
+    ];
     
     steps.forEach(stepId => {
       statuses[stepId] = getStepStatus(stepId);
@@ -146,27 +153,20 @@ function App() {
 
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center justify-between text-sm">
+            <div className="text-gray-600 dark:text-gray-400">
               Pipeline Visualizer v1.0.0 - Self-Learning Prompt Engine System
             </div>
             <div className="flex items-center gap-4">
-              <a 
-                href="https://github.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-sm text-processing hover:underline"
-              >
-                Documentation
-              </a>
-              <a 
-                href="http://localhost:5000/health" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-sm text-processing hover:underline"
-              >
-                API Health
-              </a>
+              <span className="text-gray-500 dark:text-gray-500">
+                Parallel Processing: Agent + Prompt Engine
+              </span>
+              {pipelineState.isRunning && (
+                <span className="flex items-center gap-2 text-processing">
+                  <span className="w-2 h-2 bg-processing rounded-full animate-pulse"></span>
+                  Pipeline Running
+                </span>
+              )}
             </div>
           </div>
         </div>

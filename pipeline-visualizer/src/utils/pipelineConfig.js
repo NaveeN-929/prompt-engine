@@ -1,22 +1,23 @@
 /**
  * Pipeline Configuration
- * Defines all 8 steps of the end-to-end pipeline with metadata and service endpoints
+ * Defines the actual pipeline flow matching the architecture diagram
+ * Updated: Reflects actual in-memory storage (Redis not implemented yet)
  */
 
 export const PIPELINE_STEPS = [
   {
-    id: 'data-generation',
-    name: 'Data Generation',
-    description: 'Generate business banking transactions with PII',
+    id: 'input-data',
+    name: 'Input Data',
+    description: 'Multiple data input channels',
     icon: 'Database',
     type: 'data',
     color: '#8B5CF6',
-    position: { x: 100, y: 100 },
+    position: { x: 100, y: 50 },
     features: [
-      'Business banking transactions',
-      'PII data (names, emails, phone)',
-      'Account information',
-      'Transaction history'
+      'API input',
+      'File Upload',
+      'Streaming data',
+      'Batch processing'
     ],
     sampleData: {
       customer_id: 'BIZ_0001',
@@ -36,180 +37,214 @@ export const PIPELINE_STEPS = [
   {
     id: 'pseudonymization',
     name: 'Pseudonymization',
-    description: 'PII detection & masking',
+    description: 'PII detection & secure tokenization',
     icon: 'Shield',
     type: 'process',
     color: '#10B981',
-    position: { x: 350, y: 100 },
+    position: { x: 100, y: 150 },
     port: 5003,
     endpoint: 'http://localhost:5003',
     healthCheck: '/health',
     apiPath: '/pseudonymize',
     features: [
-      'Automatic PII detection (20+ types)',
-      'Field-level security',
-      'Reversible tokenization',
-      'Data utility preservation'
+      'PII Detection',
+      'Token Mapping',
+      'In-Memory Storage (for now)',
+      'Reversible tokenization'
     ],
-    metrics: ['pii_detected', 'fields_pseudonymized', 'processing_time_ms']
+    metrics: ['pii_detected', 'fields_pseudonymized', 'processing_time_ms'],
+    storageType: 'in-memory', // Currently uses Python dict, not Redis
+    productionRecommendation: 'Use Redis for persistent token storage'
   },
   {
-    id: 'prompt-generation',
-    name: 'Prompt Generation',
-    description: 'Intelligent prompt creation',
-    icon: 'FileText',
+    id: 'autonomous-agent',
+    name: 'Autonomous Agent',
+    description: 'Financial analysis with RAG',
+    icon: 'Brain',
     type: 'process',
     color: '#3B82F6',
-    position: { x: 600, y: 100 },
+    position: { x: 50, y: 300 },
+    port: 5001,
+    endpoint: 'http://localhost:5001',
+    healthCheck: '/agent/status',
+    apiPath: '/analyze',
+    features: [
+      'Financial Analysis',
+      'RAG Enhancement',
+      'Self-Learning Integration',
+      'Multi-step Reasoning'
+    ],
+    metrics: ['processing_time', 'rag_items_found', 'confidence_score'],
+    parallel: true // Runs in parallel with prompt-engine
+  },
+  {
+    id: 'prompt-engine',
+    name: 'Prompt Engine',
+    description: 'Intelligent prompt generation with Self-Learning',
+    icon: 'FileText',
+    type: 'process',
+    color: '#F59E0B',
+    position: { x: 400, y: 300 },
     port: 5000,
     endpoint: 'http://localhost:5000',
     healthCheck: '/health',
     apiPath: '/generate',
     features: [
-      'Template-based generation',
-      'Context inference',
-      'Multi-type generation',
-      'Agentic intelligence'
+      'Prompt Generation',
+      'Template Management',
+      'Vector Acceleration',
+      'Self-Learning System (built-in)'
     ],
-    metrics: ['generation_mode', 'template_used', 'processing_time']
+    metrics: ['generation_mode', 'template_used', 'processing_time'],
+    parallel: true, // Runs in parallel with autonomous-agent
+    includesSelfLearning: true // Self-Learning API is part of this service
   },
   {
-    id: 'rag-enhancement',
-    name: 'RAG Enhancement',
-    description: 'Vector database context augmentation',
-    icon: 'Brain',
-    type: 'process',
-    color: '#F59E0B',
-    position: { x: 850, y: 100 },
-    port: 6333,
-    endpoint: 'http://localhost:6333',
-    healthCheck: '/collections',
-    features: [
-      'Vector similarity search',
-      'Context augmentation',
-      'Pattern matching',
-      'Knowledge retrieval'
-    ],
-    metrics: ['rag_items_found', 'similarity_scores', 'vector_db_time']
-  },
-  {
-    id: 'llm-analysis',
-    name: 'LLM Analysis',
-    description: 'Ollama text generation',
-    icon: 'Sparkles',
-    type: 'process',
-    color: '#EC4899',
-    position: { x: 100, y: 300 },
-    port: 11434,
-    endpoint: 'http://localhost:11434',
-    healthCheck: '/api/tags',
-    apiPath: '/api/generate',
-    features: [
-      'Local LLM inference',
-      'Multiple model support',
-      'Structured output',
-      'Fast generation'
-    ],
-    metrics: ['tokens_used', 'model_name', 'llm_time']
-  },
-  {
-    id: 'validation',
-    name: 'Validation',
-    description: 'Quality assessment',
+    id: 'validation-system',
+    name: 'Validation System',
+    description: 'Quality assessment with Vector DB & LLM',
     icon: 'CheckCircle',
     type: 'decision',
     color: '#06B6D4',
-    position: { x: 350, y: 300 },
+    position: { x: 225, y: 450 },
     port: 5002,
     endpoint: 'http://localhost:5002',
     healthCheck: '/health',
     apiPath: '/validate/response',
     features: [
-      'Multi-criteria assessment',
-      'Quality scoring (0-100%)',
-      'Automated quality gates',
-      'Fast validation (<20s)'
+      'Response Quality Assessment',
+      'Multi-Criteria Validation',
+      'Quality Gates',
+      'Uses Vector DB & Ollama'
     ],
-    metrics: ['overall_score', 'quality_level', 'validation_time', 'criteria_scores']
+    metrics: ['overall_score', 'quality_level', 'validation_time', 'criteria_scores'],
+    dependencies: {
+      vectorDb: {
+        name: 'Qdrant Vector DB',
+        port: 6333,
+        endpoint: 'http://localhost:6333'
+      },
+      llm: {
+        name: 'Ollama LLM',
+        port: 11434,
+        endpoint: 'http://localhost:11434',
+        models: ['mistral', 'llama3.1:8b', 'phi3:3.8b']
+      }
+    }
   },
   {
     id: 'self-learning',
     name: 'Self-Learning',
-    description: 'Pattern storage & knowledge graph',
+    description: 'Pattern storage & feedback loop (part of Prompt Engine)',
     icon: 'GitBranch',
-    type: 'process',
+    type: 'feedback',
     color: '#8B5CF6',
-    position: { x: 600, y: 300 },
+    position: { x: 500, y: 600 },
     port: 5000,
     endpoint: 'http://localhost:5000',
     healthCheck: '/self-learning/status',
     apiPath: '/self-learning/metrics',
     features: [
-      'Pattern learning',
-      'Knowledge graph',
-      'Cross-component bridge',
-      'Continuous improvement'
+      'Pattern Learning',
+      'Knowledge Graph',
+      'Cross-Component Bridge',
+      'Continuous Improvement'
     ],
-    metrics: ['learning_stats', 'knowledge_graph_stats', 'patterns_learned']
+    metrics: ['learning_stats', 'knowledge_graph_stats', 'patterns_learned'],
+    isFeedbackLoop: true, // Not a sequential step, runs in background
+    partOfPromptEngine: true // This is NOT a separate service
   },
   {
     id: 'repersonalization',
     name: 'Repersonalization',
-    description: 'Restore original data',
+    description: 'Restore original data securely',
     icon: 'Unlock',
     type: 'process',
     color: '#EF4444',
-    position: { x: 850, y: 300 },
+    position: { x: 225, y: 700 },
     port: 5004,
     endpoint: 'http://localhost:5004',
     healthCheck: '/health',
     apiPath: '/repersonalize',
     features: [
-      'Data restoration',
-      'Integrity verification',
-      'Secure retrieval',
-      'GDPR compliance'
+      'Token Reversal',
+      'In-Memory Mapping (for now)',
+      'Data Restoration',
+      'GDPR Compliance'
     ],
-    metrics: ['processing_time_ms', 'verified', 'restoration_success']
+    metrics: ['processing_time_ms', 'verified', 'restoration_success'],
+    storageType: 'in-memory', // Currently uses in-memory, not Redis
+    productionRecommendation: 'Use Redis for persistent token retrieval'
+  },
+  {
+    id: 'output-data',
+    name: 'Output Data',
+    description: 'Multiple output channels',
+    icon: 'Database',
+    type: 'data',
+    color: '#EC4899',
+    position: { x: 225, y: 850 },
+    features: [
+      'Insights',
+      'Recommendations',
+      'Visualizations',
+      'Multi-channel delivery'
+    ]
   }
 ];
 
-// Define connections between steps
+// Define connections - Updated to match actual architecture
 export const PIPELINE_EDGES = [
-  { id: 'e1-2', source: 'data-generation', target: 'pseudonymization', animated: true },
-  { id: 'e2-3', source: 'pseudonymization', target: 'prompt-generation', animated: true },
-  { id: 'e3-4', source: 'prompt-generation', target: 'rag-enhancement', animated: true },
-  { id: 'e4-5', source: 'rag-enhancement', target: 'llm-analysis', animated: true },
-  { id: 'e5-6', source: 'llm-analysis', target: 'validation', animated: true },
-  { id: 'e6-7', source: 'validation', target: 'self-learning', animated: true },
-  { id: 'e7-8', source: 'self-learning', target: 'repersonalization', animated: true },
+  { id: 'e1-2', source: 'input-data', target: 'pseudonymization', animated: true },
+  // Pseudonymization splits to both Agent and Prompt Engine (parallel)
+  { id: 'e2-3a', source: 'pseudonymization', target: 'autonomous-agent', animated: true, label: 'Parallel' },
+  { id: 'e2-3b', source: 'pseudonymization', target: 'prompt-engine', animated: true, label: 'Parallel' },
+  // Both converge to Validation System
+  { id: 'e3-4', source: 'autonomous-agent', target: 'validation-system', animated: true },
+  { id: 'e3b-4', source: 'prompt-engine', target: 'validation-system', animated: true },
+  // Validation to Repersonalization
+  { id: 'e4-6', source: 'validation-system', target: 'repersonalization', animated: true },
+  // Self-Learning feedback loop (dashed) - goes back to Prompt Engine since it's part of it
+  { id: 'e4-5', source: 'validation-system', target: 'self-learning', animated: true, type: 'step', style: { strokeDasharray: '5,5', stroke: '#8B5CF6' } },
+  { id: 'e5-3b', source: 'self-learning', target: 'prompt-engine', animated: false, type: 'step', style: { strokeDasharray: '5,5', stroke: '#8B5CF6' } },
+  // Final output
+  { id: 'e6-7', source: 'repersonalization', target: 'output-data', animated: true }
 ];
 
-// Service configuration
+// Service configuration - ACTUAL implementation (no Redis yet)
 export const SERVICES = {
   PSEUDONYMIZATION: {
     name: 'Pseudonymization Service',
     port: 5003,
     url: 'http://localhost:5003',
-    healthEndpoint: '/health'
+    healthEndpoint: '/health',
+    storage: 'in-memory' // Uses Python dict, not Redis
   },
-  REPERSONALIZATION: {
-    name: 'Repersonalization Service',
-    port: 5004,
-    url: 'http://localhost:5004',
-    healthEndpoint: '/health'
+  AUTONOMOUS_AGENT: {
+    name: 'Autonomous Agent',
+    port: 5001,
+    url: 'http://localhost:5001',
+    healthEndpoint: '/agent/status'
   },
   PROMPT_ENGINE: {
     name: 'Prompt Engine',
     port: 5000,
     url: 'http://localhost:5000',
-    healthEndpoint: '/health'
+    healthEndpoint: '/health',
+    includesSelfLearning: true // Self-Learning API is part of this service
   },
   VALIDATION: {
     name: 'Validation Service',
     port: 5002,
     url: 'http://localhost:5002',
     healthEndpoint: '/health'
+  },
+  REPERSONALIZATION: {
+    name: 'Repersonalization Service',
+    port: 5004,
+    url: 'http://localhost:5004',
+    healthEndpoint: '/health',
+    storage: 'in-memory' // Uses in-memory, not Redis
   },
   QDRANT: {
     name: 'Qdrant Vector DB',
@@ -222,12 +257,6 @@ export const SERVICES = {
     port: 11434,
     url: 'http://localhost:11434',
     healthEndpoint: '/api/tags'
-  },
-  SELF_LEARNING: {
-    name: 'Self-Learning API',
-    port: 5000,
-    url: 'http://localhost:5000',
-    healthEndpoint: '/self-learning/status'
   }
 };
 
@@ -255,4 +284,3 @@ export default {
   STATUS_COLORS,
   QUALITY_THRESHOLDS
 };
-

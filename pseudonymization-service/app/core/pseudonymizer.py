@@ -13,6 +13,7 @@ import logging
 
 from .pii_detector import PIIDetector
 from .tokenizer import Tokenizer
+from .redis_storage import RedisStorage
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +21,17 @@ logger = logging.getLogger(__name__)
 class Pseudonymizer:
     """
     Handles pseudonymization of sensitive financial data with PII detection
+    Uses Redis for persistent token storage
     """
     
-    def __init__(self, key_manager):
+    def __init__(self, key_manager, redis_url: str = "redis://localhost:6379", redis_ttl: int = 86400):
         self.key_manager = key_manager
         self.pii_detector = PIIDetector()
         self.tokenizer = Tokenizer(key_manager)
-        self.pseudonym_map = {}  # In-memory map (in production, use Redis/database)
+        
+        # Initialize Redis storage (with fallback to memory)
+        self.storage = RedisStorage(redis_url=redis_url, ttl=redis_ttl)
+        
         self.stats = {
             "total_pseudonymized": 0,
             "total_fields_processed": 0,
@@ -80,14 +85,15 @@ class Pseudonymizer:
                     if 'transaction.date' not in fields_pseudonymized:
                         fields_pseudonymized.append('transaction.date')
         
-        # Store mapping for reversal
-        self.pseudonym_map[pseudonym_id] = {
+        # Store mapping for reversal in Redis
+        mapping_data = {
             'original_data': data,
             'created_at': datetime.utcnow().isoformat(),
             'fields_pseudonymized': list(set(fields_pseudonymized)),
             'pii_detected': pii_detections,
             'pii_summary': pii_summary
         }
+        self.storage.store(pseudonym_id, mapping_data)
         
         # Update statistics
         self.stats['total_pseudonymized'] += 1
@@ -226,23 +232,27 @@ class Pseudonymizer:
     
     def get_original_data(self, pseudonym_id: str) -> Dict[str, Any]:
         """
-        Retrieve original data (for repersonalization service)
+        Retrieve original data from Redis (for repersonalization service)
         """
-        if pseudonym_id not in self.pseudonym_map:
+        mapping_data = self.storage.retrieve(pseudonym_id)
+        
+        if not mapping_data:
             raise ValueError(f"Pseudonym ID not found: {pseudonym_id}")
         
-        return self.pseudonym_map[pseudonym_id]['original_data']
+        return mapping_data['original_data']
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get pseudonymization statistics"""
+        """Get pseudonymization statistics including Redis info"""
+        storage_stats = self.storage.get_stats()
         return {
             **self.stats,
-            "active_pseudonyms": len(self.pseudonym_map)
+            "storage": storage_stats
         }
     
     def clear_pseudonym(self, pseudonym_id: str):
-        """Clear a pseudonym mapping (after successful repersonalization)"""
-        if pseudonym_id in self.pseudonym_map:
-            del self.pseudonym_map[pseudonym_id]
+        """Clear a pseudonym mapping from Redis (after successful repersonalization)"""
+        if self.storage.delete(pseudonym_id):
             logger.info(f"Cleared pseudonym: {pseudonym_id}")
+        else:
+            logger.warning(f"Pseudonym not found for cleanup: {pseudonym_id}")
 

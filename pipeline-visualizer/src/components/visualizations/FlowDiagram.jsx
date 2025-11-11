@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -26,6 +26,7 @@ const CustomNode = ({ data }) => {
     success: 'border-success bg-success bg-opacity-10',
     processing: 'border-processing bg-processing bg-opacity-10 animate-pulse',
     error: 'border-error bg-error bg-opacity-10',
+    warning: 'border-warning bg-warning bg-opacity-10',
     idle: 'border-idle bg-gray-50 dark:bg-gray-800',
   };
 
@@ -52,6 +53,11 @@ const CustomNode = ({ data }) => {
               Port: {data.port}
             </div>
           )}
+          {data.parallel && (
+            <div className="text-xs text-processing font-medium">
+              Parallel
+            </div>
+          )}
         </div>
       </div>
       {data.description && (
@@ -59,12 +65,13 @@ const CustomNode = ({ data }) => {
           {data.description}
         </div>
       )}
-      {data.status !== 'idle' && (
+      {data.status && data.status !== 'idle' && (
         <div className="mt-2">
           <div className={`text-xs font-medium capitalize ${
             data.status === 'success' ? 'text-success' :
             data.status === 'processing' ? 'text-processing' :
-            data.status === 'error' ? 'text-error' : 'text-idle'
+            data.status === 'error' ? 'text-error' :
+            data.status === 'warning' ? 'text-warning' : 'text-idle'
           }`}>
             {data.status}
           </div>
@@ -81,7 +88,7 @@ const nodeTypes = {
 const FlowDiagram = ({ pipelineState, stepStatuses }) => {
   const [selectedStep, setSelectedStep] = useState(null);
 
-  // Convert pipeline steps to React Flow nodes
+  // Convert pipeline steps to React Flow nodes - PIPELINE_STEPS is an array
   const initialNodes = PIPELINE_STEPS.map((step) => ({
     id: step.id,
     type: 'custom',
@@ -92,6 +99,7 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
       icon: step.icon,
       color: step.color,
       port: step.port,
+      parallel: step.parallel || false,
       status: stepStatuses?.[step.id] || 'idle',
       onClick: () => setSelectedStep(step),
     },
@@ -100,19 +108,22 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
   // Convert pipeline edges to React Flow edges
   const initialEdges = PIPELINE_EDGES.map((edge) => ({
     ...edge,
-    type: 'smoothstep',
-    animated: pipelineState?.currentStep === edge.source,
+    type: edge.type || 'smoothstep',
+    animated: pipelineState?.currentStep === edge.source || false,
     style: { 
       stroke: '#3B82F6',
       strokeWidth: 2,
+      ...edge.style
     },
+    label: edge.label || undefined,
+    labelStyle: edge.label ? { fill: '#6B7280', fontSize: 12 } : undefined,
   }));
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   // Update nodes when status changes
-  React.useEffect(() => {
+  useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
@@ -124,19 +135,24 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
     );
   }, [stepStatuses, setNodes]);
 
-  // Update edges when current step changes
-  React.useEffect(() => {
+  // Update edges when current step changes or parallel steps are running
+  useEffect(() => {
     setEdges((eds) =>
-      eds.map((edge) => ({
-        ...edge,
-        animated: pipelineState?.currentStep === edge.source,
-        style: {
-          stroke: pipelineState?.currentStep === edge.source ? '#3B82F6' : '#94A3B8',
-          strokeWidth: pipelineState?.currentStep === edge.source ? 3 : 2,
-        },
-      }))
+      eds.map((edge) => {
+        const isActive = pipelineState?.currentStep === edge.source ||
+                        pipelineState?.parallelSteps?.includes(edge.source) || false;
+        return {
+          ...edge,
+          animated: isActive,
+          style: {
+            ...edge.style,
+            stroke: isActive ? '#3B82F6' : '#94A3B8',
+            strokeWidth: isActive ? 3 : 2,
+          },
+        };
+      })
     );
-  }, [pipelineState?.currentStep, setEdges]);
+  }, [pipelineState?.currentStep, pipelineState?.parallelSteps, setEdges]);
 
   return (
     <div className="h-full w-full relative">
@@ -154,10 +170,11 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
         <Controls />
         <MiniMap
           nodeColor={(node) => {
-            const status = node.data.status;
+            const status = node.data?.status || 'idle';
             if (status === 'success') return '#10B981';
             if (status === 'processing') return '#3B82F6';
             if (status === 'error') return '#EF4444';
+            if (status === 'warning') return '#F59E0B';
             return '#6B7280';
           }}
           maskColor="rgba(0, 0, 0, 0.1)"
@@ -178,4 +195,3 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
 };
 
 export default FlowDiagram;
-
