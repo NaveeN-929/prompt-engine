@@ -365,6 +365,7 @@ def optimize_continuously():
 def learn_from_interaction():
     """
     Submit feedback for the agentic system to learn from (with vector storage)
+    NOW WITH QUALITY IMPROVEMENT: Learns from validation scores to improve prompts
     """
     try:
         data = request.get_json()
@@ -373,25 +374,36 @@ def learn_from_interaction():
         if not data or not all(field in data for field in required_fields):
             return jsonify({"error": f"Missing required fields: {required_fields}"}), 400
         
-        # Submit learning data with enhanced vector storage
+        # NEW: Extract validation_result for quality improvement
+        validation_result = data.get('validation_result')
+        
+        # Submit learning data with enhanced vector storage AND quality improvement
         agentic_generator.learn_from_interaction(
             input_data=data['input_data'],
             prompt_result=data['prompt_result'],
             llm_response=data['llm_response'],
             quality_score=data.get('quality_score'),
             user_feedback=data.get('user_feedback'),
-            metadata=data.get('metadata', {})
+            metadata=data.get('metadata', {}),
+            validation_result=validation_result  # NEW: Pass validation details
         )
         
         # Get updated capabilities including vector stats
         capabilities = agentic_generator.get_agentic_capabilities()
         
-        return jsonify({
+        response_data = {
             "message": "Learning data submitted successfully and stored in vector database",
             "learning_stats": capabilities["learning_stats"],
             "vector_stats": capabilities["vector_stats"],
             "total_interactions": len(agentic_generator.interaction_history)
-        })
+        }
+        
+        # NEW: Add quality improvement info if available
+        if validation_result and agentic_generator.self_learning_manager:
+            response_data["quality_improvement_active"] = True
+            response_data["validation_score"] = validation_result.get('overall_score', 'N/A')
+        
+        return jsonify(response_data)
         
     except Exception as e:
         print(f"Error in learn endpoint: {traceback.format_exc()}")
