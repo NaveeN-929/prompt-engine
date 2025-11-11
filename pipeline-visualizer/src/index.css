@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700;
+  }
+  
+  .btn-primary {
+    @apply bg-processing hover:bg-processing-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .status-indicator {
+    @apply w-3 h-3 rounded-full animate-pulse-slow;
+  }
+  
+  .status-success {
+    @apply bg-success;
+  }
+  
+  .status-processing {
+    @apply bg-processing;
+  }
+  
+  .status-error {
+    @apply bg-error;
+  }
+  
+  .status-idle {
+    @apply bg-idle;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500 dark:bg-gray-500;
+}
+
+/* React Flow custom styles */
+.react-flow__node {
+  @apply cursor-pointer transition-all duration-200;
+}
+
+.react-flow__node:hover {
+  @apply shadow-lg;
+}
+
+.react-flow__edge-path {
+  @apply stroke-2;
+}
+
+/* Custom animations */
+@keyframes dataFlow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -20;
+  }
+}
+
+.animated-edge {
+  animation: dataFlow 1s linear infinite;
+  stroke-dasharray: 5 5;
+}

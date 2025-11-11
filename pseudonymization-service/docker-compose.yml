@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  pseudonymization-service:
+    build: .
+    container_name: pseudonymization-service
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./keys:/app/keys
+    environment:
+      - PSEUDO_HOST=0.0.0.0
+      - PSEUDO_PORT=5003
+      - KEY_STORE_PATH=/app/keys/keystore.json
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

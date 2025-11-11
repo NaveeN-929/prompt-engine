@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  repersonalization-service:
+    build: .
+    container_name: repersonalization-service
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./keys:/app/keys
+    environment:
+      - REPERSONAL_HOST=0.0.0.0
+      - REPERSONAL_PORT=5004
+      - KEY_STORE_PATH=/app/keys/keystore.json
+      - PSEUDONYMIZATION_SERVICE_URL=http://host.docker.internal:5003
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
