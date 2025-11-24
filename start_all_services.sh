@@ -26,7 +26,7 @@ check_port() {
 wait_for_service() {
     local url=$1
     local service_name=$2
-    local max_attempts=30
+    local max_attempts=45  # 90 seconds total (45 * 2)
     local attempt=1
     
     echo "   ⏳ Waiting for $service_name to be ready..."
@@ -40,7 +40,7 @@ wait_for_service() {
         attempt=$((attempt + 1))
     done
     
-    echo "   ⚠️  $service_name did not start properly (timeout after 60s)"
+    echo "   ⚠️  $service_name did not start properly (timeout after 90s)"
     return 1
 }
 
@@ -84,14 +84,15 @@ tell application "Terminal"
 end tell
 EOF
         echo "   ✅ Opened new terminal for Prompt Engine"
-        echo "   ⏳ Waiting for Prompt Engine to initialize (15 seconds)..."
-        sleep 15
+        echo "   ⏳ Waiting for Prompt Engine to initialize (20 seconds)..."
+        echo "      (Model loading may take additional time...)"
+        sleep 20
         
         if wait_for_service "http://localhost:5000/status" "Prompt Engine"; then
             echo "   ✅ Prompt Engine is operational!"
         else
-            echo "   ❌ Prompt Engine failed to start - check the terminal window"
-            exit 1
+            echo "   ⚠️  Prompt Engine health check timed out - continuing anyway"
+            echo "      Check the terminal window for initialization status"
         fi
     else
         echo "   ❌ Prompt Engine files not found at $SCRIPT_DIR"
@@ -122,8 +123,8 @@ EOF
         if wait_for_service "http://localhost:5002/health" "Validation Service"; then
             echo "   ✅ Validation Service is operational!"
         else
-            echo "   ❌ Validation Service failed to start - check the terminal window"
-            exit 1
+            echo "   ⚠️  Validation Service health check timed out - continuing anyway"
+            echo "      Check the terminal window for initialization status"
         fi
     else
         echo "   ❌ Validation Service files not found at $SCRIPT_DIR/validation-llm"

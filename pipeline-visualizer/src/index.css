@@ -23,12 +23,12 @@
   
   .status-indicator {
     @apply w-3 h-3 rounded-full animate-pulse-slow;
-  }
+}
   
   .status-success {
     @apply bg-success;
-  }
-  
+}
+
   .status-processing {
     @apply bg-processing;
   }

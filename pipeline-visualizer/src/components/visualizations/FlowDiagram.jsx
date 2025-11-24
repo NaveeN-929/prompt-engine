@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
   Background,
   useNodesState,
   useEdgesState,
+  MarkerType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { PIPELINE_STEPS, PIPELINE_EDGES } from '../../utils/pipelineConfig';
@@ -32,42 +33,37 @@ const CustomNode = ({ data }) => {
 
   return (
     <div
-      className={`px-6 py-4 shadow-lg rounded-lg border-2 cursor-pointer transition-all hover:shadow-xl min-w-[200px] ${
+      className={`px-4 py-3 shadow-lg rounded-lg border-2 cursor-pointer transition-all hover:shadow-xl min-w-[180px] ${
         statusColors[data.status] || statusColors.idle
       } bg-white dark:bg-gray-800`}
       onClick={data.onClick}
     >
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-2 mb-1">
         <div 
-          className="p-2 rounded-lg"
+          className="p-1.5 rounded-lg"
           style={{ backgroundColor: `${data.color}20` }}
         >
-          <Icon size={24} style={{ color: data.color }} />
+          <Icon size={20} style={{ color: data.color }} />
         </div>
         <div className="flex-1">
-          <div className="font-bold text-gray-900 dark:text-gray-100 text-sm">
+          <div className="font-bold text-gray-900 dark:text-gray-100 text-xs">
             {data.label}
           </div>
           {data.port && (
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-[10px] text-gray-500 dark:text-gray-400">
               Port: {data.port}
-            </div>
-          )}
-          {data.parallel && (
-            <div className="text-xs text-processing font-medium">
-              Parallel
             </div>
           )}
         </div>
       </div>
-      {data.description && (
-        <div className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-          {data.description}
+      {data.parallel && (
+        <div className="text-[10px] text-processing font-medium mt-1">
+          Parallel
         </div>
       )}
       {data.status && data.status !== 'idle' && (
-        <div className="mt-2">
-          <div className={`text-xs font-medium capitalize ${
+        <div className="mt-1">
+          <div className={`text-[10px] font-medium capitalize ${
             data.status === 'success' ? 'text-success' :
             data.status === 'processing' ? 'text-processing' :
             data.status === 'error' ? 'text-error' :
@@ -88,7 +84,7 @@ const nodeTypes = {
 const FlowDiagram = ({ pipelineState, stepStatuses }) => {
   const [selectedStep, setSelectedStep] = useState(null);
 
-  // Convert pipeline steps to React Flow nodes - PIPELINE_STEPS is an array
+  // Convert pipeline steps to React Flow nodes
   const initialNodes = PIPELINE_STEPS.map((step) => ({
     id: step.id,
     type: 'custom',
@@ -108,15 +104,21 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
   // Convert pipeline edges to React Flow edges
   const initialEdges = PIPELINE_EDGES.map((edge) => ({
     ...edge,
-    type: edge.type || 'smoothstep',
+    type: edge.type || 'straight',
     animated: pipelineState?.currentStep === edge.source || false,
     style: { 
-      stroke: '#3B82F6',
-      strokeWidth: 2,
+      stroke: '#1D4ED8',
+      strokeWidth: 3,
+      strokeOpacity: 0.85,
       ...edge.style
     },
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: '#1D4ED8',
+    },
+    className: pipelineState?.currentStep === edge.source ? 'animated-edge' : '',
     label: edge.label || undefined,
-    labelStyle: edge.label ? { fill: '#6B7280', fontSize: 12 } : undefined,
+    labelStyle: edge.label ? { fill: '#1F2937', fontSize: 11 } : undefined,
   }));
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -146,16 +148,22 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
           animated: isActive,
           style: {
             ...edge.style,
-            stroke: isActive ? '#3B82F6' : '#94A3B8',
-            strokeWidth: isActive ? 3 : 2,
+            stroke: isActive ? '#2563EB' : '#CBD5F5',
+            strokeWidth: isActive ? 4 : 3,
+            strokeDasharray: isActive ? '8,6' : edge.style?.strokeDasharray || '0',
           },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: isActive ? '#2563EB' : '#94A3B8',
+          },
+          className: isActive ? 'animated-edge' : '',
         };
       })
     );
   }, [pipelineState?.currentStep, pipelineState?.parallelSteps, setEdges]);
 
   return (
-    <div className="h-full w-full relative">
+    <div className="w-full h-full min-h-0 bg-gray-50 dark:bg-gray-900">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -163,8 +171,16 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{
+          padding: 0.2,
+          includeHiddenNodes: false,
+        }}
         attributionPosition="bottom-left"
-        className="bg-gray-50 dark:bg-gray-900"
+      className="bg-gray-50 dark:bg-gray-900"
+      style={{ width: '100%', height: '100%' }}
+        minZoom={0.5}
+        maxZoom={1.5}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
       >
         <Background color="#aaa" gap={16} />
         <Controls />
@@ -178,6 +194,9 @@ const FlowDiagram = ({ pipelineState, stepStatuses }) => {
             return '#6B7280';
           }}
           maskColor="rgba(0, 0, 0, 0.1)"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          }}
         />
       </ReactFlow>
 

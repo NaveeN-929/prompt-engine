@@ -1,7 +1,7 @@
 /**
  * Pipeline Configuration
  * Defines the actual pipeline flow matching the architecture diagram
- * Updated: Reflects actual in-memory storage (Redis not implemented yet)
+ * Updated: Self-Learning is part of Prompt Engine, Redis added
  */
 
 export const PIPELINE_STEPS = [
@@ -49,12 +49,17 @@ export const PIPELINE_STEPS = [
     features: [
       'PII Detection',
       'Token Mapping',
-      'In-Memory Storage (for now)',
+      'Redis Secure Storage',
       'Reversible tokenization'
     ],
     metrics: ['pii_detected', 'fields_pseudonymized', 'processing_time_ms'],
-    storageType: 'in-memory', // Currently uses Python dict, not Redis
-    productionRecommendation: 'Use Redis for persistent token storage'
+    dependencies: {
+      redis: {
+        name: 'Redis Cache',
+        port: 6379,
+        description: 'Token storage and mapping'
+      }
+    }
   },
   {
     id: 'autonomous-agent',
@@ -168,13 +173,18 @@ export const PIPELINE_STEPS = [
     apiPath: '/repersonalize',
     features: [
       'Token Reversal',
-      'In-Memory Mapping (for now)',
+      'Redis Mapping Retrieval',
       'Data Restoration',
       'GDPR Compliance'
     ],
     metrics: ['processing_time_ms', 'verified', 'restoration_success'],
-    storageType: 'in-memory', // Currently uses in-memory, not Redis
-    productionRecommendation: 'Use Redis for persistent token retrieval'
+    dependencies: {
+      redis: {
+        name: 'Redis Cache',
+        port: 6379,
+        description: 'Token mapping retrieval'
+      }
+    }
   },
   {
     id: 'output-data',
@@ -211,14 +221,14 @@ export const PIPELINE_EDGES = [
   { id: 'e6-7', source: 'repersonalization', target: 'output-data', animated: true }
 ];
 
-// Service configuration - ACTUAL implementation (no Redis yet)
+// Service configuration - FIXED: Self-Learning is part of Prompt Engine, Redis added
 export const SERVICES = {
   PSEUDONYMIZATION: {
     name: 'Pseudonymization Service',
     port: 5003,
     url: 'http://localhost:5003',
     healthEndpoint: '/health',
-    storage: 'in-memory' // Uses Python dict, not Redis
+    usesRedis: true
   },
   AUTONOMOUS_AGENT: {
     name: 'Autonomous Agent',
@@ -244,7 +254,7 @@ export const SERVICES = {
     port: 5004,
     url: 'http://localhost:5004',
     healthEndpoint: '/health',
-    storage: 'in-memory' // Uses in-memory, not Redis
+    usesRedis: true
   },
   QDRANT: {
     name: 'Qdrant Vector DB',
@@ -257,6 +267,14 @@ export const SERVICES = {
     port: 11434,
     url: 'http://localhost:11434',
     healthEndpoint: '/api/tags'
+  },
+  REDIS: {
+    name: 'Redis Cache',
+    port: 6379,
+    url: 'redis://localhost:6379',
+    healthEndpoint: '/ping',
+    description: 'Token storage for Pseudonymization/Repersonalization',
+    critical: true
   }
 };
 

@@ -1,9 +1,8 @@
 import React from 'react';
-import { Workflow, Clock, BarChart3, Play } from 'lucide-react';
+import { Workflow, BarChart3, Play } from 'lucide-react';
 
 const views = [
   { id: 'flow', label: 'Flow Diagram', icon: Workflow },
-  { id: 'timeline', label: 'Timeline', icon: Clock },
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { id: 'execution', label: 'Execution', icon: Play },
 ];
@@ -41,4 +40,3 @@ const ViewSelector = ({ currentView, onViewChange }) => {
 };
 
 export default ViewSelector;
-

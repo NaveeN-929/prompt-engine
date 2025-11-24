@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/layout/Header';
 import ViewSelector from './components/layout/ViewSelector';
 import FlowDiagram from './components/visualizations/FlowDiagram';
-import TimelineStepper from './components/visualizations/TimelineStepper';
 import MetricsDashboard from './components/visualizations/MetricsDashboard';
 import ExecutionView from './components/visualizations/ExecutionView';
+import { ReactFlowProvider } from 'reactflow';
 import useServiceHealth from './hooks/useServiceHealth';
 import usePipelineData from './hooks/usePipelineData';
 
@@ -87,36 +87,50 @@ function App() {
 
   // Render current view
   const renderView = () => {
+    if (healthLoading && !healthStatus) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-processing mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading services...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     switch (currentView) {
       case 'flow':
         return (
-          <FlowDiagram 
-            pipelineState={pipelineState}
-            stepStatuses={stepStatuses}
-          />
-        );
-      case 'timeline':
-        return (
-          <TimelineStepper 
-            pipelineState={pipelineState}
-            stepStatuses={stepStatuses}
-          />
+          <div className="flex-1 min-h-0 relative overflow-hidden">
+            <ReactFlowProvider>
+              <FlowDiagram 
+                pipelineState={pipelineState}
+                stepStatuses={stepStatuses}
+              />
+            </ReactFlowProvider>
+          </div>
         );
       case 'dashboard':
         return (
-          <MetricsDashboard 
-            healthStatus={healthStatus}
-            pipelineState={pipelineState}
-          />
+          <div className="flex-1 overflow-y-auto">
+            <MetricsDashboard 
+              healthStatus={healthStatus}
+              pipelineState={pipelineState}
+            />
+          </div>
         );
       case 'execution':
         return (
-          <ExecutionView
-            pipelineState={pipelineState}
-            onExecute={handleExecutePipeline}
-            onReset={resetPipeline}
-            stepStatuses={stepStatuses}
-          />
+          <div className="flex-1 overflow-y-auto">
+            <ExecutionView
+              pipelineState={pipelineState}
+              onExecute={handleExecutePipeline}
+              onReset={resetPipeline}
+              stepStatuses={stepStatuses}
+            />
+          </div>
         );
       default:
         return null;
@@ -124,7 +138,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header 
         darkMode={darkMode}
         toggleDarkMode={toggleDarkMode}
@@ -136,22 +150,11 @@ function App() {
         onViewChange={setCurrentView}
       />
 
-      <main className="flex-1 overflow-auto">
-        {healthLoading && !healthStatus ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-processing mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Loading services...
-              </p>
-            </div>
-          </div>
-        ) : (
-          renderView()
-        )}
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {renderView()}
       </main>
 
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4">
+      <footer className="flex-shrink-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between text-sm">
             <div className="text-gray-600 dark:text-gray-400">
@@ -159,7 +162,7 @@ function App() {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-gray-500 dark:text-gray-500">
-                Parallel Processing: Agent + Prompt Engine
+                Parallel Processing: Agent + Prompt Engine | Redis Token Storage
               </span>
               {pipelineState.isRunning && (
                 <span className="flex items-center gap-2 text-processing">
