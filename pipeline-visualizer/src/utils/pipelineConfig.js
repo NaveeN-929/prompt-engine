@@ -62,6 +62,38 @@ export const PIPELINE_STEPS = [
     }
   },
   {
+    id: 'pam-service',
+    name: 'PAM (Prompt Augmentation)',
+    description: 'Company intelligence & market research',
+    icon: 'Search',
+    type: 'process',
+    color: '#14B8A6',
+    position: { x: 100, y: 225 },
+    port: 5005,
+    endpoint: 'http://localhost:5005',
+    healthCheck: '/health',
+    apiPath: '/augment',
+    features: [
+      'Company Extraction',
+      'Web Scraping',
+      'LLM Research',
+      'Vector Caching (Qdrant)'
+    ],
+    metrics: ['companies_analyzed', 'pam_cache_hit', 'pam_processing_time_ms'],
+    dependencies: {
+      qdrant: {
+        name: 'Qdrant Vector DB',
+        port: 6333,
+        description: 'Augmentation data caching'
+      },
+      ollama: {
+        name: 'Ollama LLM',
+        port: 11434,
+        description: 'LLM-based research'
+      }
+    }
+  },
+  {
     id: 'autonomous-agent',
     name: 'Autonomous Agent',
     description: 'Financial analysis with RAG',
@@ -98,11 +130,13 @@ export const PIPELINE_STEPS = [
       'Prompt Generation',
       'Template Management',
       'Vector Acceleration',
-      'Self-Learning System (built-in)'
+      'Self-Learning System (built-in)',
+      'PAM Integration (optional)'
     ],
-    metrics: ['generation_mode', 'template_used', 'processing_time'],
+    metrics: ['generation_mode', 'template_used', 'processing_time', 'pam_enabled'],
     parallel: true, // Runs in parallel with autonomous-agent
-    includesSelfLearning: true // Self-Learning API is part of this service
+    includesSelfLearning: true, // Self-Learning API is part of this service
+    usesPAM: true // Integrates with PAM service for augmentation
   },
   {
     id: 'validation-system',
@@ -203,12 +237,14 @@ export const PIPELINE_STEPS = [
   }
 ];
 
-// Define connections - Updated to match actual architecture
+// Define connections - Updated to match actual architecture with PAM
 export const PIPELINE_EDGES = [
   { id: 'e1-2', source: 'input-data', target: 'pseudonymization', animated: true },
-  // Pseudonymization splits to both Agent and Prompt Engine (parallel)
-  { id: 'e2-3a', source: 'pseudonymization', target: 'autonomous-agent', animated: true, label: 'Parallel' },
-  { id: 'e2-3b', source: 'pseudonymization', target: 'prompt-engine', animated: true, label: 'Parallel' },
+  // Pseudonymization to PAM for augmentation
+  { id: 'e2-pam', source: 'pseudonymization', target: 'pam-service', animated: true, label: 'Augment' },
+  // PAM splits to both Agent and Prompt Engine (parallel)
+  { id: 'epam-3a', source: 'pam-service', target: 'autonomous-agent', animated: true, label: 'Parallel' },
+  { id: 'epam-3b', source: 'pam-service', target: 'prompt-engine', animated: true, label: 'Parallel' },
   // Both converge to Validation System
   { id: 'e3-4', source: 'autonomous-agent', target: 'validation-system', animated: true },
   { id: 'e3b-4', source: 'prompt-engine', target: 'validation-system', animated: true },
@@ -221,7 +257,7 @@ export const PIPELINE_EDGES = [
   { id: 'e6-7', source: 'repersonalization', target: 'output-data', animated: true }
 ];
 
-// Service configuration - FIXED: Self-Learning is part of Prompt Engine, Redis added
+// Service configuration - FIXED: Self-Learning is part of Prompt Engine, Redis added, PAM added
 export const SERVICES = {
   PSEUDONYMIZATION: {
     name: 'Pseudonymization Service',
@@ -229,6 +265,14 @@ export const SERVICES = {
     url: 'http://localhost:5003',
     healthEndpoint: '/health',
     usesRedis: true
+  },
+  PAM: {
+    name: 'PAM Service',
+    port: 5005,
+    url: 'http://localhost:5005',
+    healthEndpoint: '/health',
+    description: 'Prompt Augmentation Model - Company Intelligence & Market Research',
+    critical: false // Optional service for enhancement
   },
   AUTONOMOUS_AGENT: {
     name: 'Autonomous Agent',
@@ -241,7 +285,8 @@ export const SERVICES = {
     port: 5000,
     url: 'http://localhost:5000',
     healthEndpoint: '/health',
-    includesSelfLearning: true // Self-Learning API is part of this service
+    includesSelfLearning: true, // Self-Learning API is part of this service
+    usesPAM: true // Integrates with PAM service
   },
   VALIDATION: {
     name: 'Validation Service',

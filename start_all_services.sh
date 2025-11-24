@@ -67,6 +67,48 @@ else
     echo "   ❌ Failed to start Qdrant - services may not work properly!"
 fi
 
+# 0.5. Start PAM Service (Port 5005) - OPTIONAL BUT RECOMMENDED
+echo ""
+echo "============================================================"
+echo "0️⃣  Starting PAM Service (Port 5005) in new terminal..."
+echo "============================================================"
+
+if check_port 5005; then
+    echo "   ⚠️  Port 5005 is already in use. Skipping..."
+else
+    if [ -d "$SCRIPT_DIR/pam-service" ] && [ -f "$SCRIPT_DIR/pam-service/run_service.py" ]; then
+        # Check if venv exists, create if not
+        if [ ! -d "$SCRIPT_DIR/pam-service/pam" ]; then
+            echo "   📦 Creating virtual environment for PAM service..."
+            cd "$SCRIPT_DIR/pam-service"
+            python3 -m venv pam
+            source pam/bin/activate
+            pip install -r requirements.txt
+            cd "$SCRIPT_DIR"
+        fi
+        
+        osascript <<EOF
+tell application "Terminal"
+    activate
+    do script "cd '$SCRIPT_DIR/pam-service' && source pam/bin/activate && echo '🔍 Starting PAM Service...' && echo '============================================================' && python3 run_service.py"
+end tell
+EOF
+        echo "   ✅ Opened new terminal for PAM Service"
+        echo "   ⏳ Waiting for PAM Service to initialize (15 seconds)..."
+        sleep 15
+        
+        if wait_for_service "http://localhost:5005/health" "PAM Service"; then
+            echo "   ✅ PAM Service is operational!"
+        else
+            echo "   ⚠️  PAM Service health check timed out"
+            echo "      Prompt Engine will continue without augmentation"
+        fi
+    else
+        echo "   ⚠️  PAM Service files not found at $SCRIPT_DIR/pam-service"
+        echo "      Continuing without PAM augmentation"
+    fi
+fi
+
 # 1. Start Prompt Engine (Port 5000) - REQUIRED FIRST
 echo ""
 echo "============================================================"
@@ -173,7 +215,7 @@ echo ""
 
 # Check each service
 echo "🔍 Port Status:"
-for port in 5000 5001 5002; do
+for port in 5005 5000 5001 5002; do
     if check_port $port; then
         echo "   Port $port: ✅ IN USE"
     else
@@ -183,6 +225,13 @@ done
 
 echo ""
 echo "🔍 Service Health Check:"
+
+# PAM Service
+if curl -s -f http://localhost:5005/health > /dev/null 2>&1; then
+    echo "   0️⃣  PAM Service (5005):         ✅ HEALTHY & RESPONDING"
+else
+    echo "   0️⃣  PAM Service (5005):         ⚠️  NOT RESPONDING (optional)"
+fi
 
 # Prompt Engine
 if curl -s -f http://localhost:5000/status > /dev/null 2>&1; then
@@ -219,19 +268,21 @@ echo "✅ All Services Started Successfully!"
 echo "============================================================"
 echo ""
 echo "🌐 Service URLs (Click to open):"
+echo "   • PAM Service Health:     http://localhost:5005/health"
 echo "   • Prompt Engine Status:   http://localhost:5000/status"
 echo "   • Validation Health:      http://localhost:5002/health"
 echo "   • Autonomous Agent UI:    http://localhost:5001/simple"
 echo "   • Agent Status:           http://localhost:5001/status"
 echo ""
 echo "📊 Service Dependencies Flow:"
-echo "   1. Qdrant (Docker)        → Vector Database"
-echo "   2. Prompt Engine (5000)   → Prompt Generation"
+echo "   0. Qdrant (Docker)           → Vector Database"
+echo "   1. PAM Service (5005)        → Prompt Augmentation & Intelligence"
+echo "   2. Prompt Engine (5000)      → Prompt Generation"
 echo "   3. Validation Service (5002) → Response Quality Gates"
-echo "   4. Autonomous Agent (5001) → RAG-Enhanced Analysis"
+echo "   4. Autonomous Agent (5001)   → RAG-Enhanced Analysis"
 echo ""
 echo "📝 Terminal Windows:"
-echo "   • 3 new terminal windows have been opened"
+echo "   • 4 new terminal windows have been opened"
 echo "   • Each service runs with its own virtual environment"
 echo "   • Check terminal windows for service logs"
 echo ""

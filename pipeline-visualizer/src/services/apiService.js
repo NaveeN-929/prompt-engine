@@ -128,6 +128,54 @@ export const pseudonymizationService = {
 };
 
 /**
+ * PAM (Prompt Augmentation Model) Service API
+ */
+export const pamService = {
+  /**
+   * Augment prompt with company and market intelligence
+   */
+  async augment(inputData, options = {}) {
+    const response = await axios.post(
+      `${SERVICES.PAM.url}/augment`,
+      {
+        input_data: inputData,
+        prompt_text: options.prompt_text,
+        companies: options.companies,
+        context: options.context
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Bulk augmentation
+   */
+  async augmentBulk(requests) {
+    const response = await axios.post(
+      `${SERVICES.PAM.url}/augment/bulk`,
+      { requests }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get PAM statistics
+   */
+  async getStats() {
+    const response = await axios.get(`${SERVICES.PAM.url}/stats`);
+    return response.data;
+  },
+
+  /**
+   * Clean up cache
+   */
+  async cleanup() {
+    const response = await axios.post(`${SERVICES.PAM.url}/cleanup`);
+    return response.data;
+  }
+};
+
+/**
  * Autonomous Agent API
  */
 export const autonomousAgentService = {
@@ -387,19 +435,40 @@ export const pipelineExecutionService = {
       if (onStepComplete) onStepComplete('pseudonymization', { ...pseudoResult, status: 'success' });
       results.steps['pseudonymization'] = { ...pseudoResult, status: 'success' };
 
+      // Step 2.5: PAM Augmentation (optional - enriches with company intelligence)
+      let pamResult = null;
+      try {
+        if (onStepComplete) onStepComplete('pam-service', { status: 'processing' });
+        pamResult = await pamService.augment(pseudoResult.pseudonymized_data, {
+          context: 'core_banking'
+        });
+        if (onStepComplete) onStepComplete('pam-service', { ...pamResult, status: 'success' });
+        results.steps['pam-service'] = { ...pamResult, status: 'success' };
+      } catch (pamError) {
+        // PAM is optional - continue without it
+        console.warn('PAM service unavailable, continuing without augmentation:', pamError.message);
+        if (onStepComplete) onStepComplete('pam-service', { status: 'warning', error: pamError.message });
+        results.steps['pam-service'] = { status: 'warning', error: pamError.message, optional: true };
+      }
+
       // Step 3: Parallel execution of Autonomous Agent AND Prompt Engine
       if (onStepComplete) {
         onStepComplete('autonomous-agent', { status: 'processing' });
         onStepComplete('prompt-engine', { status: 'processing' });
       }
 
+      // Use PAM-augmented data if available, otherwise use pseudonymized data
+      const dataForAnalysis = pamResult?.augmented_prompt 
+        ? { ...pseudoResult.pseudonymized_data, pam_augmented: true, augmentation: pamResult }
+        : pseudoResult.pseudonymized_data;
+
       // Execute both in parallel using Promise.all
       const [agentResult, promptResult] = await Promise.all([
-        autonomousAgentService.analyze(pseudoResult.pseudonymized_data).catch(err => ({
+        autonomousAgentService.analyze(dataForAnalysis).catch(err => ({
           error: err.message,
           status: 'error'
         })),
-        promptEngineService.generate(pseudoResult.pseudonymized_data, { 
+        promptEngineService.generate(dataForAnalysis, { 
           generation_type: 'autonomous' 
         }).catch(err => ({
           error: err.message,

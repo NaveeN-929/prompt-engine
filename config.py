@@ -20,6 +20,11 @@ QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
 QDRANT_PORT = int(os.getenv('QDRANT_PORT', '6333'))
 QDRANT_GRPC_PORT = int(os.getenv('QDRANT_GRPC_PORT', '6334'))
 
+# PAM (Prompt Augmentation Model) Configuration
+PAM_HOST = os.getenv('PAM_HOST', 'localhost')
+PAM_PORT = int(os.getenv('PAM_PORT', '5005'))
+ENABLE_PAM_AUGMENTATION = os.getenv('ENABLE_PAM_AUGMENTATION', 'true').lower() == 'true'
+
 def print_config():
     """Print current configuration"""
     print("Current Configuration:")
@@ -32,6 +37,9 @@ def print_config():
     print(f"   Qdrant Host: {QDRANT_HOST}")
     print(f"   Qdrant Port: {QDRANT_PORT}")
     print(f"   Qdrant gRPC Port: {QDRANT_GRPC_PORT}")
+    print(f"   PAM Host: {PAM_HOST}")
+    print(f"   PAM Port: {PAM_PORT}")
+    print(f"   PAM Enabled: {ENABLE_PAM_AUGMENTATION}")
     print("=" * 50)
 
 if __name__ == "__main__":
