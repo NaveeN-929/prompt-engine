@@ -135,16 +135,43 @@ export const pamService = {
    * Augment prompt with company and market intelligence
    */
   async augment(inputData, options = {}) {
-    const response = await axios.post(
-      `${SERVICES.PAM.url}/augment`,
-      {
-        input_data: inputData,
-        prompt_text: options.prompt_text,
-        companies: options.companies,
-        context: options.context
-      }
-    );
-    return response.data;
+    console.log('[PAM] Calling augment endpoint:', `${SERVICES.PAM.url}/augment`);
+    console.log('[PAM] Request payload:', {
+      has_input_data: !!inputData,
+      input_data_keys: inputData ? Object.keys(inputData) : [],
+      transactions_count: inputData?.transactions?.length || 0,
+      context: options.context
+    });
+    
+    try {
+      const response = await axios.post(
+        `${SERVICES.PAM.url}/augment`,
+        {
+          input_data: inputData,
+          prompt_text: options.prompt_text,
+          companies: options.companies,
+          context: options.context
+        },
+        {
+          timeout: 30000, // 30 second timeout
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log('[PAM] Response received:', {
+        status: response.status,
+        companies_count: response.data?.companies_analyzed?.length || 0
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[PAM] Request failed:', {
+        message: error.message,
+        response_status: error.response?.status,
+        response_data: error.response?.data
+      });
+      throw error;
+    }
   },
 
   /**
@@ -439,13 +466,29 @@ export const pipelineExecutionService = {
       let pamResult = null;
       try {
         if (onStepComplete) onStepComplete('pam-service', { status: 'processing' });
+        
+        console.log('[PAM] Sending data to PAM service:', {
+          customer_id: pseudoResult.pseudonymized_data?.customer_id,
+          transaction_count: pseudoResult.pseudonymized_data?.transactions?.length,
+          sample_descriptions: pseudoResult.pseudonymized_data?.transactions?.slice(0, 2).map(t => t.description)
+        });
+        
         pamResult = await pamService.augment(pseudoResult.pseudonymized_data, {
           context: 'core_banking'
         });
+        
+        console.log('[PAM] Augmentation complete:', {
+          companies_found: pamResult.companies_analyzed?.length || 0,
+          companies: pamResult.companies_analyzed,
+          cache_hit: pamResult.cache_hit,
+          time_ms: pamResult.processing_time_ms
+        });
+        
         if (onStepComplete) onStepComplete('pam-service', { ...pamResult, status: 'success' });
         results.steps['pam-service'] = { ...pamResult, status: 'success' };
       } catch (pamError) {
         // PAM is optional - continue without it
+        console.error('[PAM] Service error:', pamError);
         console.warn('PAM service unavailable, continuing without augmentation:', pamError.message);
         if (onStepComplete) onStepComplete('pam-service', { status: 'warning', error: pamError.message });
         results.steps['pam-service'] = { status: 'warning', error: pamError.message, optional: true };

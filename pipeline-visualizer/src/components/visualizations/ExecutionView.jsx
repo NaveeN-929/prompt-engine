@@ -3,6 +3,7 @@ import { Play, RotateCcw, Download, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import TimelineStepper from './TimelineStepper';
 import CodeViewer from '../common/CodeViewer';
+import OutputDisplay from '../common/OutputDisplay';
 import { formatDuration } from '../../utils/dataFormatter';
 
 const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
@@ -63,6 +64,10 @@ const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // Get output data from pipeline results
+  const outputData = pipelineState?.steps?.['output-data'];
+  const validationResult = pipelineState?.steps?.['validation-system'];
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -161,7 +166,7 @@ const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Steps Completed:</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {Object.keys(pipelineState?.steps || {}).length}/8
+                    {Object.keys(pipelineState?.steps || {}).length}/9
                   </span>
                 </div>
               </div>
@@ -192,9 +197,18 @@ const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
           </div>
         </div>
 
-        {/* Right Column - Timeline Stepper */}
-        <div className="lg:col-span-2">
-          <div className="card h-full">
+        {/* Right Column - Timeline & Output */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Output Display - Show prominently if available */}
+          {(outputData || validationResult) && (
+            <OutputDisplay 
+              outputData={outputData}
+              validationResult={validationResult}
+            />
+          )}
+
+          {/* Timeline Stepper */}
+          <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Pipeline Execution
             </h3>
@@ -210,4 +224,3 @@ const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
 };
 
 export default ExecutionView;
-

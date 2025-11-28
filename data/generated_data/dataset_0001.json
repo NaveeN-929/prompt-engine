@@ -1,130 +1,135 @@
 {
-  "customer_id": "SME_0001",
+  "customer_id": "ENT_0001",
   "name": "Tech Solutions Inc",
   "email": "finance@techsolutionsin.solutions.com",
-  "phone": "512-617-8684",
+  "phone": "628-847-4700",
   "transactions": [
     {
-      "date": "2025-10-12",
-      "amount": -29425.15,
+      "date": "2025-10-28",
+      "amount": 70000.18,
+      "type": "credit",
+      "description": "Capital gains"
+    },
+    {
+      "date": "2025-10-28",
+      "amount": -2837.18,
       "type": "debit",
-      "description": "Machinery acquisition"
+      "description": "Water and sewer"
     },
     {
-      "date": "2025-10-13",
-      "amount": -294278.84,
+      "date": "2025-10-31",
+      "amount": -45170.23,
       "type": "debit",
-      "description": "Employee salaries and wages"
+      "description": "Warehouse rent"
     },
     {
-      "date": "2025-10-16",
-      "amount": 35127.24,
+      "date": "2025-11-01",
+      "amount": 80164.14,
       "type": "credit",
-      "description": "Contract milestone payment"
+      "description": "Annual contract payment"
     },
     {
-      "date": "2025-10-17",
-      "amount": 71839.72,
+      "date": "2025-11-03",
+      "amount": -38682.65,
+      "type": "debit",
+      "description": "Shipping via DHL Express",
+      "merchant": "DHL Express"
+    },
+    {
+      "date": "2025-11-03",
+      "amount": -26805.9,
+      "type": "debit",
+      "description": "Commercial rent payment"
+    },
+    {
+      "date": "2025-11-08",
+      "amount": 76528.94,
       "type": "credit",
-      "description": "E-commerce sales"
+      "description": "Payment from Shopify Inc",
+      "merchant": "Shopify Inc"
     },
     {
-      "date": "2025-10-19",
-      "amount": 91155.03,
+      "date": "2025-11-08",
+      "amount": -28381.38,
+      "type": "debit",
+      "description": "Advertising campaign with SAP America Inc",
+      "merchant": "SAP America Inc"
+    },
+    {
+      "date": "2025-11-09",
+      "amount": 27520.51,
       "type": "credit",
-      "description": "Retail sales revenue"
+      "description": "Investment returns"
     },
     {
-      "date": "2025-10-20",
-      "amount": 137522.46,
+      "date": "2025-11-09",
+      "amount": -19275.97,
+      "type": "debit",
+      "description": "Operational supplies"
+    },
+    {
+      "date": "2025-11-13",
+      "amount": 31266.75,
       "type": "credit",
       "description": "Innovation grant"
     },
     {
-      "date": "2025-10-21",
-      "amount": -89118.95,
+      "date": "2025-11-13",
+      "amount": -29287.72,
       "type": "debit",
-      "description": "Vendor invoice settlement"
+      "description": "Payment to SAP America Inc",
+      "merchant": "SAP America Inc"
     },
     {
-      "date": "2025-10-21",
-      "amount": -10319.07,
+      "date": "2025-11-15",
+      "amount": -14792.49,
       "type": "debit",
-      "description": "Accounting services"
+      "description": "Sales tax remittance"
     },
     {
-      "date": "2025-10-21",
-      "amount": -21895.82,
-      "type": "debit",
-      "description": "Business insurance premium"
-    },
-    {
-      "date": "2025-10-23",
-      "amount": 37489.41,
+      "date": "2025-11-17",
+      "amount": 5041.92,
       "type": "credit",
-      "description": "Retail sales revenue"
+      "description": "Monthly subscription revenue"
     },
     {
-      "date": "2025-10-26",
-      "amount": -29356.1,
+      "date": "2025-11-18",
+      "amount": -37668.57,
       "type": "debit",
-      "description": "Supplier payment"
+      "description": "Management consulting"
     },
     {
-      "date": "2025-10-27",
-      "amount": 255934.15,
+      "date": "2025-11-18",
+      "amount": -2747.3,
+      "type": "debit",
+      "description": "Building maintenance"
+    },
+    {
+      "date": "2025-11-18",
+      "amount": -5159.43,
+      "type": "debit",
+      "description": "Business electricity"
+    },
+    {
+      "date": "2025-11-23",
+      "amount": 29361.55,
       "type": "credit",
-      "description": "Business loan disbursement"
+      "description": "SaaS subscription payments"
     },
     {
-      "date": "2025-10-29",
-      "amount": 441329.23,
+      "date": "2025-11-25",
+      "amount": 47187.02,
       "type": "credit",
-      "description": "Business loan disbursement"
-    },
-    {
-      "date": "2025-10-31",
-      "amount": 174427.1,
-      "type": "credit",
-      "description": "Government grant received"
-    },
-    {
-      "date": "2025-11-01",
-      "amount": -36590.41,
-      "type": "debit",
-      "description": "Brand promotion"
-    },
-    {
-      "date": "2025-11-05",
-      "amount": -25736.68,
-      "type": "debit",
-      "description": "Distribution costs"
-    },
-    {
-      "date": "2025-11-08",
-      "amount": 35838.71,
-      "type": "credit",
-      "description": "Monthly service fees"
-    },
-    {
-      "date": "2025-11-08",
-      "amount": -107554.69,
-      "type": "debit",
-      "description": "Computer hardware"
-    },
-    {
-      "date": "2025-11-11",
-      "amount": -6347.42,
-      "type": "debit",
-      "description": "Water and sewer"
+      "description": "Payment from Bank of America Corp",
+      "merchant": "Bank of America Corp"
     }
   ],
   "account_info": {
-    "account_number": "9204-5224-1362",
-    "routing_number": "577851962",
-    "bank_name": "Enterprise Bank",
+    "account_number": "9459-1912-7165",
+    "routing_number": "302520511",
+    "bank_name": "Commerce Bank",
     "account_type": "business_checking"
   },
-  "account_balance": 810712.94,
-  "timestamp": "2025-11-11T12:41:40.036267Z"
+  "account_balance": 434401.38,
+  "timestamp": "2025-11-27T08:32:16.496074Z"
 }

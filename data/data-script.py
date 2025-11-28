@@ -27,6 +27,42 @@ class TransactionDataGenerator:
             'Education Services Ltd', 'Hospitality Management Co'
         ]
         
+        # Real company names for PAM scraping (vendors, customers, partners)
+        self.real_tech_companies = [
+            'Microsoft Corporation', 'Amazon Web Services Inc', 'Google LLC', 
+            'Apple Inc', 'Salesforce Inc', 'Adobe Inc', 'Oracle Corporation',
+            'IBM Corporation', 'SAP America Inc', 'Cisco Systems Inc',
+            'Intel Corporation', 'Dell Technologies Inc', 'HP Inc',
+            'VMware Inc', 'Zoom Video Communications Inc', 'Slack Technologies LLC',
+            'Atlassian Corporation', 'HubSpot Inc', 'Shopify Inc'
+        ]
+        
+        self.real_service_companies = [
+            'Deloitte LLP', 'PwC US', 'KPMG LLP', 'Ernst & Young LLP',
+            'Accenture PLC', 'McKinsey & Company', 'Boston Consulting Group',
+            'Bain & Company', 'FedEx Corporation', 'UPS Inc',
+            'WeWork Companies Inc', 'Regus Business Centers'
+        ]
+        
+        self.real_financial_companies = [
+            'PayPal Holdings Inc', 'Stripe Inc', 'Square Inc',
+            'American Express Company', 'Visa Inc', 'Mastercard Inc',
+            'JPMorgan Chase & Co', 'Bank of America Corp', 'Wells Fargo & Company'
+        ]
+        
+        self.real_media_companies = [
+            'LinkedIn Corporation', 'Meta Platforms Inc', 'Twitter Inc',
+            'The New York Times Company', 'Bloomberg LP', 'Reuters'
+        ]
+        
+        # All real companies combined
+        self.all_real_companies = (
+            self.real_tech_companies + 
+            self.real_service_companies + 
+            self.real_financial_companies + 
+            self.real_media_companies
+        )
+        
         # Business email domains
         self.email_domains = [
             'business.com', 'company.net', 'corp.com', 'enterprises.com',
@@ -141,7 +177,7 @@ class TransactionDataGenerator:
     
     def generate_transaction(self, transaction_type: str, category: str, 
                            base_date: datetime) -> Dict[str, Any]:
-        """Generate a single transaction"""
+        """Generate a single transaction with company names for PAM scraping"""
         
         config = self.transaction_types[transaction_type][category]
         
@@ -154,18 +190,32 @@ class TransactionDataGenerator:
         days_offset = random.randint(0, 30)
         transaction_date = base_date + timedelta(days=days_offset)
         
-        # Format description
-        description = self._format_description(category, amount)
+        # Format description with company names
+        description, merchant = self._format_description(category, amount)
         
-        return {
+        transaction = {
             'date': transaction_date.strftime('%Y-%m-%d'),
             'amount': amount,
             'type': transaction_type,
             'description': description
         }
+        
+        # Add merchant/company field if available (for PAM to extract)
+        if merchant:
+            transaction['merchant'] = merchant
+        
+        return transaction
     
-    def _format_description(self, category: str, amount: float) -> str:
-        """Format transaction description for business banking"""
+    def _format_description(self, category: str, amount: float) -> tuple:
+        """Format transaction description with real company names for PAM scraping
+        
+        Returns:
+            tuple: (description, merchant_name or None)
+        """
+        
+        # 60% chance to include a real company name (for PAM to research)
+        include_company = random.random() < 0.6
+        merchant = None
         
         descriptions = {
             # Revenue/Credit transactions
@@ -346,9 +396,47 @@ class TransactionDataGenerator:
         # Add reference numbers for some transaction types
         if '{}' in description_template:
             ref_number = random.randint(10000, 99999)
-            return description_template.format(ref_number)
+            description_template = description_template.format(ref_number)
         
-        return description_template
+        # Add real company names for specific transaction types (for PAM to scrape)
+        if include_company:
+            if category in ['customer_payment', 'sales_revenue', 'contract_payment', 'service_revenue']:
+                # Revenue from real companies
+                company = random.choice(self.all_real_companies)
+                merchant = company
+                description_template = f"Payment from {company}"
+                
+            elif category == 'software_subscription':
+                # Software subscriptions from tech companies
+                company = random.choice(self.real_tech_companies)
+                merchant = company
+                description_template = f"Subscription to {company}"
+                
+            elif category == 'vendor_payment':
+                # Payments to real vendors
+                company = random.choice(self.all_real_companies)
+                merchant = company
+                description_template = f"Payment to {company}"
+                
+            elif category == 'consulting_fees':
+                # Consulting from major firms
+                company = random.choice(self.real_service_companies)
+                merchant = company
+                description_template = f"Consulting services from {company}"
+                
+            elif category == 'marketing':
+                # Marketing with tech/media companies
+                company = random.choice(self.real_tech_companies + self.real_media_companies)
+                merchant = company
+                description_template = f"Advertising campaign with {company}"
+                
+            elif category == 'shipping_logistics':
+                # Shipping with logistics companies
+                company = random.choice(['FedEx Corporation', 'UPS Inc', 'DHL Express'])
+                merchant = company
+                description_template = f"Shipping via {company}"
+        
+        return description_template, merchant
     
     def generate_dataset(self, num_transactions: int = 10, 
                         base_balance: float = 100000.0,

@@ -60,7 +60,8 @@ function App() {
     const statuses = {};
     const steps = [
       'input-data',
-      'pseudonymization', 
+      'pseudonymization',
+      'pam-service',  // PAM Service added here
       'autonomous-agent', 
       'prompt-engine',
       'validation-system', 

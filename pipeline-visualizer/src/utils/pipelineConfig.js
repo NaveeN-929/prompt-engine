@@ -29,7 +29,25 @@ export const PIPELINE_STEPS = [
           date: '2025-01-15',
           amount: 50000.00,
           type: 'credit',
-          description: 'Customer payment received'
+          description: 'Payment from Microsoft Corporation for software licensing'
+        },
+        {
+          date: '2025-01-16',
+          amount: -15000.00,
+          type: 'debit',
+          description: 'Cloud services subscription to Amazon Web Services Inc'
+        },
+        {
+          date: '2025-01-17',
+          amount: 25000.00,
+          type: 'credit',
+          description: 'Consulting services for Google LLC'
+        },
+        {
+          date: '2025-01-18',
+          amount: -8500.00,
+          type: 'debit',
+          description: 'Software purchase from Adobe Inc'
         }
       ]
     }
