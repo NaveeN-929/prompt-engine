@@ -1,0 +1,76 @@
+services:
+  pam-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pam-service
+    ports:
+      - "5005:5005"
+    environment:
+      - PAM_HOST=0.0.0.0
+      - PAM_PORT=5005
+      - PAM_DEBUG=false
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - OLLAMA_MODEL=llama3
+      - PAM_ENABLE_SCRAPING=true
+      - PAM_ENABLE_LLM=true
+      - PAM_ENABLE_CACHING=true
+      - PAM_CACHE_TTL_HOURS=24
+      - PAM_LOG_LEVEL=INFO
+    depends_on:
+      - qdrant
+      - ollama
+    networks:
+      - pam-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Qdrant Vector Database (shared dependency)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: pam-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    networks:
+      - pam-network
+    restart: unless-stopped
+
+  # Ollama LLM Service (shared dependency)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: pam-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - pam-network
+    restart: unless-stopped
+
+networks:
+  pam-network:
+    driver: bridge
+
+volumes:
+  qdrant_data:
+    driver: local
+  ollama_data:
+    driver: local
+

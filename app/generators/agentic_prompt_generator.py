@@ -5,6 +5,7 @@ Agentic Prompt Generator - Intelligent, autonomous prompt generation
 import time
 import json
 import re
+import requests
 from typing import Dict, Any, Tuple, List, Optional
 from datetime import datetime
 from app.templates.base import TemplateRegistry
@@ -26,15 +27,45 @@ except ImportError as e:
     VectorService = None
     VECTOR_SERVICE_AVAILABLE = False
 
+# Import config for PAM service
+try:
+    from config import PAM_HOST, PAM_PORT, ENABLE_PAM_AUGMENTATION
+    PAM_SERVICE_AVAILABLE = True
+    PAM_SERVICE_URL = f"http://{PAM_HOST}:{PAM_PORT}"
+except ImportError:
+    PAM_SERVICE_AVAILABLE = False
+    PAM_SERVICE_URL = "http://localhost:5005"
+    ENABLE_PAM_AUGMENTATION = False
+    print("PAM service configuration not found, using defaults")
+
 class AgenticPromptGenerator:
     """
     Intelligent prompt generator that autonomously analyzes data,
     infers context, and creates optimized prompts with learning capabilities
     """
     
-    def __init__(self, enable_vector_db: bool = True):
+    def __init__(self, enable_vector_db: bool = True, enable_pam: bool = None):
         self.template_registry = TemplateRegistry()
         self._register_templates()
+        
+        # PAM (Prompt Augmentation Model) service integration
+        self.enable_pam = enable_pam if enable_pam is not None else ENABLE_PAM_AUGMENTATION
+        self.pam_service_url = PAM_SERVICE_URL
+        if self.enable_pam:
+            # Test PAM service connectivity
+            try:
+                response = requests.get(f"{self.pam_service_url}/health", timeout=2)
+                if response.status_code == 200:
+                    print(f"🔍 PAM Service enabled at {self.pam_service_url}")
+                else:
+                    print(f"⚠️ PAM Service responded with status {response.status_code}, augmentation disabled")
+                    self.enable_pam = False
+            except Exception as e:
+                print(f"⚠️ PAM Service not available at {self.pam_service_url}: {e}")
+                print("   Continuing without prompt augmentation")
+                self.enable_pam = False
+        else:
+            print("PAM Service disabled")
         
         # Vector database for fast similarity search - NO FALLBACKS
         self.vector_service = None
@@ -116,6 +147,68 @@ class AgenticPromptGenerator:
         self.template_registry.register(offer_generation)
         self.template_registry.register(card_spend_analysis)
         self.template_registry.register(credit_utilization)
+    
+    def _augment_with_pam(self, input_data: Dict[str, Any], 
+                         prompt_text: str = None, 
+                         context: str = None) -> Tuple[Optional[str], Dict[str, Any]]:
+        """
+        Augment prompt using PAM (Prompt Augmentation Model) service
+        
+        Args:
+            input_data: Transaction or financial data
+            prompt_text: Original prompt text to augment
+            context: Context for augmentation
+            
+        Returns:
+            Tuple of (augmented_prompt, pam_metadata)
+        """
+        if not self.enable_pam:
+            return None, {}
+        
+        try:
+            # Call PAM service
+            pam_request = {
+                "input_data": input_data,
+                "prompt_text": prompt_text,
+                "context": context
+            }
+            
+            response = requests.post(
+                f"{self.pam_service_url}/augment",
+                json=pam_request,
+                timeout=10  # 10 second timeout
+            )
+            
+            if response.status_code == 200:
+                pam_result = response.json()
+                
+                augmented_prompt = pam_result.get('augmented_prompt')
+                companies_analyzed = pam_result.get('companies_analyzed', [])
+                cache_hit = pam_result.get('cache_hit', False)
+                processing_time = pam_result.get('processing_time_ms', 0)
+                
+                print(f"✨ PAM augmentation: {len(companies_analyzed)} companies analyzed "
+                      f"({'cached' if cache_hit else 'fresh'}, {processing_time:.0f}ms)")
+                
+                pam_metadata = {
+                    'pam_enabled': True,
+                    'companies_analyzed': companies_analyzed,
+                    'pam_cache_hit': cache_hit,
+                    'pam_processing_time_ms': processing_time,
+                    'augmentation_summary': pam_result.get('augmentation_summary', {})
+                }
+                
+                return augmented_prompt, pam_metadata
+            else:
+                print(f"⚠️ PAM service returned status {response.status_code}")
+                return None, {'pam_enabled': False, 'pam_error': f'HTTP {response.status_code}'}
+                
+        except requests.exceptions.Timeout:
+            print("⚠️ PAM service timeout, continuing without augmentation")
+            return None, {'pam_enabled': False, 'pam_error': 'timeout'}
+        except Exception as e:
+            print(f"⚠️ PAM augmentation failed: {e}")
+            return None, {'pam_enabled': False, 'pam_error': str(e)}
     
     def _analyze_input_data(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -236,9 +329,16 @@ class AgenticPromptGenerator:
     def generate_agentic_prompt(self, 
                               context: Optional[str] = None, 
                               data_type: Optional[str] = None, 
-                              input_data: Dict[str, Any] = None) -> Tuple[str, Dict[str, Any], float]:
+                              input_data: Dict[str, Any] = None,
+                              enable_pam_augmentation: bool = True) -> Tuple[str, Dict[str, Any], float]:
         """
         Generate an intelligent, context-aware prompt with vector-enhanced speed
+        
+        Args:
+            context: Context for prompt generation
+            data_type: Type of data being processed
+            input_data: Input data for prompt generation
+            enable_pam_augmentation: Whether to use PAM service (default True)
         
         Returns:
             Tuple of (prompt_text, metadata, processing_time)
@@ -247,6 +347,24 @@ class AgenticPromptGenerator:
         
         if not input_data:
             raise ValueError("Input data is required for agentic prompt generation")
+        
+        # STEP 0: PAM AUGMENTATION (Before everything - enriches the data context)
+        # This adds company intelligence and market context before embedding generation
+        augmented_prompt_base = None
+        pam_metadata = {}
+        
+        if self.enable_pam and enable_pam_augmentation:
+            try:
+                # Note: We don't have the final prompt yet, so PAM will work with data
+                # and we'll use its augmentation later
+                augmented_prompt_base, pam_metadata = self._augment_with_pam(
+                    input_data=input_data,
+                    prompt_text=None,  # Will augment later when we have the base prompt
+                    context=context
+                )
+            except Exception as e:
+                print(f"⚠️ PAM augmentation error (continuing): {e}")
+                pam_metadata = {'pam_enabled': False, 'pam_error': str(e)}
         
         # NEW: QUALITY IMPROVEMENT CHECK (HIGHEST PRIORITY)
         # Check for quality-improved prompts from validation feedback
@@ -275,9 +393,13 @@ class AgenticPromptGenerator:
                                 "generation_mode": "quality_optimized",
                                 "quality_improvement_applied": True,
                                 "processing_time": processing_time,
-                                "timestamp": datetime.now().isoformat()
+                                "timestamp": datetime.now().isoformat(),
+                                **pam_metadata
                             }
                             print(f"🎯 Using quality-improved prompt (learned from past validation feedback)")
+                            # Apply PAM augmentation if available
+                            if augmented_prompt_base:
+                                improved_prompt = augmented_prompt_base
                             return improved_prompt, metadata, processing_time
                 except RuntimeError:
                     # No event loop, create one
@@ -296,9 +418,13 @@ class AgenticPromptGenerator:
                             "generation_mode": "quality_optimized",
                             "quality_improvement_applied": True,
                             "processing_time": processing_time,
-                            "timestamp": datetime.now().isoformat()
+                            "timestamp": datetime.now().isoformat(),
+                            **pam_metadata
                         }
                         print(f"🎯 Using quality-improved prompt (learned from past validation feedback)")
+                        # Apply PAM augmentation if available
+                        if augmented_prompt_base:
+                            improved_prompt = augmented_prompt_base
                         return improved_prompt, metadata, processing_time
             except Exception as e:
                 print(f"⚠️ Quality improvement check failed: {e}")
@@ -327,9 +453,13 @@ class AgenticPromptGenerator:
                         "similar_prompts_used": len(similar_prompts),
                         "processing_time": processing_time,
                         "timestamp": datetime.now().isoformat(),
-                        "vector_optimization": True
+                        "vector_optimization": True,
+                        **pam_metadata
                     }
                     
+                    # Apply PAM augmentation if available
+                    if augmented_prompt_base:
+                        adapted_prompt = augmented_prompt_base
                     return adapted_prompt, metadata, processing_time
         
         # Standard agentic analysis for new patterns
@@ -372,8 +502,13 @@ class AgenticPromptGenerator:
         metadata = {
             **base_metadata,
             "template_used": template.name,
-            "processing_time": processing_time
+            "processing_time": processing_time,
+            **pam_metadata
         }
+        
+        # Apply PAM augmentation to final prompt if available
+        if augmented_prompt_base:
+            enhanced_prompt = augmented_prompt_base
         
         return enhanced_prompt, metadata, processing_time
     
