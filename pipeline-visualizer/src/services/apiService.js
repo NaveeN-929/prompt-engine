@@ -10,6 +10,14 @@ import { SERVICES } from '../utils/pipelineConfig';
 // Configure axios defaults
 axios.defaults.timeout = 30000; // 30 seconds
 
+// Timeout for long-running batch operations (large datasets)
+const LONG_RUNNING_TIMEOUT_MS = 120000; // 2 minutes
+
+const createLongRunningConfig = (overrides = {}) => ({
+  timeout: LONG_RUNNING_TIMEOUT_MS,
+  ...overrides
+});
+
 /**
  * Health Check Service
  */
@@ -113,7 +121,8 @@ export const pseudonymizationService = {
   async pseudonymize(data) {
     const response = await axios.post(
       `${SERVICES.PSEUDONYMIZATION.url}/pseudonymize`,
-      data
+      data,
+      createLongRunningConfig()
     );
     return response.data;
   },
@@ -152,12 +161,11 @@ export const pamService = {
           companies: options.companies,
           context: options.context
         },
-        {
-          timeout: 30000, // 30 second timeout
-          headers: {
-            'Content-Type': 'application/json'
-          }
+      createLongRunningConfig({
+        headers: {
+          'Content-Type': 'application/json'
         }
+      })
       );
       console.log('[PAM] Response received:', {
         status: response.status,
@@ -218,7 +226,8 @@ export const autonomousAgentService = {
           generation_type: options.generation_type || 'autonomous',
           include_validation: false // Validation is separate
         }
-      }
+      },
+      createLongRunningConfig()
     );
     return response.data;
   },
@@ -248,7 +257,8 @@ export const promptEngineService = {
         context: options.context,
         data_type: options.data_type,
         generation_type: options.generation_type || 'standard'
-      }
+      },
+      createLongRunningConfig()
     );
     return response.data;
   },
@@ -283,7 +293,8 @@ export const validationService = {
       {
         response_data: responseData,
         input_data: inputData
-      }
+      },
+      createLongRunningConfig()
     );
     return response.data;
   },
@@ -307,7 +318,8 @@ export const repersonalizationService = {
   async repersonalize(pseudonymId) {
     const response = await axios.post(
       `${SERVICES.REPERSONALIZATION.url}/repersonalize`,
-      { pseudonym_id: pseudonymId }
+      { pseudonym_id: pseudonymId },
+      createLongRunningConfig()
     );
     return response.data;
   },
@@ -450,6 +462,21 @@ export const pipelineExecutionService = {
       success: true,
       error: null
     };
+    let activeStepId = null;
+
+    const markActiveStepError = (error) => {
+      if (!activeStepId) return;
+      const errorPayload = {
+        status: 'error',
+        error: error.message
+      };
+      if (onStepComplete) onStepComplete(activeStepId, errorPayload);
+      results.steps[activeStepId] = {
+        ...(results.steps[activeStepId] || {}),
+        ...errorPayload
+      };
+      activeStepId = null;
+    };
 
     try {
       // Step 1: Input Data (already have it)
@@ -457,13 +484,16 @@ export const pipelineExecutionService = {
       results.steps['input-data'] = { data: inputData, status: 'success' };
 
       // Step 2: Pseudonymization (uses Redis for token storage)
+      activeStepId = 'pseudonymization';
       if (onStepComplete) onStepComplete('pseudonymization', { status: 'processing' });
       const pseudoResult = await pseudonymizationService.pseudonymize(inputData);
       if (onStepComplete) onStepComplete('pseudonymization', { ...pseudoResult, status: 'success' });
       results.steps['pseudonymization'] = { ...pseudoResult, status: 'success' };
+      activeStepId = null;
 
       // Step 2.5: PAM Augmentation (optional - enriches with company intelligence)
       let pamResult = null;
+      activeStepId = 'pam-service';
       try {
         if (onStepComplete) onStepComplete('pam-service', { status: 'processing' });
         
@@ -492,6 +522,8 @@ export const pipelineExecutionService = {
         console.warn('PAM service unavailable, continuing without augmentation:', pamError.message);
         if (onStepComplete) onStepComplete('pam-service', { status: 'warning', error: pamError.message });
         results.steps['pam-service'] = { status: 'warning', error: pamError.message, optional: true };
+      } finally {
+        activeStepId = null;
       }
 
       // Step 3: Parallel execution of Autonomous Agent AND Prompt Engine
@@ -534,6 +566,7 @@ export const pipelineExecutionService = {
       }
 
       // Step 4: Validation System (uses both Vector DB and Ollama internally)
+      activeStepId = 'validation-system';
       if (onStepComplete) onStepComplete('validation-system', { status: 'processing' });
       const validationResult = await validationService.validateResponse(
         { analysis: analysisResult.analysis || analysisResult.response },
@@ -541,6 +574,7 @@ export const pipelineExecutionService = {
       );
       if (onStepComplete) onStepComplete('validation-system', { ...validationResult, status: 'success' });
       results.steps['validation-system'] = { ...validationResult, status: 'success' };
+      activeStepId = null;
 
       // Step 5: Self-Learning (background feedback loop - non-blocking)
       // Note: This is part of Prompt Engine, not a separate service
@@ -560,12 +594,14 @@ export const pipelineExecutionService = {
       results.steps['self-learning'] = { status: 'processing', feedback_submitted: 'pending' };
 
       // Step 6: Repersonalization (uses Redis to retrieve token mappings)
+      activeStepId = 'repersonalization';
       if (onStepComplete) onStepComplete('repersonalization', { status: 'processing' });
       const repersonalResult = await repersonalizationService.repersonalize(
         pseudoResult.pseudonym_id
       );
       if (onStepComplete) onStepComplete('repersonalization', { ...repersonalResult, status: 'success' });
       results.steps['repersonalization'] = { ...repersonalResult, status: 'success' };
+      activeStepId = null;
 
       // Step 7: Output Data
       const outputData = {
@@ -579,6 +615,7 @@ export const pipelineExecutionService = {
       results.steps['output-data'] = { ...outputData, status: 'success' };
 
     } catch (error) {
+      markActiveStepError(error);
       results.success = false;
       results.error = error.message;
       console.error('Pipeline execution error:', error);

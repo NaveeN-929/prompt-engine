@@ -1,135 +1,2060 @@
 {
-  "customer_id": "ENT_0001",
+  "customer_id": "BIZ_0001",
   "name": "Tech Solutions Inc",
   "email": "finance@techsolutionsin.solutions.com",
-  "phone": "628-847-4700",
+  "phone": "712-372-3739",
   "transactions": [
     {
-      "date": "2025-10-28",
-      "amount": 70000.18,
+      "date": "2025-10-29",
+      "amount": 481172.65,
       "type": "credit",
-      "description": "Capital gains"
+      "description": "Line of credit drawdown",
+      "tags": [
+        "revenue"
+      ]
     },
     {
-      "date": "2025-10-28",
-      "amount": -2837.18,
+      "date": "2025-10-29",
+      "amount": 67696.14,
+      "type": "credit",
+      "description": "Consulting services payment",
+      "tags": [
+        "cross_border",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-10-29",
+      "amount": -47907.23,
       "type": "debit",
-      "description": "Water and sewer"
+      "description": "Consulting services from Boston Consulting Group",
+      "tags": [
+        "high_value",
+        "recurring"
+      ],
+      "merchant": "Boston Consulting Group"
+    },
+    {
+      "date": "2025-10-29",
+      "amount": -27031.99,
+      "type": "debit",
+      "description": "Consulting services from Deloitte LLP",
+      "tags": [],
+      "merchant": "Deloitte LLP"
+    },
+    {
+      "date": "2025-10-29",
+      "amount": -83516.67,
+      "type": "debit",
+      "description": "Payment to Cisco Systems Inc",
+      "tags": [
+        "high_value"
+      ],
+      "merchant": "Cisco Systems Inc"
+    },
+    {
+      "date": "2025-10-29",
+      "amount": -83207.58,
+      "type": "debit",
+      "description": "Machinery acquisition",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-10-30",
+      "amount": 32905.0,
+      "type": "credit",
+      "description": "Payment from Slack Technologies LLC",
+      "tags": [],
+      "merchant": "Slack Technologies LLC"
+    },
+    {
+      "date": "2025-10-30",
+      "amount": 57041.66,
+      "type": "credit",
+      "description": "Payment from Amazon Web Services Inc",
+      "tags": [],
+      "merchant": "Amazon Web Services Inc"
+    },
+    {
+      "date": "2025-10-30",
+      "amount": 69827.51,
+      "type": "credit",
+      "description": "Government grant received",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-10-30",
+      "amount": -34836.75,
+      "type": "debit",
+      "description": "Consulting services from Ernst & Young LLP",
+      "tags": [],
+      "merchant": "Ernst & Young LLP"
+    },
+    {
+      "date": "2025-10-30",
+      "amount": -14410.81,
+      "type": "debit",
+      "description": "Financial audit",
+      "tags": []
     },
     {
       "date": "2025-10-31",
-      "amount": -45170.23,
+      "amount": 192943.35,
+      "type": "credit",
+      "description": "Research grant funding",
+      "tags": []
+    },
+    {
+      "date": "2025-10-31",
+      "amount": -28593.58,
       "type": "debit",
-      "description": "Warehouse rent"
+      "description": "Advertising campaign with SAP America Inc",
+      "tags": [],
+      "merchant": "SAP America Inc"
     },
     {
       "date": "2025-11-01",
-      "amount": 80164.14,
+      "amount": 96477.22,
       "type": "credit",
-      "description": "Annual contract payment"
+      "description": "E-commerce sales",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-01",
+      "amount": 43033.38,
+      "type": "credit",
+      "description": "Payment from Salesforce Inc",
+      "tags": [],
+      "merchant": "Salesforce Inc"
+    },
+    {
+      "date": "2025-11-01",
+      "amount": 69494.89,
+      "type": "credit",
+      "description": "Innovation grant",
+      "tags": []
+    },
+    {
+      "date": "2025-11-01",
+      "amount": -5565.58,
+      "type": "debit",
+      "description": "Inventory purchase",
+      "tags": []
+    },
+    {
+      "date": "2025-11-01",
+      "amount": -4540.21,
+      "type": "debit",
+      "description": "Business software subscription",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-01",
+      "amount": -13983.03,
+      "type": "debit",
+      "description": "Skills training",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-01",
+      "amount": -8152.1,
+      "type": "debit",
+      "description": "Enterprise software license",
+      "tags": []
+    },
+    {
+      "date": "2025-11-01",
+      "amount": -4787.47,
+      "type": "debit",
+      "description": "Accounting services",
+      "tags": [
+        "card_spend",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-01",
+      "amount": -62508.62,
+      "type": "debit",
+      "description": "Line of credit payment",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-01",
+      "amount": -17222.71,
+      "type": "debit",
+      "description": "Operational supplies",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-01",
+      "amount": -20586.12,
+      "type": "debit",
+      "description": "Property insurance",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-02",
+      "amount": 43826.91,
+      "type": "credit",
+      "description": "Long-term contract installment",
+      "tags": []
+    },
+    {
+      "date": "2025-11-02",
+      "amount": 21238.99,
+      "type": "credit",
+      "description": "Payment from Amazon Web Services Inc",
+      "tags": [],
+      "merchant": "Amazon Web Services Inc"
+    },
+    {
+      "date": "2025-11-02",
+      "amount": 59453.82,
+      "type": "credit",
+      "description": "Payment from HP Inc",
+      "tags": [
+        "cross_border",
+        "revenue",
+        "recurring"
+      ],
+      "merchant": "HP Inc"
+    },
+    {
+      "date": "2025-11-02",
+      "amount": 39091.1,
+      "type": "credit",
+      "description": "Payment from Wells Fargo & Company",
+      "tags": [
+        "revenue"
+      ],
+      "merchant": "Wells Fargo & Company"
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -13987.78,
+      "type": "debit",
+      "description": "Management consulting",
+      "tags": []
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -41027.9,
+      "type": "debit",
+      "description": "Term loan installment",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -18839.57,
+      "type": "debit",
+      "description": "Term loan installment",
+      "tags": []
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -69867.13,
+      "type": "debit",
+      "description": "Equipment financing",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -40851.95,
+      "type": "debit",
+      "description": "Term loan installment",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -8143.25,
+      "type": "debit",
+      "description": "Contract review",
+      "tags": []
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -6521.89,
+      "type": "debit",
+      "description": "Equipment maintenance",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -12489.83,
+      "type": "debit",
+      "description": "Financial audit",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -71786.07,
+      "type": "debit",
+      "description": "Strategy consulting",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -12404.04,
+      "type": "debit",
+      "description": "Bookkeeping fees",
+      "tags": [
+        "recurring"
+      ]
     },
     {
       "date": "2025-11-03",
-      "amount": -38682.65,
+      "amount": -32012.89,
       "type": "debit",
-      "description": "Shipping via DHL Express",
-      "merchant": "DHL Express"
+      "description": "Legal services",
+      "tags": [
+        "recurring"
+      ]
     },
     {
       "date": "2025-11-03",
-      "amount": -26805.9,
+      "amount": -67293.56,
       "type": "debit",
-      "description": "Commercial rent payment"
+      "description": "Consulting services from McKinsey & Company",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ],
+      "merchant": "McKinsey & Company"
     },
     {
-      "date": "2025-11-08",
-      "amount": 76528.94,
+      "date": "2025-11-04",
+      "amount": 46776.96,
       "type": "credit",
-      "description": "Payment from Shopify Inc",
+      "description": "Invoice payment - Net 30",
+      "tags": []
+    },
+    {
+      "date": "2025-11-04",
+      "amount": 112475.72,
+      "type": "credit",
+      "description": "Long-term contract installment",
+      "tags": [
+        "cross_border"
+      ]
+    },
+    {
+      "date": "2025-11-04",
+      "amount": -86889.57,
+      "type": "debit",
+      "description": "Computer hardware",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-04",
+      "amount": -5821.81,
+      "type": "debit",
+      "description": "Subscription to Salesforce Inc",
+      "tags": [],
+      "merchant": "Salesforce Inc"
+    },
+    {
+      "date": "2025-11-04",
+      "amount": -46414.01,
+      "type": "debit",
+      "description": "Payroll tax deposit",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-04",
+      "amount": -9252.98,
+      "type": "debit",
+      "description": "Water and sewer",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-04",
+      "amount": -69172.1,
+      "type": "debit",
+      "description": "Payment to Shopify Inc",
+      "tags": [
+        "high_value"
+      ],
       "merchant": "Shopify Inc"
     },
     {
+      "date": "2025-11-04",
+      "amount": -20316.05,
+      "type": "debit",
+      "description": "Business insurance premium",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-05",
+      "amount": 67173.87,
+      "type": "credit",
+      "description": "Payment from IBM Corporation",
+      "tags": [],
+      "merchant": "IBM Corporation"
+    },
+    {
+      "date": "2025-11-05",
+      "amount": 146071.35,
+      "type": "credit",
+      "description": "Annual contract payment",
+      "tags": [
+        "cross_border"
+      ]
+    },
+    {
+      "date": "2025-11-05",
+      "amount": 18141.95,
+      "type": "credit",
+      "description": "Payment from Slack Technologies LLC",
+      "tags": [],
+      "merchant": "Slack Technologies LLC"
+    },
+    {
+      "date": "2025-11-05",
+      "amount": 337130.64,
+      "type": "credit",
+      "description": "Line of credit drawdown",
+      "tags": []
+    },
+    {
+      "date": "2025-11-05",
+      "amount": 95882.34,
+      "type": "credit",
+      "description": "Payment from Twitter Inc",
+      "tags": [
+        "revenue"
+      ],
+      "merchant": "Twitter Inc"
+    },
+    {
+      "date": "2025-11-05",
+      "amount": 385486.35,
+      "type": "credit",
+      "description": "Business loan disbursement",
+      "tags": []
+    },
+    {
+      "date": "2025-11-05",
+      "amount": 46362.65,
+      "type": "credit",
+      "description": "Customer invoice payment",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-05",
+      "amount": -17410.93,
+      "type": "debit",
+      "description": "Operational supplies",
+      "tags": []
+    },
+    {
+      "date": "2025-11-05",
+      "amount": -95294.48,
+      "type": "debit",
+      "description": "Equipment purchase",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-05",
+      "amount": -37975.29,
+      "type": "debit",
+      "description": "Payroll tax deposit",
+      "tags": []
+    },
+    {
+      "date": "2025-11-05",
+      "amount": -14679.01,
+      "type": "debit",
+      "description": "Advertising campaign with LinkedIn Corporation",
+      "tags": [],
+      "merchant": "LinkedIn Corporation"
+    },
+    {
+      "date": "2025-11-06",
+      "amount": 103701.77,
+      "type": "credit",
+      "description": "Research grant funding",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-06",
+      "amount": -7171.25,
+      "type": "debit",
+      "description": "Facility repairs",
+      "tags": []
+    },
+    {
+      "date": "2025-11-07",
+      "amount": 48879.76,
+      "type": "credit",
+      "description": "Payment from HP Inc",
+      "tags": [
+        "recurring"
+      ],
+      "merchant": "HP Inc"
+    },
+    {
+      "date": "2025-11-07",
+      "amount": 33438.6,
+      "type": "credit",
+      "description": "Product sales revenue",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-07",
+      "amount": 4122.58,
+      "type": "credit",
+      "description": "Business savings interest",
+      "tags": []
+    },
+    {
+      "date": "2025-11-07",
+      "amount": -11277.08,
+      "type": "debit",
+      "description": "Bookkeeping fees",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-07",
+      "amount": -4788.7,
+      "type": "debit",
+      "description": "Skills training",
+      "tags": []
+    },
+    {
+      "date": "2025-11-07",
+      "amount": -24072.89,
+      "type": "debit",
+      "description": "Shipping via DHL Express",
+      "tags": [],
+      "merchant": "DHL Express"
+    },
+    {
+      "date": "2025-11-07",
+      "amount": -48238.51,
+      "type": "debit",
+      "description": "Payment to Salesforce Inc",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ],
+      "merchant": "Salesforce Inc"
+    },
+    {
+      "date": "2025-11-07",
+      "amount": -113108.4,
+      "type": "debit",
+      "description": "Machinery acquisition",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
       "date": "2025-11-08",
-      "amount": -28381.38,
+      "amount": 351159.35,
+      "type": "credit",
+      "description": "Working capital loan",
+      "tags": []
+    },
+    {
+      "date": "2025-11-08",
+      "amount": 171774.02,
+      "type": "credit",
+      "description": "Long-term contract installment",
+      "tags": [
+        "cross_border"
+      ]
+    },
+    {
+      "date": "2025-11-08",
+      "amount": -69285.34,
       "type": "debit",
-      "description": "Advertising campaign with SAP America Inc",
-      "merchant": "SAP America Inc"
+      "description": "Sales tax remittance",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-08",
+      "amount": -60918.89,
+      "type": "debit",
+      "description": "Vendor invoice settlement",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-08",
+      "amount": -25729.89,
+      "type": "debit",
+      "description": "Consulting services from WeWork Companies Inc",
+      "tags": [
+        "card_spend"
+      ],
+      "merchant": "WeWork Companies Inc"
+    },
+    {
+      "date": "2025-11-08",
+      "amount": -16777.73,
+      "type": "debit",
+      "description": "Vehicle maintenance",
+      "tags": []
+    },
+    {
+      "date": "2025-11-08",
+      "amount": -5751.17,
+      "type": "debit",
+      "description": "Financial audit",
+      "tags": []
     },
     {
       "date": "2025-11-09",
-      "amount": 27520.51,
+      "amount": 179779.23,
       "type": "credit",
-      "description": "Investment returns"
+      "description": "Government grant received",
+      "tags": []
     },
     {
       "date": "2025-11-09",
-      "amount": -19275.97,
-      "type": "debit",
-      "description": "Operational supplies"
-    },
-    {
-      "date": "2025-11-13",
-      "amount": 31266.75,
+      "amount": 16955.58,
       "type": "credit",
-      "description": "Innovation grant"
+      "description": "Payment from Bain & Company",
+      "tags": [],
+      "merchant": "Bain & Company"
+    },
+    {
+      "date": "2025-11-09",
+      "amount": 71339.8,
+      "type": "credit",
+      "description": "Customer invoice payment",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-09",
+      "amount": -6127.5,
+      "type": "debit",
+      "description": "Subscription to HP Inc",
+      "tags": [],
+      "merchant": "HP Inc"
+    },
+    {
+      "date": "2025-11-09",
+      "amount": -9072.9,
+      "type": "debit",
+      "description": "Subscription to Intel Corporation",
+      "tags": [],
+      "merchant": "Intel Corporation"
+    },
+    {
+      "date": "2025-11-09",
+      "amount": -17448.92,
+      "type": "debit",
+      "description": "Brand promotion",
+      "tags": []
+    },
+    {
+      "date": "2025-11-09",
+      "amount": -29367.96,
+      "type": "debit",
+      "description": "Business travel",
+      "tags": []
+    },
+    {
+      "date": "2025-11-09",
+      "amount": -13958.72,
+      "type": "debit",
+      "description": "Business travel",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-10",
+      "amount": 10549.76,
+      "type": "credit",
+      "description": "Capital gains",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-10",
+      "amount": 3390.85,
+      "type": "credit",
+      "description": "Investment interest",
+      "tags": []
+    },
+    {
+      "date": "2025-11-10",
+      "amount": 78361.22,
+      "type": "credit",
+      "description": "Service delivery payment",
+      "tags": [
+        "cross_border"
+      ]
+    },
+    {
+      "date": "2025-11-10",
+      "amount": -295583.78,
+      "type": "debit",
+      "description": "Payroll tax and benefits",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-10",
+      "amount": -7931.6,
+      "type": "debit",
+      "description": "Compliance legal fees",
+      "tags": []
+    },
+    {
+      "date": "2025-11-10",
+      "amount": -23105.08,
+      "type": "debit",
+      "description": "Shipping via DHL Express",
+      "tags": [
+        "card_spend"
+      ],
+      "merchant": "DHL Express"
+    },
+    {
+      "date": "2025-11-10",
+      "amount": -14116.51,
+      "type": "debit",
+      "description": "Building maintenance",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-10",
+      "amount": -17189.47,
+      "type": "debit",
+      "description": "Tax preparation",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-10",
+      "amount": -4412.92,
+      "type": "debit",
+      "description": "Bookkeeping fees",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-11",
+      "amount": 166946.76,
+      "type": "credit",
+      "description": "Contract milestone payment",
+      "tags": [
+        "cross_border"
+      ]
+    },
+    {
+      "date": "2025-11-11",
+      "amount": 206868.15,
+      "type": "credit",
+      "description": "Government grant received",
+      "tags": [
+        "revenue",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-11",
+      "amount": 922.11,
+      "type": "credit",
+      "description": "Investment interest",
+      "tags": []
+    },
+    {
+      "date": "2025-11-11",
+      "amount": 4671.04,
+      "type": "credit",
+      "description": "Cash management interest",
+      "tags": []
+    },
+    {
+      "date": "2025-11-11",
+      "amount": -23302.74,
+      "type": "debit",
+      "description": "Liability insurance",
+      "tags": []
+    },
+    {
+      "date": "2025-11-11",
+      "amount": -7194.12,
+      "type": "debit",
+      "description": "Liability insurance",
+      "tags": []
+    },
+    {
+      "date": "2025-11-11",
+      "amount": -5567.43,
+      "type": "debit",
+      "description": "Business travel",
+      "tags": []
+    },
+    {
+      "date": "2025-11-11",
+      "amount": -33361.0,
+      "type": "debit",
+      "description": "Warehouse rent",
+      "tags": [
+        "card_spend",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-11",
+      "amount": -4939.47,
+      "type": "debit",
+      "description": "Water and sewer",
+      "tags": []
+    },
+    {
+      "date": "2025-11-11",
+      "amount": -6181.23,
+      "type": "debit",
+      "description": "Professional development",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-12",
+      "amount": 28974.41,
+      "type": "credit",
+      "description": "Customer invoice payment",
+      "tags": []
+    },
+    {
+      "date": "2025-11-12",
+      "amount": 39206.23,
+      "type": "credit",
+      "description": "Payment from Google LLC",
+      "tags": [
+        "revenue"
+      ],
+      "merchant": "Google LLC"
+    },
+    {
+      "date": "2025-11-12",
+      "amount": 80515.94,
+      "type": "credit",
+      "description": "Working capital loan",
+      "tags": []
+    },
+    {
+      "date": "2025-11-12",
+      "amount": 148421.64,
+      "type": "credit",
+      "description": "Annual contract payment",
+      "tags": [
+        "revenue",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-12",
+      "amount": -13476.12,
+      "type": "debit",
+      "description": "Advertising campaign with Intel Corporation",
+      "tags": [],
+      "merchant": "Intel Corporation"
+    },
+    {
+      "date": "2025-11-12",
+      "amount": -25539.02,
+      "type": "debit",
+      "description": "Property insurance",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-12",
+      "amount": -20603.95,
+      "type": "debit",
+      "description": "Distribution costs",
+      "tags": [
+        "card_spend"
+      ]
     },
     {
       "date": "2025-11-13",
-      "amount": -29287.72,
+      "amount": 18628.44,
+      "type": "credit",
+      "description": "Dividend income",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-13",
+      "amount": 62601.52,
+      "type": "credit",
+      "description": "Retail sales revenue",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-13",
+      "amount": -4239.33,
       "type": "debit",
-      "description": "Payment to SAP America Inc",
-      "merchant": "SAP America Inc"
+      "description": "Water and sewer",
+      "tags": []
+    },
+    {
+      "date": "2025-11-14",
+      "amount": 24247.92,
+      "type": "credit",
+      "description": "Monthly subscription revenue",
+      "tags": [
+        "cross_border"
+      ]
+    },
+    {
+      "date": "2025-11-14",
+      "amount": -15513.48,
+      "type": "debit",
+      "description": "Advertising campaign with Google LLC",
+      "tags": [
+        "recurring"
+      ],
+      "merchant": "Google LLC"
+    },
+    {
+      "date": "2025-11-14",
+      "amount": -23610.77,
+      "type": "debit",
+      "description": "Shipping via UPS Inc",
+      "tags": [
+        "cross_border",
+        "card_spend"
+      ],
+      "merchant": "UPS Inc"
+    },
+    {
+      "date": "2025-11-14",
+      "amount": -3108.02,
+      "type": "debit",
+      "description": "Accounting services",
+      "tags": []
+    },
+    {
+      "date": "2025-11-14",
+      "amount": -6342.8,
+      "type": "debit",
+      "description": "Facility repairs",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-14",
+      "amount": -25298.99,
+      "type": "debit",
+      "description": "Client meeting travel",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-14",
+      "amount": -19683.0,
+      "type": "debit",
+      "description": "Brand promotion",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-14",
+      "amount": -19285.4,
+      "type": "debit",
+      "description": "Equipment maintenance",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-14",
+      "amount": -7158.66,
+      "type": "debit",
+      "description": "Accounting services",
+      "tags": []
     },
     {
       "date": "2025-11-15",
-      "amount": -14792.49,
+      "amount": 179633.18,
+      "type": "credit",
+      "description": "Government grant received",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-15",
+      "amount": 24585.07,
+      "type": "credit",
+      "description": "Customer payment received - Invoice #INV74579",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-15",
+      "amount": 3139.08,
+      "type": "credit",
+      "description": "Interest income earned",
+      "tags": []
+    },
+    {
+      "date": "2025-11-15",
+      "amount": 314102.28,
+      "type": "credit",
+      "description": "Working capital loan",
+      "tags": []
+    },
+    {
+      "date": "2025-11-15",
+      "amount": -28769.52,
       "type": "debit",
-      "description": "Sales tax remittance"
+      "description": "Compliance legal fees",
+      "tags": []
+    },
+    {
+      "date": "2025-11-15",
+      "amount": -6109.22,
+      "type": "debit",
+      "description": "Shipping via UPS Inc",
+      "tags": [],
+      "merchant": "UPS Inc"
+    },
+    {
+      "date": "2025-11-15",
+      "amount": -11270.57,
+      "type": "debit",
+      "description": "Certification programs",
+      "tags": []
+    },
+    {
+      "date": "2025-11-15",
+      "amount": -40215.64,
+      "type": "debit",
+      "description": "Office lease payment",
+      "tags": [
+        "card_spend",
+        "high_value",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-15",
+      "amount": -2441.82,
+      "type": "debit",
+      "description": "Commercial utilities",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-15",
+      "amount": -34188.8,
+      "type": "debit",
+      "description": "Payroll tax and benefits",
+      "tags": []
+    },
+    {
+      "date": "2025-11-16",
+      "amount": 58351.27,
+      "type": "credit",
+      "description": "Bulk invoice payment",
+      "tags": []
+    },
+    {
+      "date": "2025-11-16",
+      "amount": 50121.98,
+      "type": "credit",
+      "description": "Invoice payment - Net 30",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-16",
+      "amount": -109178.11,
+      "type": "debit",
+      "description": "Bi-weekly payroll",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-16",
+      "amount": -11753.45,
+      "type": "debit",
+      "description": "Facility repairs",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-16",
+      "amount": -23569.17,
+      "type": "debit",
+      "description": "Inventory purchase",
+      "tags": []
+    },
+    {
+      "date": "2025-11-16",
+      "amount": -38501.5,
+      "type": "debit",
+      "description": "Office lease payment",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-16",
+      "amount": -95847.56,
+      "type": "debit",
+      "description": "Payment to American Express Company",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ],
+      "merchant": "American Express Company"
     },
     {
       "date": "2025-11-17",
-      "amount": 5041.92,
+      "amount": -13053.31,
+      "type": "debit",
+      "description": "Professional development",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-17",
+      "amount": -24879.7,
+      "type": "debit",
+      "description": "Advertising campaign with Atlassian Corporation",
+      "tags": [
+        "card_spend"
+      ],
+      "merchant": "Atlassian Corporation"
+    },
+    {
+      "date": "2025-11-17",
+      "amount": -40100.56,
+      "type": "debit",
+      "description": "Compliance legal fees",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-17",
+      "amount": -141416.98,
+      "type": "debit",
+      "description": "Computer hardware",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-17",
+      "amount": -3368.77,
+      "type": "debit",
+      "description": "Tax preparation",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-18",
+      "amount": -5996.66,
+      "type": "debit",
+      "description": "Water and sewer",
+      "tags": []
+    },
+    {
+      "date": "2025-11-18",
+      "amount": -20618.23,
+      "type": "debit",
+      "description": "Trade show travel",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-19",
+      "amount": 20824.08,
       "type": "credit",
-      "description": "Monthly subscription revenue"
+      "description": "Long-term contract installment",
+      "tags": []
     },
     {
-      "date": "2025-11-18",
-      "amount": -37668.57,
+      "date": "2025-11-19",
+      "amount": -19438.19,
       "type": "debit",
-      "description": "Management consulting"
+      "description": "Professional development",
+      "tags": []
     },
     {
-      "date": "2025-11-18",
-      "amount": -2747.3,
+      "date": "2025-11-19",
+      "amount": -14470.56,
       "type": "debit",
-      "description": "Building maintenance"
+      "description": "Bookkeeping fees",
+      "tags": []
     },
     {
-      "date": "2025-11-18",
-      "amount": -5159.43,
+      "date": "2025-11-19",
+      "amount": -8022.0,
       "type": "debit",
-      "description": "Business electricity"
+      "description": "Water and sewer",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-19",
+      "amount": -42706.25,
+      "type": "debit",
+      "description": "Wholesale purchase",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-20",
+      "amount": 147474.33,
+      "type": "credit",
+      "description": "Service contract revenue",
+      "tags": [
+        "cross_border",
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-20",
+      "amount": -24851.84,
+      "type": "debit",
+      "description": "Quarterly tax payment",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-20",
+      "amount": -3177.06,
+      "type": "debit",
+      "description": "Business insurance premium",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-20",
+      "amount": -8049.22,
+      "type": "debit",
+      "description": "Retail space lease",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-20",
+      "amount": -17789.85,
+      "type": "debit",
+      "description": "Shipping via FedEx Corporation",
+      "tags": [
+        "cross_border"
+      ],
+      "merchant": "FedEx Corporation"
+    },
+    {
+      "date": "2025-11-20",
+      "amount": -68646.53,
+      "type": "debit",
+      "description": "Management consulting",
+      "tags": [
+        "high_value",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-20",
+      "amount": -116715.56,
+      "type": "debit",
+      "description": "Machinery acquisition",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-20",
+      "amount": -14158.34,
+      "type": "debit",
+      "description": "Inventory purchase",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-20",
+      "amount": -9811.63,
+      "type": "debit",
+      "description": "Professional development",
+      "tags": []
+    },
+    {
+      "date": "2025-11-21",
+      "amount": -11180.55,
+      "type": "debit",
+      "description": "Payment to Cisco Systems Inc",
+      "tags": [
+        "card_spend"
+      ],
+      "merchant": "Cisco Systems Inc"
+    },
+    {
+      "date": "2025-11-21",
+      "amount": -31908.46,
+      "type": "debit",
+      "description": "Office lease payment",
+      "tags": []
+    },
+    {
+      "date": "2025-11-21",
+      "amount": -14793.52,
+      "type": "debit",
+      "description": "Employee training",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-21",
+      "amount": -14042.25,
+      "type": "debit",
+      "description": "Contract review",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-21",
+      "amount": -36657.49,
+      "type": "debit",
+      "description": "Shipping via DHL Express",
+      "tags": [],
+      "merchant": "DHL Express"
+    },
+    {
+      "date": "2025-11-21",
+      "amount": -31762.92,
+      "type": "debit",
+      "description": "Payroll tax deposit",
+      "tags": []
+    },
+    {
+      "date": "2025-11-21",
+      "amount": -38857.63,
+      "type": "debit",
+      "description": "Legal services",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-22",
+      "amount": 53913.42,
+      "type": "credit",
+      "description": "Research grant funding",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-22",
+      "amount": -13159.9,
+      "type": "debit",
+      "description": "Contract review",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-22",
+      "amount": -13160.19,
+      "type": "debit",
+      "description": "Financial audit",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-22",
+      "amount": -26252.88,
+      "type": "debit",
+      "description": "Consulting services from Regus Business Centers",
+      "tags": [
+        "card_spend"
+      ],
+      "merchant": "Regus Business Centers"
     },
     {
       "date": "2025-11-23",
-      "amount": 29361.55,
+      "amount": -24748.29,
+      "type": "debit",
+      "description": "Liability insurance",
+      "tags": []
+    },
+    {
+      "date": "2025-11-23",
+      "amount": -28758.23,
+      "type": "debit",
+      "description": "Shipping via UPS Inc",
+      "tags": [
+        "cross_border"
+      ],
+      "merchant": "UPS Inc"
+    },
+    {
+      "date": "2025-11-23",
+      "amount": -92579.13,
+      "type": "debit",
+      "description": "Payment to American Express Company",
+      "tags": [
+        "high_value"
+      ],
+      "merchant": "American Express Company"
+    },
+    {
+      "date": "2025-11-23",
+      "amount": -62660.88,
+      "type": "debit",
+      "description": "Sales tax remittance",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-24",
+      "amount": 25746.18,
       "type": "credit",
-      "description": "SaaS subscription payments"
+      "description": "Payment from LinkedIn Corporation",
+      "tags": [],
+      "merchant": "LinkedIn Corporation"
+    },
+    {
+      "date": "2025-11-24",
+      "amount": 89833.63,
+      "type": "credit",
+      "description": "Research grant funding",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-24",
+      "amount": -23008.73,
+      "type": "debit",
+      "description": "Payment to Salesforce Inc",
+      "tags": [
+        "card_spend"
+      ],
+      "merchant": "Salesforce Inc"
+    },
+    {
+      "date": "2025-11-24",
+      "amount": -8746.35,
+      "type": "debit",
+      "description": "Building maintenance",
+      "tags": [
+        "card_spend",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-24",
+      "amount": -34298.78,
+      "type": "debit",
+      "description": "Contract review",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-24",
+      "amount": -60448.03,
+      "type": "debit",
+      "description": "Business loan payment",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-24",
+      "amount": -18198.23,
+      "type": "debit",
+      "description": "Accounting services",
+      "tags": []
+    },
+    {
+      "date": "2025-11-24",
+      "amount": -2729.55,
+      "type": "debit",
+      "description": "Accounting services",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-24",
+      "amount": -3874.84,
+      "type": "debit",
+      "description": "Business electricity",
+      "tags": [
+        "recurring"
+      ]
     },
     {
       "date": "2025-11-25",
-      "amount": 47187.02,
+      "amount": 56456.68,
       "type": "credit",
-      "description": "Payment from Bank of America Corp",
-      "merchant": "Bank of America Corp"
+      "description": "Invoice payment - Net 30",
+      "tags": []
+    },
+    {
+      "date": "2025-11-25",
+      "amount": 406146.19,
+      "type": "credit",
+      "description": "Line of credit drawdown",
+      "tags": []
+    },
+    {
+      "date": "2025-11-25",
+      "amount": 4890.52,
+      "type": "credit",
+      "description": "Investment interest",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-25",
+      "amount": 2245.46,
+      "type": "credit",
+      "description": "Cash management interest",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-25",
+      "amount": 22238.35,
+      "type": "credit",
+      "description": "Payment from Atlassian Corporation",
+      "tags": [
+        "recurring"
+      ],
+      "merchant": "Atlassian Corporation"
+    },
+    {
+      "date": "2025-11-25",
+      "amount": 58299.76,
+      "type": "credit",
+      "description": "Service delivery payment",
+      "tags": [
+        "cross_border"
+      ]
+    },
+    {
+      "date": "2025-11-25",
+      "amount": 95383.05,
+      "type": "credit",
+      "description": "Capital gains",
+      "tags": []
+    },
+    {
+      "date": "2025-11-25",
+      "amount": -122987.46,
+      "type": "debit",
+      "description": "Computer hardware",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-25",
+      "amount": -149117.91,
+      "type": "debit",
+      "description": "Machinery acquisition",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-25",
+      "amount": -71949.84,
+      "type": "debit",
+      "description": "Line of credit payment",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-25",
+      "amount": -88967.44,
+      "type": "debit",
+      "description": "Quarterly tax payment",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-25",
+      "amount": -30655.28,
+      "type": "debit",
+      "description": "Shipping via FedEx Corporation",
+      "tags": [
+        "card_spend",
+        "recurring"
+      ],
+      "merchant": "FedEx Corporation"
+    },
+    {
+      "date": "2025-11-25",
+      "amount": -64147.25,
+      "type": "debit",
+      "description": "Consulting services from FedEx Corporation",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ],
+      "merchant": "FedEx Corporation"
+    },
+    {
+      "date": "2025-11-25",
+      "amount": -77094.0,
+      "type": "debit",
+      "description": "Sales tax remittance",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-26",
+      "amount": 26460.29,
+      "type": "credit",
+      "description": "Monthly subscription revenue",
+      "tags": []
+    },
+    {
+      "date": "2025-11-26",
+      "amount": 83620.78,
+      "type": "credit",
+      "description": "Product sales revenue",
+      "tags": []
+    },
+    {
+      "date": "2025-11-26",
+      "amount": 26480.49,
+      "type": "credit",
+      "description": "Investment returns",
+      "tags": [
+        "revenue",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-26",
+      "amount": -53004.95,
+      "type": "debit",
+      "description": "Quarterly tax payment",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-26",
+      "amount": -58137.18,
+      "type": "debit",
+      "description": "Sales tax remittance",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-27",
+      "amount": 48440.28,
+      "type": "credit",
+      "description": "Capital gains",
+      "tags": []
+    },
+    {
+      "date": "2025-11-27",
+      "amount": 47457.62,
+      "type": "credit",
+      "description": "Invoice payment - Net 30",
+      "tags": []
+    },
+    {
+      "date": "2025-11-27",
+      "amount": 277175.24,
+      "type": "credit",
+      "description": "Working capital loan",
+      "tags": []
+    },
+    {
+      "date": "2025-11-27",
+      "amount": 38307.87,
+      "type": "credit",
+      "description": "Payment from client - Account #AC54116",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-27",
+      "amount": -5878.4,
+      "type": "debit",
+      "description": "Skills training",
+      "tags": []
+    },
+    {
+      "date": "2025-11-27",
+      "amount": -27827.46,
+      "type": "debit",
+      "description": "Delivery expenses",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-27",
+      "amount": -5064.2,
+      "type": "debit",
+      "description": "Production materials",
+      "tags": []
+    },
+    {
+      "date": "2025-11-27",
+      "amount": -68957.72,
+      "type": "debit",
+      "description": "Corporate tax",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-27",
+      "amount": -10213.73,
+      "type": "debit",
+      "description": "Workers compensation",
+      "tags": []
+    },
+    {
+      "date": "2025-11-27",
+      "amount": -66599.39,
+      "type": "debit",
+      "description": "Equipment financing",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-28",
+      "amount": 335735.24,
+      "type": "credit",
+      "description": "Business loan disbursement",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-28",
+      "amount": 22888.79,
+      "type": "credit",
+      "description": "Payment from SAP America Inc",
+      "tags": [],
+      "merchant": "SAP America Inc"
+    },
+    {
+      "date": "2025-11-28",
+      "amount": 66040.48,
+      "type": "credit",
+      "description": "Bulk invoice payment",
+      "tags": []
+    },
+    {
+      "date": "2025-11-28",
+      "amount": 224585.19,
+      "type": "credit",
+      "description": "Small business grant",
+      "tags": [
+        "revenue"
+      ]
+    },
+    {
+      "date": "2025-11-28",
+      "amount": -14260.18,
+      "type": "debit",
+      "description": "Office supplies",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-28",
+      "amount": -79848.48,
+      "type": "debit",
+      "description": "Equipment purchase",
+      "tags": [
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-28",
+      "amount": -3635.94,
+      "type": "debit",
+      "description": "Business electricity",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-28",
+      "amount": -9720.69,
+      "type": "debit",
+      "description": "Consulting services from McKinsey & Company",
+      "tags": [],
+      "merchant": "McKinsey & Company"
+    },
+    {
+      "date": "2025-11-28",
+      "amount": -6080.49,
+      "type": "debit",
+      "description": "Employee training",
+      "tags": []
     }
   ],
   "account_info": {
-    "account_number": "9459-1912-7165",
-    "routing_number": "302520511",
-    "bank_name": "Commerce Bank",
-    "account_type": "business_checking"
+    "account_number": "2964-3742-8069",
+    "routing_number": "977020268",
+    "bank_name": "First National Bank",
+    "account_type": "business_savings"
   },
-  "account_balance": 434401.38,
-  "timestamp": "2025-11-27T08:32:16.496074Z"
+  "account_balance": 2626057.41,
+  "customer_profile": {
+    "income": 142206.16,
+    "products_owned": [
+      "corporate_card",
+      "business_loan"
+    ],
+    "propensities": {
+      "fx_lockup": 0.95,
+      "credit_increase": 0.9,
+      "card_to_loan": 0.9
+    },
+    "risk_profile": "medium",
+    "segments": [
+      "wealth"
+    ],
+    "channel_preferences": [
+      "relationship_manager"
+    ],
+    "credit_utilization": 0.42,
+    "life_stage": "growth",
+    "preferred_currency": "SGD",
+    "tenure_months": 84,
+    "account_balance": 2626057.41
+  },
+  "contextual_signals": {
+    "recent_transaction_count": 222,
+    "cross_border_transfers": 13,
+    "card_spend_count": 55,
+    "high_value_spend": 40,
+    "avg_transaction_value": 54711.59,
+    "signals_timestamp": "2025-11-28T09:51:15.440166"
+  },
+  "bank_contexts": [
+    {
+      "id": "fx_lockup",
+      "name": "FX Lockup Promotion",
+      "focus_area": "Secure FX rates for customers with frequent cross-border transfers",
+      "priority": 1,
+      "status": "active",
+      "time_frame": {
+        "start_date": "2025-11-01",
+        "end_date": "2025-12-31",
+        "open_ended": false
+      },
+      "description": "Target customers sending at least 4 cross-border transfers in 30 days and with FX propensity.",
+      "incentive": "Preferential FX rate + cashback on lockup fees",
+      "eligibility": {
+        "min_recent_cross_border_transactions": 4,
+        "recent_days": 30,
+        "transaction_tags": [
+          "cross_border"
+        ],
+        "propensity_score": {
+          "key": "fx_lockup",
+          "min": 0.65
+        },
+        "required_products": [
+          "salary_account"
+        ],
+        "risk_profiles": [
+          "low",
+          "medium"
+        ],
+        "segments": [
+          "SME",
+          "retail"
+        ],
+        "channel_preferences": [
+          "digital",
+          "branch"
+        ]
+      },
+      "preview": "Customer made multiple EUR transfers and prefers digital channels."
+    },
+    {
+      "id": "credit_limit_increase",
+      "name": "Credit Limit Optimisation",
+      "focus_area": "Raise credit limits for clients showing high card utilisation",
+      "priority": 2,
+      "status": "active",
+      "time_frame": {
+        "open_ended": true
+      },
+      "description": "Encourage customers who consistently use 65-90% of their limit to consider an increase.",
+      "incentive": "Waived annual review fee on approved increases",
+      "eligibility": {
+        "min_transactions": 6,
+        "recent_days": 30,
+        "min_credit_utilization": 0.65,
+        "max_credit_utilization": 0.9,
+        "propensity_score": {
+          "key": "credit_increase",
+          "min": 0.6
+        },
+        "required_products": [
+          "corporate_card",
+          "salary_account"
+        ],
+        "risk_profiles": [
+          "low"
+        ],
+        "segments": [
+          "retail",
+          "SME"
+        ]
+      },
+      "preview": "Frequent card spend with strong payment history."
+    },
+    {
+      "id": "card_to_loan",
+      "name": "Card-to-Loan Conversion",
+      "focus_area": "Move high invoice spenders toward term loans",
+      "priority": 3,
+      "status": "scheduled",
+      "time_frame": {
+        "start_date": "2025-11-15",
+        "end_date": "2025-12-15",
+        "open_ended": false
+      },
+      "description": "Convert consistent high spenders into structured financing opportunities.",
+      "incentive": "Discounted first-year interest rate",
+      "eligibility": {
+        "min_transactions": 8,
+        "recent_days": 30,
+        "min_income": 120000,
+        "propensity_score": {
+          "key": "card_to_loan",
+          "min": 0.5
+        },
+        "risk_profiles": [
+          "low",
+          "medium"
+        ],
+        "segments": [
+          "SME"
+        ]
+      },
+      "preview": "SMEs with repeat high-value invoice payments."
+    }
+  ],
+  "timestamp": "2025-11-28T15:21:15.440550Z"
 }

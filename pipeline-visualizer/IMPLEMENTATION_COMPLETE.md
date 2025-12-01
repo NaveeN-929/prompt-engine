@@ -2,7 +2,7 @@
 
 ## 🎉 Project Successfully Created!
 
-A comprehensive React application for visualizing the complete end-to-end pipeline of your Self-Learning Prompt Engine System has been successfully implemented.
+A comprehensive React application for visualizing the complete end-to-end pipeline of your Self-Learning Analysis Engine System has been successfully implemented.
 
 ---
 

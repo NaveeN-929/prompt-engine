@@ -1,5 +1,6 @@
 import React from 'react';
-import { Sun, Moon, Activity } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
+import analysisLogo from '../../assets/analysis-logo.svg';
 
 const Header = ({ darkMode, toggleDarkMode, healthSummary }) => {
   return (
@@ -8,15 +9,19 @@ const Header = ({ darkMode, toggleDarkMode, healthSummary }) => {
         <div className="flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-processing bg-opacity-10 rounded-lg">
-              <Activity size={32} className="text-processing" />
+            <div className="p-1 bg-processing bg-opacity-15 rounded-lg">
+              <img
+                src={analysisLogo}
+                alt="Self-Learning Analysis Engine System logo"
+                className="h-12 w-12 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Pipeline Visualizer
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Self-Learning Prompt Engine System
+                Self-Learning Analysis Engine System
               </p>
             </div>
           </div>

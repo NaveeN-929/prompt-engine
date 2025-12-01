@@ -7,11 +7,14 @@ Unit tests for PAM service components
 import json
 import sys
 import os
+from datetime import datetime, timedelta
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.core.company_extractor import CompanyExtractor
+from app.core.context_evaluator import ContextEvaluator
+from app.core.context_loader import ContextLoader
 from app.core.web_scraper import WebScraper
 from app.config import settings
 
@@ -91,6 +94,58 @@ def test_web_scraper():
         print(f"⚠️  Scraping test failed: {e}")
         print("   (This is expected if no internet connection)")
         return False
+
+
+def test_context_priority_matching():
+    """Verify that context evaluator picks the FX lockup context when eligible"""
+    print("\n" + "=" * 60)
+    print("TEST: Context Prioritisation")
+    print("=" * 60)
+    
+    contexts = ContextLoader(settings.BANK_CONTEXTS_FILE).get_contexts()
+    evaluator = ContextEvaluator()
+    
+    base_date = datetime.utcnow()
+    transactions = []
+    for i in range(1, 6):
+        tx_date = (base_date - timedelta(days=i * 3)).strftime("%Y-%m-%d")
+        transactions.append({
+            "date": tx_date,
+            "amount": -15000.00,
+            "type": "debit",
+            "description": f"Cross-border FX payment #{i}",
+            "tags": ["cross_border"]
+        })
+
+    sample_input = {
+        "customer_id": "RET_0001",
+        "transactions": transactions,
+        "account_balance": 220000.00,
+        "customer_profile": {
+            "products_owned": ["salary_account"],
+            "propensities": {
+                "fx_lockup": 0.8,
+                "credit_increase": 0.3
+            },
+            "risk_profile": "low",
+            "segments": ["retail"],
+            "channel_preferences": ["digital"],
+            "income": 185000,
+            "credit_utilization": 0.5,
+            "life_stage": "growth"
+        }
+    }
+
+    context, summary = evaluator.evaluate(contexts, sample_input)
+    
+    if context:
+        print(f"\n✅ Matched context: {context.name} (priority {context.priority})")
+        for rule, matched in summary.get("matched_rules", {}).items():
+            print(f"   • {rule}: {'✔' if matched else '✘'}")
+        return context.id == "fx_lockup"
+    
+    print("\n⚠️  No context matched for sample profile")
+    return False
 
 
 def test_pam_service_api():
@@ -204,6 +259,7 @@ def main():
     tests = [
         ("Company Extractor", test_company_extractor),
         ("Web Scraper", test_web_scraper),
+        ("Context Prioritisation", test_context_priority_matching),
         ("PAM Service API", test_pam_service_api),
         ("Full Augmentation", test_augmentation_request)
     ]

@@ -5,11 +5,67 @@ Generates realistic business banking transaction datasets for testing the self-l
 Designed for SME (Small & Medium Enterprise) business accounts
 """
 
+import argparse
 import json
 import random
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import os
+
+
+QUALITY_FOCUS_PRESETS = {
+    "balanced": {
+        "label": "Balanced realism",
+        "description": "Reflects a realistic SME portfolio with a steady mix of revenues and expenses.",
+        "transaction_scale": 1.0,
+        "bonus_transactions": 0,
+        "cross_border_chance": 0.65,
+        "card_spend_chance": 0.35,
+        "high_value_chance": 0.25,
+        "recurring_chance": 0.15,
+        "ensure_cross_border_count": 1,
+        "ensure_high_value_count": 1,
+        "ensure_card_spend_count": 2,
+        "min_cross_border_notes": 1,
+        "min_high_value_notes": 1,
+        "min_card_spend_notes": 1,
+        "insight_depth": 2
+    },
+    "actionable": {
+        "label": "Actionable focus",
+        "description": "Surfaces high-impact, implementable behaviours (cross-border payables, large invoices, card spend).",
+        "transaction_scale": 1.3,
+        "bonus_transactions": 3,
+        "cross_border_chance": 0.85,
+        "card_spend_chance": 0.55,
+        "high_value_chance": 0.65,
+        "recurring_chance": 0.4,
+        "ensure_cross_border_count": 3,
+        "ensure_high_value_count": 2,
+        "ensure_card_spend_count": 3,
+        "min_cross_border_notes": 2,
+        "min_high_value_notes": 2,
+        "min_card_spend_notes": 2,
+        "insight_depth": 3
+    },
+    "comprehensive": {
+        "label": "Comprehensive coverage",
+        "description": "Maximizes category coverage so validation sees completeness and structural compliance.",
+        "transaction_scale": 1.5,
+        "bonus_transactions": 4,
+        "cross_border_chance": 0.7,
+        "card_spend_chance": 0.45,
+        "high_value_chance": 0.7,
+        "recurring_chance": 0.3,
+        "ensure_cross_border_count": 2,
+        "ensure_high_value_count": 2,
+        "ensure_card_spend_count": 2,
+        "min_cross_border_notes": 2,
+        "min_high_value_notes": 2,
+        "min_card_spend_notes": 2,
+        "insight_depth": 4
+    }
+}
 
 
 class TransactionDataGenerator:
@@ -114,8 +170,35 @@ class TransactionDataGenerator:
             }
         }
         
+        # Categories that are likely to include cross-border flows
+        self.cross_border_categories = {
+            'contract_payment',
+            'shipping_logistics',
+            'international_payments',
+            'subscription_revenue',
+            'service_revenue'
+        }
+
+        # Products that customers typically own
+        self.product_catalog = [
+            'salary_account',
+            'corporate_card',
+            'business_loan',
+            'trade_finance',
+            'cash_management',
+            'foreign_currency_account'
+        ]
+
+        self.segment_types = ['retail', 'SME', 'wealth']
+        self.channel_preferences = ['digital', 'branch', 'relationship_manager']
+        self.life_stages = ['growth', 'scaling', 'mature', 'expansion']
+        self.currency_preferences = ['SGD', 'USD', 'EUR', 'GBP', 'AED']
+        
         # Business customer ID prefixes
         self.customer_prefixes = ['BIZ', 'SME', 'ENT', 'CORP', 'CO']
+
+        # Focus presets control signal density for validation
+        self.quality_focus_presets = QUALITY_FOCUS_PRESETS
         
     def generate_customer_id(self, index: int) -> str:
         """Generate a unique customer ID"""
@@ -197,7 +280,8 @@ class TransactionDataGenerator:
             'date': transaction_date.strftime('%Y-%m-%d'),
             'amount': amount,
             'type': transaction_type,
-            'description': description
+            'description': description,
+            'tags': self._build_transaction_tags(category, transaction_type, amount)
         }
         
         # Add merchant/company field if available (for PAM to extract)
@@ -205,6 +289,135 @@ class TransactionDataGenerator:
             transaction['merchant'] = merchant
         
         return transaction
+
+    def _compute_contextual_signals(self, transactions: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Summarize behavioural signals used by PAM contexts"""
+        total_amount = sum(abs(tx['amount']) for tx in transactions)
+        cross_border = sum(1 for tx in transactions if 'cross_border' in tx.get('tags', []))
+        card_spend = sum(1 for tx in transactions if 'card_spend' in tx.get('tags', []))
+        high_value_spend = sum(
+            1 for tx in transactions
+            if tx.get('type') == 'debit' and abs(tx['amount']) >= 40000
+        )
+
+        avg_tx_value = round(total_amount / len(transactions), 2) if transactions else 0
+
+        return {
+            "recent_transaction_count": len(transactions),
+            "cross_border_transfers": cross_border,
+            "card_spend_count": card_spend,
+            "high_value_spend": high_value_spend,
+            "avg_transaction_value": avg_tx_value,
+            "signals_timestamp": datetime.utcnow().isoformat()
+        }
+
+    def generate_customer_profile(self, account_balance: float, signals: Dict[str, Any]) -> Dict[str, Any]:
+        """Create an enriched customer profile for PAM eligibility checks"""
+        fx_factor = min(1.0, signals.get("cross_border_transfers", 0) / 6)
+        card_factor = min(1.0, signals.get("card_spend_count", 0) / 8)
+        high_value_factor = min(1.0, signals.get("high_value_spend", 0) / 6)
+
+        propensities = {
+            "fx_lockup": round(0.5 + fx_factor * 0.45, 2),
+            "credit_increase": round(0.4 + card_factor * 0.5, 2),
+            "card_to_loan": round(0.35 + high_value_factor * 0.55, 2)
+        }
+
+        products = random.sample(self.product_catalog, k=random.randint(2, 4))
+        segments = random.sample(self.segment_types, k=random.randint(1, 2))
+        channels = random.sample(self.channel_preferences, k=random.randint(1, 2))
+
+        profile = {
+            "income": round(random.uniform(90000, 320000), 2),
+            "products_owned": products,
+            "propensities": propensities,
+            "risk_profile": random.choice(['low', 'medium', 'high']),
+            "segments": segments,
+            "channel_preferences": channels,
+            "credit_utilization": round(random.uniform(0.3, 0.9), 2),
+            "life_stage": random.choice(self.life_stages),
+            "preferred_currency": random.choice(self.currency_preferences),
+            "tenure_months": random.randint(6, 84),
+            "account_balance": round(account_balance, 2)
+        }
+
+        return profile
+
+    def generate_context_cards(self) -> List[Dict[str, Any]]:
+        """Return templated context cards that mirror the PAM config for UI inputs"""
+        return [
+            {
+                "id": "fx_lockup",
+                "name": "FX Lockup Promotion",
+                "focus_area": "Secure FX rates for customers with frequent cross-border transfers",
+                "priority": 1,
+                "status": "active",
+                "time_frame": {
+                    "start_date": "2025-11-01",
+                    "end_date": "2025-12-31",
+                    "open_ended": False
+                },
+                "description": "Target customers sending at least 4 cross-border transfers in 30 days and with FX propensity.",
+                "incentive": "Preferential FX rate + cashback on lockup fees",
+                "eligibility": {
+                    "min_recent_cross_border_transactions": 4,
+                    "recent_days": 30,
+                    "transaction_tags": ["cross_border"],
+                    "propensity_score": {"key": "fx_lockup", "min": 0.65},
+                    "required_products": ["salary_account"],
+                    "risk_profiles": ["low", "medium"],
+                    "segments": ["SME", "retail"],
+                    "channel_preferences": ["digital", "branch"]
+                },
+                "preview": "Customer made multiple EUR transfers and prefers digital channels."
+            },
+            {
+                "id": "credit_limit_increase",
+                "name": "Credit Limit Optimisation",
+                "focus_area": "Raise credit limits for clients showing high card utilisation",
+                "priority": 2,
+                "status": "active",
+                "time_frame": {
+                    "open_ended": True
+                },
+                "description": "Encourage customers who consistently use 65-90% of their limit to consider an increase.",
+                "incentive": "Waived annual review fee on approved increases",
+                "eligibility": {
+                    "min_transactions": 6,
+                    "recent_days": 30,
+                    "min_credit_utilization": 0.65,
+                    "max_credit_utilization": 0.9,
+                    "propensity_score": {"key": "credit_increase", "min": 0.6},
+                    "required_products": ["corporate_card", "salary_account"],
+                    "risk_profiles": ["low"],
+                    "segments": ["retail", "SME"]
+                },
+                "preview": "Frequent card spend with strong payment history."
+            },
+            {
+                "id": "card_to_loan",
+                "name": "Card-to-Loan Conversion",
+                "focus_area": "Move high invoice spenders toward term loans",
+                "priority": 3,
+                "status": "scheduled",
+                "time_frame": {
+                    "start_date": "2025-11-15",
+                    "end_date": "2025-12-15",
+                    "open_ended": False
+                },
+                "description": "Convert consistent high spenders into structured financing opportunities.",
+                "incentive": "Discounted first-year interest rate",
+                "eligibility": {
+                    "min_transactions": 8,
+                    "recent_days": 30,
+                    "min_income": 120000,
+                    "propensity_score": {"key": "card_to_loan", "min": 0.5},
+                    "risk_profiles": ["low", "medium"],
+                    "segments": ["SME"]
+                },
+                "preview": "SMEs with repeat high-value invoice payments."
+            }
+        ]
     
     def _format_description(self, category: str, amount: float) -> tuple:
         """Format transaction description with real company names for PAM scraping
@@ -437,6 +650,27 @@ class TransactionDataGenerator:
                 description_template = f"Shipping via {company}"
         
         return description_template, merchant
+
+    def _build_transaction_tags(self, category: str, transaction_type: str, amount: float) -> List[str]:
+        """Build tags that signal behaviours for PAM contexts"""
+        tags = []
+
+        if category in self.cross_border_categories and random.random() < 0.65:
+            tags.append('cross_border')
+
+        if transaction_type == 'debit':
+            if random.random() < 0.35:
+                tags.append('card_spend')
+            if abs(amount) >= 40000:
+                tags.append('high_value')
+        else:
+            if random.random() < 0.25:
+                tags.append('revenue')
+
+        if random.random() < 0.15:
+            tags.append('recurring')
+
+        return tags
     
     def generate_dataset(self, num_transactions: int = 10, 
                         base_balance: float = 100000.0,
@@ -472,6 +706,10 @@ class TransactionDataGenerator:
         total_change = sum(t['amount'] for t in transactions)
         final_balance = round(base_balance + total_change, 2)
         
+        contextual_signals = self._compute_contextual_signals(transactions)
+        customer_profile = self.generate_customer_profile(final_balance, contextual_signals)
+        context_cards = self.generate_context_cards()
+
         # Generate PII data
         customer_id = self.generate_customer_id(customer_index)
         business_name = self.generate_business_name(customer_index)
@@ -488,6 +726,9 @@ class TransactionDataGenerator:
             'transactions': transactions,
             'account_info': account_info,
             'account_balance': final_balance,
+            'customer_profile': customer_profile,
+            'contextual_signals': contextual_signals,
+            'bank_contexts': context_cards,
             'timestamp': datetime.now().isoformat() + 'Z'
         }
     

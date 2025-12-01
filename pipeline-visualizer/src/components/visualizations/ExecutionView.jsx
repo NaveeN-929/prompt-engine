@@ -5,35 +5,10 @@ import TimelineStepper from './TimelineStepper';
 import CodeViewer from '../common/CodeViewer';
 import OutputDisplay from '../common/OutputDisplay';
 import { formatDuration } from '../../utils/dataFormatter';
+import dataset0001 from '../../assets/dataset_0001.json';
 
 const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
-  const [inputData, setInputData] = useState(JSON.stringify({
-    customer_id: 'BIZ_0001',
-    name: 'Tech Solutions Inc',
-    email: 'info@techsolutions.com',
-    phone: '555-234-5678',
-    transactions: [
-      {
-        date: '2025-01-15',
-        amount: 50000.00,
-        type: 'credit',
-        description: 'Customer payment received'
-      },
-      {
-        date: '2025-01-16',
-        amount: -5000.00,
-        type: 'debit',
-        description: 'Payroll'
-      }
-    ],
-    account_info: {
-      account_number: '1234-5678-9012',
-      routing_number: '021000021',
-      bank_name: 'First National Bank',
-      account_type: 'business_checking'
-    },
-    account_balance: 150000.00
-  }, null, 2));
+  const [inputData, setInputData] = useState(() => JSON.stringify(dataset0001, null, 2));
 
   const [inputError, setInputError] = useState(null);
 
@@ -68,6 +43,21 @@ const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
   // Get output data from pipeline results
   const outputData = pipelineState?.steps?.['output-data'];
   const validationResult = pipelineState?.steps?.['validation-system'];
+  const allSteps = pipelineState?.steps || {};
+  const hasProcessingSteps = Object.values(allSteps).some(
+    (step) => step?.status === 'processing'
+  );
+  const isProcessingStatus = pipelineState?.isRunning || hasProcessingSteps;
+  const statusClass = isProcessingStatus
+    ? 'text-processing'
+    : pipelineState?.results?.success
+      ? 'text-success'
+      : 'text-error';
+  const statusText = isProcessingStatus
+    ? 'Running'
+    : pipelineState?.results?.success
+      ? 'Success'
+      : 'Failed';
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -128,12 +118,8 @@ const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
-                  <span className={`text-sm font-medium ${
-                    pipelineState?.isRunning ? 'text-processing' :
-                    pipelineState?.results?.success ? 'text-success' : 'text-error'
-                  }`}>
-                    {pipelineState?.isRunning ? 'Running' :
-                     pipelineState?.results?.success ? 'Success' : 'Failed'}
+                  <span className={`text-sm font-medium ${statusClass}`}>
+                    {statusText}
                   </span>
                 </div>
                 

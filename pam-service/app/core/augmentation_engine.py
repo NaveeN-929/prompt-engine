@@ -9,6 +9,8 @@ import time
 from datetime import datetime
 
 from .company_extractor import CompanyExtractor
+from .context_loader import ContextCard, ContextLoader
+from .context_evaluator import ContextEvaluator
 from .web_scraper import WebScraper
 from .llm_researcher import LLMResearcher
 from .qdrant_cache import QdrantCache
@@ -79,6 +81,12 @@ class AugmentationEngine:
         else:
             self.qdrant_cache = None
             logger.info("Caching disabled")
+
+        # Bank context loader/evaluator
+        self.context_loader = ContextLoader(config.BANK_CONTEXTS_FILE)
+        self.context_evaluator = ContextEvaluator()
+        loaded = len(self.context_loader.get_contexts())
+        logger.info(f"Loaded {loaded} bank context card{'s' if loaded != 1 else ''}")
         
         # Statistics
         self.stats = {
@@ -91,10 +99,11 @@ class AugmentationEngine:
             'errors': 0
         }
     
-    def augment(self, input_data: Dict[str, Any], 
+    def augment(self, input_data: Dict[str, Any],
                 prompt_text: str = None,
                 companies: List[str] = None,
-                context: str = None) -> Dict[str, Any]:
+                context: str = None,
+                bank_contexts: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Main augmentation function
         
@@ -103,6 +112,7 @@ class AugmentationEngine:
             prompt_text: Original prompt to augment (optional)
             companies: Explicit list of companies (optional)
             context: Context for the augmentation (optional)
+            bank_contexts: Bank-defined context cards from UI or config (optional)
             
         Returns:
             Dictionary with augmented data
@@ -112,6 +122,26 @@ class AugmentationEngine:
         
         logger.info("Starting prompt augmentation...")
         
+        # Resolve bank contexts (either from request payload or stored config)
+        context_source = "config_file"
+        if bank_contexts:
+            available_contexts = ContextLoader.parse_context_dicts(bank_contexts)
+            context_source = "request_payload"
+        else:
+            available_contexts = self.context_loader.get_contexts()
+
+        selected_context, context_match_summary = self.context_evaluator.evaluate(
+            available_contexts,
+            input_data,
+            reference_time=datetime.utcnow()
+        )
+        context_metadata = self._build_context_metadata(
+            selected_context,
+            context_match_summary,
+            source=context_source
+        )
+        context_id_for_cache = context_metadata.get("id") if context_metadata else None
+
         try:
             # Step 1: Extract companies
             logger.info("Step 1: Extracting companies...")
@@ -134,7 +164,7 @@ class AugmentationEngine:
             if not extracted_companies:
                 logger.warning("No companies extracted, returning minimal augmentation")
                 logger.warning("This usually means no company names were found in transaction descriptions")
-                return self._create_empty_response(prompt_text, start_time)
+                return self._create_empty_response(prompt_text, start_time, context_metadata)
             
             self.stats['companies_analyzed'] += len(extracted_companies)
             logger.info(f"Extracted {len(extracted_companies)} companies")
@@ -144,8 +174,8 @@ class AugmentationEngine:
             if self.qdrant_cache:
                 logger.info("Step 2: Checking cache...")
                 cached_data = self.qdrant_cache.get_cached_augmentation(
-                    extracted_companies, 
-                    context
+                    extracted_companies,
+                    context=context_id_for_cache
                 )
                 
                 if cached_data:
@@ -155,7 +185,8 @@ class AugmentationEngine:
                     # Enhance prompt with cached data
                     augmented_prompt = self._enhance_prompt(
                         prompt_text,
-                        cached_data['augmented_data']
+                    cached_data['augmented_data'],
+                    context_metadata=context_metadata
                     )
                     
                     processing_time = (time.time() - start_time) * 1000
@@ -164,7 +195,10 @@ class AugmentationEngine:
                         'augmented_prompt': augmented_prompt,
                         'companies_analyzed': cached_data['companies_analyzed'],
                         'augmentation_summary': cached_data['augmented_data'],
-                        'cache_hit': True,
+                    'cache_hit': True,
+                    'selected_context': context_metadata,
+                    'context_match_summary': context_match_summary,
+                    'context_source': context_source,
                         'processing_time_ms': round(processing_time, 2),
                         'timestamp': datetime.utcnow().isoformat()
                     }
@@ -225,11 +259,16 @@ class AugmentationEngine:
                 self.qdrant_cache.store_augmentation(
                     extracted_companies,
                     augmentation_data,
-                    context
+                    context=context_id_for_cache,
+                    context_metadata=context_metadata
                 )
             
             # Step 7: Enhance prompt
-            augmented_prompt = self._enhance_prompt(prompt_text, augmentation_data)
+            augmented_prompt = self._enhance_prompt(
+                prompt_text,
+                augmentation_data,
+                context_metadata=context_metadata
+            )
             
             processing_time = (time.time() - start_time) * 1000
             
@@ -240,6 +279,9 @@ class AugmentationEngine:
                 'companies_analyzed': extracted_companies,
                 'augmentation_summary': augmentation_data,
                 'cache_hit': False,
+                'selected_context': context_metadata,
+                'context_match_summary': context_match_summary,
+                'context_source': context_source,
                 'processing_time_ms': round(processing_time, 2),
                 'timestamp': datetime.utcnow().isoformat()
             }
@@ -340,14 +382,16 @@ class AugmentationEngine:
         
         return summary
     
-    def _enhance_prompt(self, original_prompt: str, 
-                       augmentation_data: Dict[str, Any]) -> str:
+    def _enhance_prompt(self, original_prompt: str,
+                       augmentation_data: Dict[str, Any],
+                       context_metadata: Optional[Dict[str, Any]] = None) -> str:
         """
         Enhance prompt with augmentation data
         
         Args:
             original_prompt: Original prompt text
             augmentation_data: Augmentation data to add
+            context_metadata: Optional bank context metadata to highlight
             
         Returns:
             Enhanced prompt
@@ -389,6 +433,34 @@ class AugmentationEngine:
             for trend in trends[:3]:
                 augmentation_parts.append(f"- {trend[:150]}")
         
+        # Add bank context priority info
+        if context_metadata:
+            priority = context_metadata.get("priority")
+            name = context_metadata.get("name")
+            focus_area = context_metadata.get("focus_area")
+            description = context_metadata.get("description")
+            incentive = context_metadata.get("incentive")
+            matched_rules = context_metadata.get("matched_rules", {})
+
+            context_block = ["\n## Bank Contextual Priority\n"]
+            if priority:
+                context_block.append(f"- Priority {priority}: {name or 'Context'}")
+            elif name:
+                context_block.append(f"- {name}")
+            if focus_area:
+                context_block.append(f"- Focus: {focus_area}")
+            if description:
+                context_block.append(f"- Intent: {description}")
+            if incentive:
+                context_block.append(f"- Incentive: {incentive}")
+            if matched_rules:
+                context_block.append("- Matched criteria:")
+                for rule, matched in matched_rules.items():
+                    status = "✔" if matched else "✘"
+                    context_block.append(f"  {status} {rule}")
+
+            augmentation_parts.extend(context_block)
+
         # Combine
         if augmentation_parts:
             augmentation_text = "\n".join(augmentation_parts)
@@ -402,8 +474,37 @@ class AugmentationEngine:
             return enhanced
         
         return original_prompt
+
+    def _build_context_metadata(self,
+                               context_card: Optional[ContextCard],
+                               summary: Dict[str, Any],
+                               source: str) -> Optional[Dict[str, Any]]:
+        """
+        Prepare a simplified context payload for reporting and caching.
+        """
+        if not context_card:
+            return None
+
+        matched_rules = summary.get("matched_rules") if summary else {}
+
+        return {
+            "id": context_card.id,
+            "name": context_card.name,
+            "focus_area": context_card.focus_area,
+            "priority": context_card.priority,
+            "description": context_card.description,
+            "incentive": context_card.incentive,
+            "status": context_card.status,
+            "time_frame": context_card.time_frame,
+            "source": source,
+            "matched_rules": matched_rules,
+            "eligibility": context_card.eligibility
+        }
     
-    def _create_empty_response(self, prompt_text: str, start_time: float) -> Dict[str, Any]:
+    def _create_empty_response(self,
+                               prompt_text: str,
+                               start_time: float,
+                               context_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Create empty response when no augmentation possible"""
         processing_time = (time.time() - start_time) * 1000
         
@@ -416,6 +517,9 @@ class AugmentationEngine:
                 'message': 'No companies identified for augmentation'
             },
             'cache_hit': False,
+            'selected_context': context_metadata,
+            'context_match_summary': context_metadata.get('matched_rules') if context_metadata else {},
+            'context_source': context_metadata.get('source') if context_metadata else None,
             'processing_time_ms': round(processing_time, 2),
             'timestamp': datetime.utcnow().isoformat()
         }

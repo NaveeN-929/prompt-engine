@@ -158,9 +158,9 @@ function App() {
       <footer className="flex-shrink-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between text-sm">
-            <div className="text-gray-600 dark:text-gray-400">
-              Pipeline Visualizer v1.0.0 - Self-Learning Prompt Engine System
-            </div>
+              <div className="text-gray-600 dark:text-gray-400">
+                Pipeline Visualizer v1.0.0 - Self-Learning Analysis Engine System
+              </div>
             <div className="flex items-center gap-4">
               <span className="text-gray-500 dark:text-gray-500">
                 Parallel Processing: Agent + Prompt Engine | Redis Token Storage

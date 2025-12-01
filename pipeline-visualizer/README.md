@@ -1,6 +1,6 @@
 # Pipeline Visualizer
 
-A comprehensive React application for visualizing the complete end-to-end pipeline of the Self-Learning Prompt Engine System.
+A comprehensive React application for visualizing the complete end-to-end pipeline of the Self-Learning Analysis Engine System.
 
 ## Features
 
@@ -292,4 +292,4 @@ Current version: 1.0.0
 
 ## Contributors
 
-Built for the Self-Learning Prompt Engine System
+Built for the Self-Learning Analysis Engine System
