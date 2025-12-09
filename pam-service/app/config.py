@@ -3,6 +3,7 @@ Configuration for PAM (Prompt Augmentation Model) Service
 """
 
 import os
+from pathlib import Path
 from typing import Optional
 
 class Settings:
@@ -45,6 +46,13 @@ class Settings:
     
     # Logging
     LOG_LEVEL: str = os.getenv("PAM_LOG_LEVEL", "INFO")
+
+    # Bank Contexts
+    BASE_DIR = Path(__file__).resolve().parent
+    BANK_CONTEXTS_FILE: str = os.getenv(
+        "PAM_BANK_CONTEXTS_FILE",
+        str(BASE_DIR / "configs" / "bank_contexts.json")
+    )
 
 
 # Global settings instance

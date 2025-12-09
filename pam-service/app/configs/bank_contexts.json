@@ -1,0 +1,80 @@
+[
+  {
+    "id": "fx_lockup",
+    "name": "FX Lockups",
+    "focus_area": "Encourage FX lockup usage for customers with FX exposure",
+    "priority": 1,
+    "status": "active",
+    "time_frame": {
+      "start_date": "2025-11-01",
+      "end_date": "2025-12-31",
+      "open_ended": false
+    },
+    "description": "Identify customers with repeated cross-border transfers and offer FX Lockup for rate certainty.",
+    "incentive": "Preferential FX rate for the first lockup transaction",
+    "eligibility": {
+      "min_recent_cross_border_transactions": 4,
+      "recent_days": 30,
+      "transaction_tags": ["cross_border", "international"],
+      "propensity_score": {
+        "key": "fx_lockup",
+        "min": 0.65
+      },
+      "required_products": ["salary_account"],
+      "risk_profiles": ["low", "medium"],
+      "segments": ["SME", "retail"],
+      "channel_preferences": ["digital", "branch"]
+    }
+  },
+  {
+    "id": "credit_limit_increase",
+    "name": "Credit Limit Optimisation",
+    "focus_area": "Promote credit limit increases for fully utilized cards",
+    "priority": 2,
+    "status": "active",
+    "time_frame": {
+      "open_ended": true
+    },
+    "description": "Detect high card utilisation with steady repayments and nudge customers to request a strategic credit limit increase.",
+    "incentive": "Waived annual review fee for approved increases",
+    "eligibility": {
+      "min_transactions": 6,
+      "recent_days": 30,
+      "min_credit_utilization": 0.65,
+      "max_credit_utilization": 0.9,
+      "propensity_score": {
+        "key": "credit_increase",
+        "min": 0.6
+      },
+      "required_products": ["corporate_card", "salary_account"],
+      "risk_profiles": ["low"],
+      "segments": ["retail", "SME"]
+    }
+  },
+  {
+    "id": "card_to_loan",
+    "name": "Card-to-Loan Conversion",
+    "focus_area": "Transition high invoice spenders onto term loans",
+    "priority": 3,
+    "status": "scheduled",
+    "time_frame": {
+      "start_date": "2025-11-15",
+      "end_date": "2025-12-15",
+      "open_ended": false
+    },
+    "description": "Target SMEs with sustained card spend and predictable revenue to offer a structured term loan.",
+    "incentive": "Discounted annual interest rate for the first 12 months",
+    "eligibility": {
+      "min_transactions": 8,
+      "recent_days": 30,
+      "min_income": 120000,
+      "risk_profiles": ["low", "medium"],
+      "segments": ["SME"],
+      "propensity_score": {
+        "key": "card_to_loan",
+        "min": 0.5
+      }
+    }
+  }
+]
+

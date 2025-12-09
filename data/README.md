@@ -71,6 +71,37 @@ Here's what a generated dataset looks like:
 
 ---
 
+## 🧬 PAM Contextual Inputs
+
+Each dataset now includes the signals PAM needs for bank-defined contexts.
+
+- `transactions` include a `tags` array (e.g., `cross_border`, `high_value`, `card_spend`) that feeds eligibility checks.
+- `customer_profile` captures income, products, propensities (`fx_lockup`, `credit_increase`, `card_to_loan`), risk, segments, channels, and utilisation.
+- `contextual_signals` summarize recent behaviour (cross-border transfers, card spend, high-value transactions, average size).
+- `bank_contexts` is a list of context cards (id, name, focus_area, priority, time_frame, incentive, description, eligibility rules, preview). These are the same structures the UI can send in an `/augment` request via the new `bank_contexts` body field.
+
+You can reuse the sample context cards in `generated_data/dataset_0001.json` (and `pam-service/app/configs/bank_contexts.json`) to seeding the UI or API payloads.
+
+Example augment request addition:
+
+```json
+{
+  "input_data": { ... },
+  "bank_contexts": [
+    {
+      "id": "fx_lockup",
+      "priority": 1,
+      "eligibility": {
+        "min_recent_cross_border_transactions": 4,
+        "propensity_score": { "key": "fx_lockup", "min": 0.65 }
+      }
+    }
+  ]
+}
+```
+
+---
+
 ## 💡 Common Use Cases
 
 ### 1. Train Self-Learning System

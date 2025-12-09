@@ -4,6 +4,19 @@
  * Updated: Self-Learning is part of Prompt Engine, Redis added
  */
 
+const getServiceUrl = (envKey, fallback) => import.meta.env[envKey] ?? fallback;
+
+const SERVICE_URLS = {
+  PSEUDONYMIZATION: getServiceUrl('VITE_PSEUDONYMIZATION_URL', 'http://localhost:5003'),
+  PAM: getServiceUrl('VITE_PAM_URL', 'http://localhost:5005'),
+  AUTONOMOUS_AGENT: getServiceUrl('VITE_AUTONOMOUS_AGENT_URL', 'http://localhost:5001'),
+  PROMPT_ENGINE: getServiceUrl('VITE_PROMPT_ENGINE_URL', 'http://localhost:5000'),
+  VALIDATION: getServiceUrl('VITE_VALIDATION_URL', 'http://localhost:5002'),
+  REPERSONALIZATION: getServiceUrl('VITE_REPERSONALIZATION_URL', 'http://localhost:5004'),
+  QDRANT: getServiceUrl('VITE_QDRANT_URL', 'http://localhost:6333'),
+  OLLAMA: getServiceUrl('VITE_OLLAMA_URL', 'http://localhost:11434')
+};
+
 export const PIPELINE_STEPS = [
   {
     id: 'input-data',
@@ -61,7 +74,7 @@ export const PIPELINE_STEPS = [
     color: '#10B981',
     position: { x: 100, y: 150 },
     port: 5003,
-    endpoint: 'http://localhost:5003',
+    endpoint: SERVICE_URLS.PSEUDONYMIZATION,
     healthCheck: '/health',
     apiPath: '/pseudonymize',
     features: [
@@ -88,7 +101,7 @@ export const PIPELINE_STEPS = [
     color: '#14B8A6',
     position: { x: 100, y: 225 },
     port: 5005,
-    endpoint: 'http://localhost:5005',
+    endpoint: SERVICE_URLS.PAM,
     healthCheck: '/health',
     apiPath: '/augment',
     features: [
@@ -102,11 +115,13 @@ export const PIPELINE_STEPS = [
       qdrant: {
         name: 'Qdrant Vector DB',
         port: 6333,
+        endpoint: SERVICE_URLS.QDRANT,
         description: 'Augmentation data caching'
       },
       ollama: {
         name: 'Ollama LLM',
         port: 11434,
+        endpoint: SERVICE_URLS.OLLAMA,
         description: 'LLM-based research'
       }
     }
@@ -120,7 +135,7 @@ export const PIPELINE_STEPS = [
     color: '#3B82F6',
     position: { x: 50, y: 300 },
     port: 5001,
-    endpoint: 'http://localhost:5001',
+    endpoint: SERVICE_URLS.AUTONOMOUS_AGENT,
     healthCheck: '/agent/status',
     apiPath: '/analyze',
     features: [
@@ -141,7 +156,7 @@ export const PIPELINE_STEPS = [
     color: '#F59E0B',
     position: { x: 400, y: 300 },
     port: 5000,
-    endpoint: 'http://localhost:5000',
+    endpoint: SERVICE_URLS.PROMPT_ENGINE,
     healthCheck: '/health',
     apiPath: '/generate',
     features: [
@@ -165,7 +180,7 @@ export const PIPELINE_STEPS = [
     color: '#06B6D4',
     position: { x: 225, y: 450 },
     port: 5002,
-    endpoint: 'http://localhost:5002',
+    endpoint: SERVICE_URLS.VALIDATION,
     healthCheck: '/health',
     apiPath: '/validate/response',
     features: [
@@ -179,12 +194,12 @@ export const PIPELINE_STEPS = [
       vectorDb: {
         name: 'Qdrant Vector DB',
         port: 6333,
-        endpoint: 'http://localhost:6333'
+        endpoint: SERVICE_URLS.QDRANT
       },
       llm: {
         name: 'Ollama LLM',
         port: 11434,
-        endpoint: 'http://localhost:11434',
+        endpoint: SERVICE_URLS.OLLAMA,
         models: ['mistral', 'llama3.1:8b', 'phi3:3.8b']
       }
     }
@@ -220,7 +235,7 @@ export const PIPELINE_STEPS = [
     color: '#EF4444',
     position: { x: 225, y: 700 },
     port: 5004,
-    endpoint: 'http://localhost:5004',
+    endpoint: SERVICE_URLS.REPERSONALIZATION,
     healthCheck: '/health',
     apiPath: '/repersonalize',
     features: [
@@ -280,14 +295,14 @@ export const SERVICES = {
   PSEUDONYMIZATION: {
     name: 'Pseudonymization Service',
     port: 5003,
-    url: 'http://localhost:5003',
+    url: SERVICE_URLS.PSEUDONYMIZATION,
     healthEndpoint: '/health',
     usesRedis: true
   },
   PAM: {
     name: 'PAM Service',
     port: 5005,
-    url: 'http://localhost:5005',
+    url: SERVICE_URLS.PAM,
     healthEndpoint: '/health',
     description: 'Prompt Augmentation Model - Company Intelligence & Market Research',
     critical: false // Optional service for enhancement
@@ -295,13 +310,13 @@ export const SERVICES = {
   AUTONOMOUS_AGENT: {
     name: 'Autonomous Agent',
     port: 5001,
-    url: 'http://localhost:5001',
+    url: SERVICE_URLS.AUTONOMOUS_AGENT,
     healthEndpoint: '/agent/status'
   },
   PROMPT_ENGINE: {
     name: 'Prompt Engine',
     port: 5000,
-    url: 'http://localhost:5000',
+    url: SERVICE_URLS.PROMPT_ENGINE,
     healthEndpoint: '/health',
     includesSelfLearning: true, // Self-Learning API is part of this service
     usesPAM: true // Integrates with PAM service
@@ -309,26 +324,26 @@ export const SERVICES = {
   VALIDATION: {
     name: 'Validation Service',
     port: 5002,
-    url: 'http://localhost:5002',
+    url: SERVICE_URLS.VALIDATION,
     healthEndpoint: '/health'
   },
   REPERSONALIZATION: {
     name: 'Repersonalization Service',
     port: 5004,
-    url: 'http://localhost:5004',
+    url: SERVICE_URLS.REPERSONALIZATION,
     healthEndpoint: '/health',
     usesRedis: true
   },
   QDRANT: {
     name: 'Qdrant Vector DB',
     port: 6333,
-    url: 'http://localhost:6333',
+    url: SERVICE_URLS.QDRANT,
     healthEndpoint: '/collections'
   },
   OLLAMA: {
     name: 'Ollama LLM',
     port: 11434,
-    url: 'http://localhost:11434',
+    url: SERVICE_URLS.OLLAMA,
     healthEndpoint: '/api/tags'
   },
   REDIS: {

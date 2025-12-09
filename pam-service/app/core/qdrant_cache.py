@@ -218,13 +218,14 @@ class QdrantCache:
                 self.stats['cache_hits'] += 1
                 logger.info(f"Cache hit for companies: {', '.join(companies[:3])}")
                 
-                return {
-                    'augmented_data': payload.get('augmented_data'),
-                    'companies_analyzed': payload.get('companies_analyzed'),
-                    'timestamp': timestamp,
-                    'cache_hit': True,
-                    'similarity_score': hit.score
-                }
+            return {
+                'augmented_data': payload.get('augmented_data'),
+                'companies_analyzed': payload.get('companies_analyzed'),
+                'timestamp': timestamp,
+                'cache_hit': True,
+                'similarity_score': hit.score,
+                'context_metadata': payload.get('context_metadata')
+            }
             
             # Cache miss
             self.stats['cache_misses'] += 1
@@ -237,7 +238,8 @@ class QdrantCache:
     
     def store_augmentation(self, companies: List[str], 
                           augmented_data: Dict[str, Any],
-                          context: str = None):
+                          context: str = None,
+                          context_metadata: Dict[str, Any] = None):
         """
         Store augmentation data in cache
         
@@ -263,6 +265,8 @@ class QdrantCache:
                 'timestamp': datetime.utcnow().isoformat(),
                 'ttl_hours': self.cache_ttl_hours
             }
+            if context_metadata:
+                payload['context_metadata'] = context_metadata
             
             # Generate unique ID
             point_id = str(uuid.uuid4())

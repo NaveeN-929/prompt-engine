@@ -1,0 +1,267 @@
+{
+  "customer_id": "ENT_0001",
+  "name": "Tech Solutions Inc",
+  "email": "accounts@techsolutionsin.group.com",
+  "phone": "425-315-6440",
+  "transactions": [
+    {
+      "date": "2025-11-01",
+      "amount": -42149.84,
+      "type": "debit",
+      "description": "Consulting services from PwC US",
+      "tags": [
+        "high_value"
+      ],
+      "merchant": "PwC US"
+    },
+    {
+      "date": "2025-11-02",
+      "amount": 12773.31,
+      "type": "credit",
+      "description": "Invoice payment - Net 30",
+      "tags": [
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-02",
+      "amount": -284753.3,
+      "type": "debit",
+      "description": "Monthly payroll processing",
+      "tags": [
+        "card_spend",
+        "high_value"
+      ]
+    },
+    {
+      "date": "2025-11-03",
+      "amount": -23002.51,
+      "type": "debit",
+      "description": "Shipping via FedEx Corporation",
+      "tags": [
+        "recurring"
+      ],
+      "merchant": "FedEx Corporation"
+    },
+    {
+      "date": "2025-11-05",
+      "amount": 15322.97,
+      "type": "credit",
+      "description": "Professional services rendered",
+      "tags": []
+    },
+    {
+      "date": "2025-11-15",
+      "amount": -9514.21,
+      "type": "debit",
+      "description": "SaaS platform fees",
+      "tags": [
+        "card_spend"
+      ]
+    },
+    {
+      "date": "2025-11-18",
+      "amount": 96133.12,
+      "type": "credit",
+      "description": "Portfolio income",
+      "tags": []
+    },
+    {
+      "date": "2025-11-18",
+      "amount": 79223.14,
+      "type": "credit",
+      "description": "Payment from HP Inc",
+      "tags": [
+        "revenue"
+      ],
+      "merchant": "HP Inc"
+    },
+    {
+      "date": "2025-11-21",
+      "amount": -296898.79,
+      "type": "debit",
+      "description": "Bi-weekly payroll",
+      "tags": [
+        "high_value",
+        "recurring"
+      ]
+    },
+    {
+      "date": "2025-11-22",
+      "amount": 46042.16,
+      "type": "credit",
+      "description": "Portfolio income",
+      "tags": []
+    },
+    {
+      "date": "2025-11-24",
+      "amount": 94432.14,
+      "type": "credit",
+      "description": "Capital gains",
+      "tags": []
+    },
+    {
+      "date": "2025-11-27",
+      "amount": -98047.74,
+      "type": "debit",
+      "description": "Wholesale purchase",
+      "tags": [
+        "card_spend",
+        "high_value",
+        "recurring"
+      ]
+    }
+  ],
+  "account_info": {
+    "account_number": "3363-4765-1820",
+    "routing_number": "682357774",
+    "bank_name": "SME Banking Solutions",
+    "account_type": "business_savings"
+  },
+  "account_balance": -66416.24,
+  "customer_profile": {
+    "income": 168154.17,
+    "products_owned": [
+      "corporate_card",
+      "salary_account",
+      "trade_finance",
+      "cash_management"
+    ],
+    "propensities": {
+      "fx_lockup": 0.5,
+      "credit_increase": 0.59,
+      "card_to_loan": 0.72
+    },
+    "risk_profile": "medium",
+    "segments": [
+      "SME"
+    ],
+    "channel_preferences": [
+      "relationship_manager",
+      "digital"
+    ],
+    "credit_utilization": 0.62,
+    "life_stage": "expansion",
+    "preferred_currency": "USD",
+    "tenure_months": 34,
+    "account_balance": -66416.24
+  },
+  "contextual_signals": {
+    "recent_transaction_count": 12,
+    "cross_border_transfers": 0,
+    "card_spend_count": 3,
+    "high_value_spend": 4,
+    "avg_transaction_value": 91524.44,
+    "signals_timestamp": "2025-11-28T08:13:10.676327"
+  },
+  "bank_contexts": [
+    {
+      "id": "fx_lockup",
+      "name": "FX Lockup Promotion",
+      "focus_area": "Secure FX rates for customers with frequent cross-border transfers",
+      "priority": 1,
+      "status": "active",
+      "time_frame": {
+        "start_date": "2025-11-01",
+        "end_date": "2025-12-31",
+        "open_ended": false
+      },
+      "description": "Target customers sending at least 4 cross-border transfers in 30 days and with FX propensity.",
+      "incentive": "Preferential FX rate + cashback on lockup fees",
+      "eligibility": {
+        "min_recent_cross_border_transactions": 4,
+        "recent_days": 30,
+        "transaction_tags": [
+          "cross_border"
+        ],
+        "propensity_score": {
+          "key": "fx_lockup",
+          "min": 0.65
+        },
+        "required_products": [
+          "salary_account"
+        ],
+        "risk_profiles": [
+          "low",
+          "medium"
+        ],
+        "segments": [
+          "SME",
+          "retail"
+        ],
+        "channel_preferences": [
+          "digital",
+          "branch"
+        ]
+      },
+      "preview": "Customer made multiple EUR transfers and prefers digital channels."
+    },
+    {
+      "id": "credit_limit_increase",
+      "name": "Credit Limit Optimisation",
+      "focus_area": "Raise credit limits for clients showing high card utilisation",
+      "priority": 2,
+      "status": "active",
+      "time_frame": {
+        "open_ended": true
+      },
+      "description": "Encourage customers who consistently use 65-90% of their limit to consider an increase.",
+      "incentive": "Waived annual review fee on approved increases",
+      "eligibility": {
+        "min_transactions": 6,
+        "recent_days": 30,
+        "min_credit_utilization": 0.65,
+        "max_credit_utilization": 0.9,
+        "propensity_score": {
+          "key": "credit_increase",
+          "min": 0.6
+        },
+        "required_products": [
+          "corporate_card",
+          "salary_account"
+        ],
+        "risk_profiles": [
+          "low"
+        ],
+        "segments": [
+          "retail",
+          "SME"
+        ]
+      },
+      "preview": "Frequent card spend with strong payment history."
+    },
+    {
+      "id": "card_to_loan",
+      "name": "Card-to-Loan Conversion",
+      "focus_area": "Move high invoice spenders toward term loans",
+      "priority": 3,
+      "status": "scheduled",
+      "time_frame": {
+        "start_date": "2025-11-15",
+        "end_date": "2025-12-15",
+        "open_ended": false
+      },
+      "description": "Convert consistent high spenders into structured financing opportunities.",
+      "incentive": "Discounted first-year interest rate",
+      "eligibility": {
+        "min_transactions": 8,
+        "recent_days": 30,
+        "min_income": 120000,
+        "propensity_score": {
+          "key": "card_to_loan",
+          "min": 0.5
+        },
+        "risk_profiles": [
+          "low",
+          "medium"
+        ],
+        "segments": [
+          "SME"
+        ]
+      },
+      "preview": "SMEs with repeat high-value invoice payments."
+    }
+  ],
+  "timestamp": "2025-11-28T13:43:10.676939Z"
+}
+

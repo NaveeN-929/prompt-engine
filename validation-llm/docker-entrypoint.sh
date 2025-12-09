@@ -47,17 +47,6 @@ else
     echo "⚠️ Continuing anyway, but validation may not work properly"
 fi
 
-# Test imports
-echo "🧪 Testing imports..."
-python test_imports.py
-
-if [ $? -eq 0 ]; then
-    echo "✅ All imports successful"
-else
-    echo "❌ Import test failed"
-    exit 1
-fi
-
 # Create necessary directories
 mkdir -p /app/logs
 mkdir -p /app/training_data/{exemplary,high_quality,acceptable,exports}

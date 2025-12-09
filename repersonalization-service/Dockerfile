@@ -23,5 +23,5 @@ RUN mkdir -p /app/keys
 EXPOSE 5004
 
 # Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5004"]
+CMD ["python", "-m", "app.main"]
 

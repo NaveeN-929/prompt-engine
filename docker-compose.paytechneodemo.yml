@@ -1,5 +1,113 @@
+version: '3.8'
+
 services:
-  # Autonomous Agent Service
+  redis:
+    image: redis:7-alpine
+    container_name: paytechneodemo-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - paytechneodemo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  pseudonymization-service:
+    image: paytechneodemo/pseudo:latest
+    container_name: paytechneodemo-pseudonymization-service
+    ports:
+      - "5003:5003"
+    volumes:
+      - shared-keys:/app/keys
+    environment:
+      - PSEUDO_HOST=0.0.0.0
+      - PSEUDO_PORT=5003
+      - KEY_STORE_PATH=/app/keys/keystore.json
+      - REDIS_URL=redis://redis:6379
+      - REDIS_TTL=86400
+      - REPERSONALIZATION_SERVICE_URL=http://repersonalization-service:5004
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - paytechneodemo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  repersonalization-service:
+    image: paytechneodemo/re-personal:latest
+    container_name: paytechneodemo-repersonalization-service
+    ports:
+      - "5004:5004"
+    volumes:
+      - shared-keys:/app/keys
+    environment:
+      - REPERSONAL_HOST=0.0.0.0
+      - REPERSONAL_PORT=5004
+      - KEY_STORE_PATH=/app/keys/keystore.json
+      - REDIS_URL=redis://redis:6379
+      - PSEUDONYMIZATION_SERVICE_URL=http://pseudonymization-service:5003
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+    depends_on:
+      redis:
+        condition: service_healthy
+      pseudonymization-service:
+        condition: service_started
+    networks:
+      - paytechneodemo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  pam-service:
+    image: paytechneodemo/pam:latest
+    container_name: paytechneodemo-pam
+    ports:
+      - "5005:5005"
+    environment:
+      - PAM_HOST=0.0.0.0
+      - PAM_PORT=5005
+      - PAM_DEBUG=false
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - OLLAMA_MODEL=llama3
+      - PAM_ENABLE_SCRAPING=true
+      - PAM_ENABLE_LLM=true
+      - PAM_ENABLE_CACHING=true
+      - PAM_CACHE_TTL_HOURS=24
+    depends_on:
+      - qdrant
+      - ollama
+    networks:
+      - paytechneodemo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   autonomous-agent:
     image: paytechneodemo/autonomous-agent:latest
     container_name: paytechneodemo-autonomous-agent
@@ -24,6 +132,7 @@ services:
       - validator
       - ollama
       - qdrant
+      - pam-service
     networks:
       - paytechneodemo-network
     volumes:
@@ -35,7 +144,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # Prompt Engine Service
   prompt-engine:
     image: paytechneodemo/prompt-engine:latest
     container_name: paytechneodemo-prompt-engine
@@ -47,12 +155,16 @@ services:
       - OLLAMA_PORT=11434
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
+      - PAM_HOST=pam-service
+      - PAM_PORT=5005
+      - ENABLE_PAM_AUGMENTATION=true
       - FLASK_HOST=0.0.0.0
       - FLASK_PORT=5000
       - FLASK_DEBUG=false
     depends_on:
       - qdrant
       - ollama
+      - pam-service
     networks:
       - paytechneodemo-network
     restart: unless-stopped
@@ -62,7 +174,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # Validation Service
   validator:
     image: paytechneodemo/validator:latest
     container_name: paytechneodemo-validator
@@ -72,7 +183,7 @@ services:
       - DOCKER_ENV=true
       - VALIDATION_HOST=0.0.0.0
       - VALIDATION_PORT=5002
-      - OLLAMA_HOST=ollama
+      - OLLAMA_HOST=http://ollama:11434
       - OLLAMA_PORT=11434
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
@@ -95,7 +206,6 @@ services:
       retries: 3
       start_period: 60s
 
-  # Ollama LLM Service
   ollama:
     image: ollama/ollama:latest
     container_name: paytechneodemo-ollama
@@ -115,7 +225,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # Qdrant Vector Database
   qdrant:
     image: qdrant/qdrant:latest
     container_name: paytechneodemo-qdrant
@@ -136,10 +245,11 @@ services:
       timeout: 10s
       retries: 3
 
-  # Caddy Reverse Proxy & SSL
   caddy:
     image: caddy:latest
     container_name: caddy
+    environment:
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY:-}
     networks:
       - paytechneodemo-network
     volumes:
@@ -157,7 +267,6 @@ services:
       - prompt-engine
       - validator
 
-  # Watchtower - Auto Container Updates
   watchtower:
     image: containrrr/watchtower
     container_name: watchtower
@@ -191,4 +300,7 @@ volumes:
     driver: local
   caddy_config:
     driver: local
-
+  shared-keys:
+    driver: local
+  redis-data:
+    driver: local

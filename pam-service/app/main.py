@@ -107,7 +107,8 @@ def augment_prompt():
         "input_data": {...},  // Transaction data or other input
         "prompt_text": "...", // Optional: prompt to augment
         "companies": [...],   // Optional: explicit company list
-        "context": "..."      // Optional: context string
+        "context": "...",     // Optional: context string
+        "bank_contexts": [...]// Optional: bank-defined context cards
     }
     """
     if not augmentation_engine:
@@ -130,13 +131,15 @@ def augment_prompt():
         prompt_text = data.get('prompt_text')
         companies = data.get('companies')
         context = data.get('context')
+        bank_contexts = data.get('bank_contexts')
         
         # Perform augmentation
         result = augmentation_engine.augment(
             input_data=input_data,
             prompt_text=prompt_text,
             companies=companies,
-            context=context
+            context=context,
+            bank_contexts=bank_contexts
         )
         
         logger.info(f"Augmentation completed: {len(result.get('companies_analyzed', []))} companies")
@@ -162,12 +165,13 @@ def augment_bulk():
     Request body:
     {
         "requests": [
-            {
-                "input_data": {...},
-                "prompt_text": "...",
-                "companies": [...],
-                "context": "..."
-            },
+        {
+            "input_data": {...},
+            "prompt_text": "...",
+            "companies": [...],
+            "context": "...",
+            "bank_contexts": [...]
+        },
             ...
         ]
     }
@@ -203,7 +207,8 @@ def augment_bulk():
                     input_data=input_data,
                     prompt_text=req.get('prompt_text'),
                     companies=req.get('companies'),
-                    context=req.get('context')
+                    context=req.get('context'),
+                    bank_contexts=req.get('bank_contexts')
                 )
                 
                 results.append({

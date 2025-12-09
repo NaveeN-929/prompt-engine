@@ -18,6 +18,7 @@ from config import OLLAMA_HOST, OLLAMA_PORT, OLLAMA_MODEL, FLASK_HOST, FLASK_POR
 from app.generators.agentic_prompt_generator import AgenticPromptGenerator
 from app.generators.prompt_generator import PromptGenerator
 from app.generators.response_formatter import ResponseFormatter
+from app.data_generator import DynamicDatasetGenerator
 from app.llm.mock_llm import OllamaLLM
 from app.feedback.feedback_system import FeedbackSystem
 
@@ -35,6 +36,7 @@ ollama_llm = OllamaLLM(
 )
 feedback_system = FeedbackSystem()
 response_formatter = ResponseFormatter()
+data_generator = DynamicDatasetGenerator()
 
 @app.route('/')
 def root():
@@ -198,6 +200,27 @@ def generate_prompt():
     except Exception as e:
         print(f"Error in generate endpoint: {traceback.format_exc()}")
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+
+@app.route('/data-generator', methods=['POST'])
+def generate_dynamic_dataset():
+    """
+    Generate a synthetic transaction dataset that can be plugged into the visualizer
+    """
+    try:
+        payload = request.get_json(silent=True) or {}
+        profile = payload.get('profile', 'balanced')
+        count = payload.get('transaction_count', 30)
+        try:
+            count = int(count)
+        except (TypeError, ValueError):
+            count = 30
+
+        dataset = data_generator.generate(profile=profile, transaction_count=count)
+        return jsonify(dataset)
+    except Exception as exc:
+        print(f"Error generating dataset: {traceback.format_exc()}")
+        return jsonify({"error": f"Unable to generate dataset: {str(exc)}"}), 500
 
 @app.route('/agentic/analyze', methods=['POST'])
 def analyze_data():
