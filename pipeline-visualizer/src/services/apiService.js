@@ -7,6 +7,9 @@
 import axios from 'axios';
 import { SERVICES } from '../utils/pipelineConfig';
 
+const OLLAMA_API_KEY = import.meta.env.VITE_OLLAMA_API_KEY;
+const getOllamaHeaders = () => (OLLAMA_API_KEY ? { 'Ollama-Api-Key': OLLAMA_API_KEY } : {});
+
 // Configure axios defaults
 axios.defaults.timeout = 30000; // 30 seconds
 
@@ -46,7 +49,10 @@ export const healthCheckService = {
       try {
         const response = await axios.get(
           `${service.url}${service.healthEndpoint}`,
-          { timeout: 5000 }
+          {
+            timeout: 5000,
+            headers: key === 'OLLAMA' ? getOllamaHeaders() : undefined
+          }
         );
         results[key] = {
           status: 'healthy',
@@ -94,7 +100,10 @@ export const healthCheckService = {
     try {
       const response = await axios.get(
         `${service.url}${service.healthEndpoint}`,
-        { timeout: 5000 }
+        {
+          timeout: 5000,
+          headers: serviceKey === 'OLLAMA' ? getOllamaHeaders() : undefined
+        }
       );
       return {
         status: 'healthy',
@@ -398,6 +407,10 @@ export const selfLearningService = {
 };
 
 /**
+ * Data generator endpoint
+ */
+
+/**
  * Qdrant Vector DB API
  */
 export const qdrantService = {
@@ -428,7 +441,9 @@ export const ollamaService = {
    * List available models
    */
   async listModels() {
-    const response = await axios.get(`${SERVICES.OLLAMA.url}/api/tags`);
+    const response = await axios.get(`${SERVICES.OLLAMA.url}/api/tags`, {
+      headers: getOllamaHeaders()
+    });
     return response.data;
   },
 
@@ -436,11 +451,17 @@ export const ollamaService = {
    * Generate text
    */
   async generate(model, prompt) {
-    const response = await axios.post(`${SERVICES.OLLAMA.url}/api/generate`, {
-      model,
-      prompt,
-      stream: false
-    });
+    const response = await axios.post(
+      `${SERVICES.OLLAMA.url}/api/generate`,
+      {
+        model,
+        prompt,
+        stream: false
+      },
+      createLongRunningConfig({
+        headers: getOllamaHeaders()
+      })
+    );
     return response.data;
   }
 };

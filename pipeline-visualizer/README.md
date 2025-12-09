@@ -77,16 +77,33 @@ The application will be available at `http://localhost:5173`
 
 ### Connecting to Backend Services
 
-The visualizer connects to the following services:
+The visualizer reads every backend URL from environment variables so you can point it at the actual deployment domains.
+Copy `env.template` to `.env` (Vite picks up `.env.local`/`.env` files automatically) and override the `VITE_*` entries when you run the app.
+By default the template points at the published endpoints behind Caddy:
 
-- **Pseudonymization Service** - http://localhost:5003
-- **Repersonalization Service** - http://localhost:5004
-- **Prompt Engine** - http://localhost:5000
-- **Validation Service** - http://localhost:5002
-- **Qdrant Vector DB** - http://localhost:6333
-- **Ollama LLM** - http://localhost:11434
+- **Pseudonymization Service** - https://pseudonymization.neoengage.io
+- **Repersonalization Service** - https://repersonalize.neoengage.io
+- **PAM Service** - https://pam.neoengage.io
+- **Autonomous Agent** - https://autonomous-agent.neoengage.io
+- **Prompt Engine** - https://prompt-engine.neoengage.io
+- **Validation Service** - https://validator.neoengage.io
+- **Qdrant Vector DB** - https://qdrant.neoengage.io (via Caddy proxy)
+- **Ollama LLM** - https://ollama.neoengage.io (via Caddy proxy)
 
-Make sure all services are running before starting the visualizer.
+Make sure the target services are reachable from your browser before starting the visualizer.
+
+### API Authentication
+
+Set `VITE_OLLAMA_API_KEY` in `pipeline-visualizer/.env` so the visualizer can append the required `Ollama-Api-Key` header when it polls the models/health endpoints. The reverse proxy also reads `OLLAMA_API_KEY` (defined in the host environment or `.env`) and forwards the same header to the Ollama container, so the two values should match.
+
+If you don’t have a key yet, add it to `.env.local` or export it before launching Caddy:
+
+```bash
+export OLLAMA_API_KEY=your-secret-key
+export VITE_OLLAMA_API_KEY=$OLLAMA_API_KEY
+docker compose up caddy
+npm run dev   # or npm run build && npm run preview
+```
 
 ### Quick Start
 
@@ -149,18 +166,11 @@ Make sure all services are running before starting the visualizer.
 
 ### API Endpoints
 
-Edit `src/utils/pipelineConfig.js` to configure service endpoints:
+Edit `src/utils/pipelineConfig.js` to configure service endpoints or override them by setting the `VITE_*` values in `env.template` (now including `VITE_QDRANT_URL` and `VITE_OLLAMA_URL`) and copying it to `.env`.
 
 ```javascript
-export const SERVICES = {
-  PSEUDONYMIZATION: {
-    name: 'Pseudonymization Service',
-    port: 5003,
-    url: 'http://localhost:5003',
-    healthEndpoint: '/health'
-  },
-  // ... more services
-};
+const service = SERVICES.PROMPT_ENGINE;
+console.log(`Prompt Engine URL: ${service.url}`);
 ```
 
 ### Theme Colors

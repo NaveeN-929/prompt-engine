@@ -1,0 +1,94 @@
+{
+  # Global options
+  acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+  email admin@neoengage.io
+  http_port 80
+  https_port 443
+}
+
+autonomous-agent.neoengage.io {
+  encode zstd gzip
+  reverse_proxy autonomous-agent:5001 {
+    transport http {
+      read_buffer 4096
+    }
+  }
+  log {
+    output file /var/log/caddy/autonomous-agent.log
+    level INFO
+  }
+}
+
+prompt-engine.neoengage.io {
+  encode zstd gzip
+  reverse_proxy prompt-engine:5000
+  log {
+    output file /var/log/caddy/prompt-engine.log
+    level INFO
+  }
+}
+
+pseudonymization.neoengage.io {
+  encode zstd gzip
+  reverse_proxy pseudonymization-service:5003
+  log {
+    output file /var/log/caddy/pseudonymization.log
+    level INFO
+  }
+}
+
+validator.neoengage.io {
+  encode zstd gzip
+  reverse_proxy validator:5002
+  log {
+    output file /var/log/caddy/validator.log
+    level INFO
+  }
+}
+
+pam.neoengage.io {
+  encode zstd gzip
+  reverse_proxy pam-service:5005
+  log {
+    output file /var/log/caddy/pam.log
+    level INFO
+  }
+}
+
+# Optional: expose repersonalization workflow under a path rather than subdomain
+repersonalize.neoengage.io {
+  encode zstd gzip
+  reverse_proxy repersonalization-service:5004
+}
+
+qdrant.neoengage.io {
+  encode zstd gzip
+  reverse_proxy qdrant:6333
+  log {
+    output file /var/log/caddy/qdrant.log
+    level INFO
+  }
+}
+
+ollama.neoengage.io {
+  encode zstd gzip
+  @ollama-preflight {
+    method OPTIONS
+  }
+  handle @ollama-preflight {
+    respond "" 204
+  }
+  reverse_proxy ollama:11434 {
+    header_up Ollama-Api-Key {env.OLLAMA_API_KEY}
+  }
+  log {
+    output file /var/log/caddy/ollama.log
+    level INFO
+  }
+  header {
+    Access-Control-Allow-Origin *
+    Access-Control-Allow-Headers *
+    Access-Control-Allow-Methods "GET, POST, OPTIONS"
+  }
+}
+

@@ -6,11 +6,44 @@ import CodeViewer from '../common/CodeViewer';
 import OutputDisplay from '../common/OutputDisplay';
 import { formatDuration } from '../../utils/dataFormatter';
 import dataset0001 from '../../assets/dataset_0001.json';
+import { generateDataset } from '../../utils/dataGenerator';
+
+const DYNAMIC_DATA_PROFILES = [
+  { label: 'Balanced growth', value: 'balanced' },
+  { label: 'Negative pressure', value: 'negative' },
+  { label: 'Neutral stability', value: 'neutral' }
+];
 
 const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
   const [inputData, setInputData] = useState(() => JSON.stringify(dataset0001, null, 2));
 
   const [inputError, setInputError] = useState(null);
+  const [dynamicProfile, setDynamicProfile] = useState(DYNAMIC_DATA_PROFILES[0].value);
+  const [dynamicLoading, setDynamicLoading] = useState(false);
+  const [dynamicCount, setDynamicCount] = useState(800);
+  const [activeGeneratorLabel, setActiveGeneratorLabel] = useState('Default dataset');
+
+  const handleGenerateDynamicDataset = () => {
+    if (dynamicLoading || pipelineState?.isRunning) {
+      return;
+    }
+
+    setDynamicLoading(true);
+    setInputError(null);
+
+    try {
+      const dataset = generateDataset(dynamicProfile, dynamicCount);
+      setInputData(JSON.stringify(dataset, null, 2));
+      const profileLabel =
+        DYNAMIC_DATA_PROFILES.find((profile) => profile.value === dynamicProfile)?.label ??
+        'Dynamic dataset';
+      setActiveGeneratorLabel(`${profileLabel} (dynamic, ${dataset.transactions?.length ?? 0} txns)`);
+    } catch (error) {
+      setInputError(`Failed to generate dynamic dataset: ${error?.message ?? 'unknown error'}`);
+    } finally {
+      setDynamicLoading(false);
+    }
+  };
 
   const handleExecute = () => {
     try {
@@ -164,6 +197,67 @@ const ExecutionView = ({ pipelineState, onExecute, onReset, stepStatuses }) => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Input Data
             </h3>
+            <div className="mb-4 space-y-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Generate a synthetic dataset if you need a fresh input shape.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-3 sm:items-end">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                    Scenario
+                  </label>
+                  <select
+                    value={dynamicProfile}
+                    onChange={(e) => setDynamicProfile(e.target.value)}
+                    disabled={pipelineState?.isRunning || dynamicLoading}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-processing focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  >
+                    {DYNAMIC_DATA_PROFILES.map((profile) => (
+                      <option key={profile.value} value={profile.value}>
+                        {profile.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                    Transactions
+                  </label>
+                  <input
+                    type="number"
+                    min={10}
+                    max={3000}
+                    value={dynamicCount}
+                    onChange={(e) => {
+                      const parsed = Number(e.target.value);
+                      if (Number.isNaN(parsed)) return;
+                      setDynamicCount(Math.max(10, Math.min(3000, parsed)));
+                    }}
+                    disabled={pipelineState?.isRunning || dynamicLoading}
+                    className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-processing focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <button
+                    type="button"
+                    onClick={handleGenerateDynamicDataset}
+                    disabled={pipelineState?.isRunning || dynamicLoading}
+                    className={`btn-primary w-full text-sm ${
+                      pipelineState?.isRunning || dynamicLoading
+                        ? 'opacity-60 cursor-not-allowed'
+                        : ''
+                    }`}
+                  >
+                    {dynamicLoading ? 'Generating…' : 'Generate dynamic dataset'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="mb-4">
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                Active input: {activeGeneratorLabel}
+              </span>
+            </div>
             {inputError && (
               <div className="mb-3 p-3 bg-error bg-opacity-10 border border-error rounded-lg flex items-start gap-2">
                 <AlertCircle size={18} className="text-error mt-0.5" />

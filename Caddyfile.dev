@@ -1,0 +1,45 @@
+autonomous-agent.neoengage.io {
+  reverse_proxy autonomous-agent:5001
+}
+
+prompt-engine.neoengage.io {
+  reverse_proxy prompt-engine:5000
+}
+
+validator.neoengage.io {
+  reverse_proxy validator:5002
+}
+
+pam.neoengage.io {
+  reverse_proxy pam-service:5005
+}
+
+repersonalize.neoengage.io {
+  reverse_proxy repersonalization-service:5004
+}
+
+pseudonymize.neoengage.io {
+  reverse_proxy pseudonymization-service:5003
+}
+
+qdrant.neoengage.io {
+  reverse_proxy qdrant:6333
+}
+
+ollama.neoengage.io {
+  @ollama-preflight {
+    method OPTIONS
+  }
+  handle @ollama-preflight {
+    respond "" 204
+  }
+  reverse_proxy ollama:11434 {
+    header_up Ollama-Api-Key {env.OLLAMA_API_KEY}
+  }
+  header {
+    Access-Control-Allow-Origin *
+    Access-Control-Allow-Headers *
+    Access-Control-Allow-Methods "GET, POST, OPTIONS"
+  }
+}
+

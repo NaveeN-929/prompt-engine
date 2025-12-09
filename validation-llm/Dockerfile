@@ -59,7 +59,6 @@ COPY config.py .
 COPY simple_server.py .
 COPY validation_server.py .
 COPY setup_models.py .
-COPY test_imports.py .
 COPY test-docker-env.py .
 COPY docker-entrypoint.sh .
 COPY requirements.txt .
